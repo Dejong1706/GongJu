@@ -2,22 +2,33 @@
 
 import { useMemo, useState } from "react";
 import Popup from "./Popup";
-import { COURSES, PALETTE, uid } from "@/lib/mock";
+import { COURSES, PALETTE } from "@/lib/config";
 import { DOW, isSameDay, monthGrid, parseYmd, ymd } from "@/lib/date";
-import type { SchoolEvent } from "@/lib/types";
+import type { NewEvent, SchoolEvent } from "@/lib/types";
 
-type EditState = { id: string | null; date: string; title: string; color: string };
+type EditState = {
+  id: string | null;
+  date: string;
+  title: string;
+  color: string;
+};
 
 export default function CalendarView({
   events,
-  setEvents,
+  onSave,
+  onRemove,
   today,
+  weekLeft,
 }: {
   events: SchoolEvent[];
-  setEvents: (fn: (prev: SchoolEvent[]) => SchoolEvent[]) => void;
+  onSave: (id: string | null, data: NewEvent) => Promise<void>;
+  onRemove: (id: string) => Promise<void>;
   today: Date;
+  weekLeft: number;
 }) {
-  const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
+  const [cursor, setCursor] = useState(
+    new Date(today.getFullYear(), today.getMonth(), 1)
+  );
   const [dayOpen, setDayOpen] = useState<Date | null>(null);
   const [edit, setEdit] = useState<EditState | null>(null);
 
@@ -25,56 +36,66 @@ export default function CalendarView({
   const month = cursor.getMonth() + 1;
   const cells = useMemo(() => monthGrid(year, month), [year, month]);
 
-  const moveMonth = (diff: number) => setCursor(new Date(year, month - 1 + diff, 1));
+  const moveMonth = (diff: number) =>
+    setCursor(new Date(year, month - 1 + diff, 1));
   const eventsOf = (d: Date) => events.filter((e) => e.date === ymd(d));
-  const coursesOf = (d: Date) => COURSES.filter((c) => c.days.includes(d.getDay()));
+  const coursesOf = (d: Date) =>
+    COURSES.filter((c) => c.days.includes(d.getDay()));
 
   const openAdd = (d: Date) =>
     setEdit({ id: null, date: ymd(d), title: "", color: PALETTE[0] });
 
-  const save = () => {
+  const save = async () => {
     if (!edit || !edit.title.trim()) return;
-    const next: SchoolEvent = {
-      id: edit.id ?? uid(),
+    await onSave(edit.id, {
       date: edit.date,
       title: edit.title.trim(),
       color: edit.color,
-    };
-    setEvents((prev) =>
-      edit.id ? prev.map((e) => (e.id === edit.id ? next : e)) : [...prev, next]
-    );
+    });
     setEdit(null);
   };
 
-  const remove = () => {
+  const remove = async () => {
     if (!edit?.id) return;
-    setEvents((prev) => prev.filter((e) => e.id !== edit.id));
+    await onRemove(edit.id);
     setEdit(null);
   };
 
   return (
     <>
       <div className="bubble">
-        이번 주 안 들은 강의가 <b>3개</b> 남았어요
+        {weekLeft > 0 ? (
+          <>
+            이번 주 안 들은 강의가 <b>{weekLeft}개</b> 남았어요
+          </>
+        ) : (
+          "이번 주 강의는 다 들었어요"
+        )}
       </div>
 
       <div className="card">
         <div className="flex items-center justify-between mb-[10px]">
-          <button className="cal-arrow" onClick={() => moveMonth(-1)}>◀</button>
+          <button className="cal-arrow" onClick={() => moveMonth(-1)}>
+            ◀
+          </button>
           <strong className="text-[15px] text-center">
             {year}. {String(month).padStart(2, "0")}
             <span className="block mt-[3px] text-[10px] font-normal text-ink-soft">
               2학기 · 14주 남음
             </span>
           </strong>
-          <button className="cal-arrow" onClick={() => moveMonth(1)}>▶</button>
+          <button className="cal-arrow" onClick={() => moveMonth(1)}>
+            ▶
+          </button>
         </div>
 
         <div className="grid grid-cols-7 mb-[3px]">
           {DOW.map((d, i) => (
             <span
               key={d}
-              className={`text-center text-[10px] py-[3px] ${i === 0 ? "text-pink-deep" : "text-ink-soft"}`}
+              className={`text-center text-[10px] py-[3px] ${
+                i === 0 ? "text-pink-deep" : "text-ink-soft"
+              }`}
             >
               {d}
             </span>
@@ -87,23 +108,39 @@ export default function CalendarView({
             return (
               <div
                 key={i}
-                className={`day ${isToday ? "day-today" : ""} ${inMonth ? "" : "opacity-[.28] pointer-events-none"}`}
+                className={`day ${isToday ? "day-today" : ""} ${
+                  inMonth ? "" : "opacity-[.28] pointer-events-none"
+                }`}
                 onClick={() => setDayOpen(date)}
               >
-                <span className={`text-[12px] leading-none ${date.getDay() === 0 ? "text-pink-deep" : ""}`}>
+                <span
+                  className={`text-[12px] leading-none ${
+                    date.getDay() === 0 ? "text-pink-deep" : ""
+                  }`}
+                >
                   {date.getDate()}
                 </span>
                 <div className="flex gap-[2px] justify-center min-h-[5px]">
                   {inMonth &&
                     coursesOf(date).map((c) => (
-                      <i key={c.id} className="w-[5px] h-[5px]" style={{ background: c.color }} />
+                      <i
+                        key={c.id}
+                        className="w-[5px] h-[5px]"
+                        style={{ background: c.color }}
+                      />
                     ))}
                 </div>
                 <div className="w-full flex flex-col gap-[2px] px-[2px]">
                   {inMonth &&
-                    eventsOf(date).slice(0, 3).map((e) => (
-                      <i key={e.id} className="bar-ev" style={{ background: e.color }} />
-                    ))}
+                    eventsOf(date)
+                      .slice(0, 3)
+                      .map((e) => (
+                        <i
+                          key={e.id}
+                          className="bar-ev"
+                          style={{ background: e.color }}
+                        />
+                      ))}
                 </div>
               </div>
             );
@@ -118,7 +155,9 @@ export default function CalendarView({
       {/* 날짜 팝업 */}
       {dayOpen && (
         <Popup
-          title={`${dayOpen.getMonth() + 1}월 ${dayOpen.getDate()}일 (${DOW[dayOpen.getDay()]})`}
+          title={`${dayOpen.getMonth() + 1}월 ${dayOpen.getDate()}일 (${
+            DOW[dayOpen.getDay()]
+          })`}
           onClose={() => setDayOpen(null)}
           footer={
             <button
@@ -137,7 +176,10 @@ export default function CalendarView({
               <div className="mlabel">수업</div>
               {coursesOf(dayOpen).map((c) => (
                 <div key={c.id} className="mrow">
-                  <i className="w-[11px] h-[11px] flex-none border border-ink/40" style={{ background: c.color }} />
+                  <i
+                    className="w-[11px] h-[11px] flex-none border border-ink/40"
+                    style={{ background: c.color }}
+                  />
                   <span className="text-[12px] flex-1">{c.name}</span>
                   <span className="text-[9px] text-ink-soft">{c.time}</span>
                 </div>
@@ -154,11 +196,19 @@ export default function CalendarView({
                 key={e.id}
                 className="mrow active:bg-cream"
                 onClick={() => {
-                  setEdit({ id: e.id, date: e.date, title: e.title, color: e.color });
+                  setEdit({
+                    id: e.id,
+                    date: e.date,
+                    title: e.title,
+                    color: e.color,
+                  });
                   setDayOpen(null);
                 }}
               >
-                <i className="w-[11px] h-[11px] flex-none border border-ink/40" style={{ background: e.color }} />
+                <i
+                  className="w-[11px] h-[11px] flex-none border border-ink/40"
+                  style={{ background: e.color }}
+                />
                 <span className="text-[12px] flex-1">{e.title}</span>
                 <span className="text-[9px] text-ink-soft">수정</span>
               </div>
@@ -174,9 +224,13 @@ export default function CalendarView({
           onClose={() => setEdit(null)}
           footer={
             <>
-              <button className="btn" onClick={save}>저장하기</button>
+              <button className="btn" onClick={save}>
+                저장하기
+              </button>
               {edit.id && (
-                <button className="btn btn-danger" onClick={remove}>삭제하기</button>
+                <button className="btn btn-danger" onClick={remove}>
+                  삭제하기
+                </button>
               )}
             </>
           }
@@ -206,7 +260,10 @@ export default function CalendarView({
                   className="w-full aspect-square border-2 border-ink"
                   style={{
                     background: c,
-                    boxShadow: c === edit.color ? "inset 0 0 0 3px #fff, 0 0 0 2px #6E3D57" : undefined,
+                    boxShadow:
+                      c === edit.color
+                        ? "inset 0 0 0 3px #fff, 0 0 0 2px #6E3D57"
+                        : undefined,
                   }}
                   onClick={() => setEdit({ ...edit, color: c })}
                   aria-label={`색상 ${c}`}
@@ -215,7 +272,8 @@ export default function CalendarView({
             </div>
           </div>
           <div className="empty text-center">
-            {parseYmd(edit.date).getMonth() + 1}월 {parseYmd(edit.date).getDate()}일에 저장됩니다
+            {parseYmd(edit.date).getMonth() + 1}월{" "}
+            {parseYmd(edit.date).getDate()}일에 저장됩니다
           </div>
         </Popup>
       )}

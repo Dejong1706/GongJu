@@ -23,8 +23,17 @@ export type Task = {
   kind: TaskKind;
   courseId: string;
   title: string;
-  date: string;
+  date: string; // YYYY-MM-DD
   done: boolean;
 };
 
-export type Word = { id: string; en: string; ko: string };
+export type Word = {
+  id: string;
+  en: string;
+  ko: string;
+  createdAt: number; // ms
+};
+
+/** 저장할 때는 id 가 없다 (Firestore 가 만들어준다) */
+export type NewEvent = Omit<SchoolEvent, "id">;
+export type NewTask = Omit<Task, "id">;

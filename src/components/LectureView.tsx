@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import Popup from "./Popup";
-import { COURSES, SEM_START, uid } from "@/lib/mock";
+import { COURSES, SEM_START } from "@/lib/config";
 import { shortDate, weekOf, weekRange, ymd } from "@/lib/date";
-import type { Task, TaskKind } from "@/lib/types";
+import type { NewTask, Task, TaskKind } from "@/lib/types";
 
 type EditState = {
   id: string | null;
@@ -16,50 +16,45 @@ type EditState = {
 
 export default function LectureView({
   tasks,
-  setTasks,
+  onSave,
+  onToggle,
+  onRemove,
   today,
 }: {
   tasks: Task[];
-  setTasks: (fn: (prev: Task[]) => Task[]) => void;
+  onSave: (id: string | null, data: NewTask) => Promise<void>;
+  onToggle: (id: string, done: boolean) => Promise<void>;
+  onRemove: (id: string) => Promise<void>;
   today: Date;
 }) {
   const [edit, setEdit] = useState<EditState | null>(null);
 
-  const courseOf = (id: string) => COURSES.find((c) => c.id === id) ?? COURSES[0];
+  const courseOf = (id: string) =>
+    COURSES.find((c) => c.id === id) ?? COURSES[0];
 
   // 이번 주가 맨 위, 아래로 갈수록 과거
-  const weeks = [...new Set(tasks.map((t) => weekOf(t.date, SEM_START)))].sort((a, b) => b - a);
+  const weeks = [...new Set(tasks.map((t) => weekOf(t.date, SEM_START)))].sort(
+    (a, b) => b - a
+  );
 
-  const toggle = (id: string) =>
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t)));
-
-  const save = () => {
+  const save = async () => {
     if (!edit || !edit.title.trim()) return;
-    setTasks((prev) =>
-      edit.id
-        ? prev.map((t) =>
-            t.id === edit.id
-              ? { ...t, kind: edit.kind, courseId: edit.courseId, title: edit.title.trim(), date: edit.date }
-              : t
-          )
-        : [
-            ...prev,
-            {
-              id: uid(),
-              kind: edit.kind,
-              courseId: edit.courseId,
-              title: edit.title.trim(),
-              date: edit.date,
-              done: false,
-            },
-          ]
-    );
+    const done = edit.id
+      ? tasks.find((t) => t.id === edit.id)?.done ?? false
+      : false;
+    await onSave(edit.id, {
+      kind: edit.kind,
+      courseId: edit.courseId,
+      title: edit.title.trim(),
+      date: edit.date,
+      done,
+    });
     setEdit(null);
   };
 
-  const remove = () => {
+  const remove = async () => {
     if (!edit?.id) return;
-    setTasks((prev) => prev.filter((t) => t.id !== edit.id));
+    await onRemove(edit.id);
     setEdit(null);
   };
 
@@ -68,7 +63,13 @@ export default function LectureView({
       <button
         className="btn mb-4"
         onClick={() =>
-          setEdit({ id: null, kind: "강의", courseId: COURSES[0].id, title: "", date: ymd(today) })
+          setEdit({
+            id: null,
+            kind: "강의",
+            courseId: COURSES[0].id,
+            title: "",
+            date: ymd(today),
+          })
         }
       >
         ＋ 강의 · 과제 추가
@@ -77,7 +78,10 @@ export default function LectureView({
       {weeks.map((w) => {
         const list = tasks
           .filter((t) => weekOf(t.date, SEM_START) === w)
-          .sort((a, b) => Number(a.done) - Number(b.done) || a.date.localeCompare(b.date));
+          .sort(
+            (a, b) =>
+              Number(a.done) - Number(b.done) || a.date.localeCompare(b.date)
+          );
         const left = list.filter((t) => !t.done).length;
 
         return (
@@ -101,23 +105,37 @@ export default function LectureView({
                   key={t.id}
                   className={`item ${t.done ? "item-done" : ""}`}
                   onClick={() =>
-                    setEdit({ id: t.id, kind: t.kind, courseId: t.courseId, title: t.title, date: t.date })
+                    setEdit({
+                      id: t.id,
+                      kind: t.kind,
+                      courseId: t.courseId,
+                      title: t.title,
+                      date: t.date,
+                    })
                   }
                 >
                   <div
                     className={`check ${t.done ? "check-on" : ""}`}
                     onClick={(e) => {
                       e.stopPropagation();
-                      toggle(t.id);
+                      void onToggle(t.id, !t.done);
                     }}
                   />
                   <div className="flex-1 min-w-0">
-                    <span className={`block text-[12px] ${t.done ? "line-through" : ""}`}>{t.title}</span>
+                    <span
+                      className={`block text-[12px] ${
+                        t.done ? "line-through" : ""
+                      }`}
+                    >
+                      {t.title}
+                    </span>
                     <span className="block mt-1 text-[10px] text-ink-soft">
                       {c.name} · {shortDate(t.date)}
                     </span>
                   </div>
-                  <span className="kind" style={{ background: c.color }}>{t.kind}</span>
+                  <span className="kind" style={{ background: c.color }}>
+                    {t.kind}
+                  </span>
                 </div>
               );
             })}
@@ -131,8 +149,14 @@ export default function LectureView({
           onClose={() => setEdit(null)}
           footer={
             <>
-              <button className="btn" onClick={save}>저장하기</button>
-              {edit.id && <button className="btn btn-danger" onClick={remove}>삭제하기</button>}
+              <button className="btn" onClick={save}>
+                저장하기
+              </button>
+              {edit.id && (
+                <button className="btn btn-danger" onClick={remove}>
+                  삭제하기
+                </button>
+              )}
             </>
           }
         >
@@ -157,10 +181,15 @@ export default function LectureView({
               {COURSES.map((c) => (
                 <button
                   key={c.id}
-                  className={`subj-btn ${edit.courseId === c.id ? "subj-on" : ""}`}
+                  className={`subj-btn ${
+                    edit.courseId === c.id ? "subj-on" : ""
+                  }`}
                   onClick={() => setEdit({ ...edit, courseId: c.id })}
                 >
-                  <i className="w-[9px] h-[9px] block flex-none" style={{ background: c.color }} />
+                  <i
+                    className="w-[9px] h-[9px] block flex-none"
+                    style={{ background: c.color }}
+                  />
                   {c.name}
                 </button>
               ))}

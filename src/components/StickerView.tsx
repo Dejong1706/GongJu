@@ -4,21 +4,30 @@ import PixelSprite from "./PixelSprite";
 import { PANDA } from "@/lib/sprites";
 
 const Spark = () => (
-  <svg className="spark" viewBox="0 0 24 24" shapeRendering="crispEdges" fill="#FFD34D">
-    <rect x="1" y="0" width="2" height="2" /><rect x="0" y="1" width="4" height="1" opacity=".7" />
-    <rect x="21" y="3" width="2" height="2" /><rect x="20" y="4" width="4" height="1" opacity=".7" />
-    <rect x="2" y="20" width="2" height="2" /><rect x="1" y="21" width="4" height="1" opacity=".7" />
-    <rect x="20" y="19" width="2" height="2" /><rect x="19" y="20" width="4" height="1" opacity=".7" />
+  <svg
+    className="spark"
+    viewBox="0 0 24 24"
+    shapeRendering="crispEdges"
+    fill="#FFD34D"
+  >
+    <rect x="1" y="0" width="2" height="2" />
+    <rect x="0" y="1" width="4" height="1" opacity=".7" />
+    <rect x="21" y="3" width="2" height="2" />
+    <rect x="20" y="4" width="4" height="1" opacity=".7" />
+    <rect x="2" y="20" width="2" height="2" />
+    <rect x="1" y="21" width="4" height="1" opacity=".7" />
+    <rect x="20" y="19" width="2" height="2" />
+    <rect x="19" y="20" width="4" height="1" opacity=".7" />
   </svg>
 );
 
 export default function StickerView({
   stickers,
-  setStickers,
+  onToggle,
   today,
 }: {
   stickers: number[];
-  setStickers: (fn: (prev: number[]) => number[]) => void;
+  onToggle: (day: number) => Promise<void>;
   today: Date;
 }) {
   const year = today.getFullYear();
@@ -32,8 +41,7 @@ export default function StickerView({
   const n = stickers.length;
   const remain = 10 - (n % 10);
 
-  const tap = (d: number) =>
-    setStickers((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]));
+  const tap = (d: number) => void onToggle(d);
 
   return (
     <>
@@ -68,7 +76,9 @@ export default function StickerView({
             return (
               <div
                 key={d}
-                className={`slot ${on ? "slot-on" : ""} ${glow.has(d) ? "slot-glow" : ""} ${d === today.getDate() ? "slot-today" : ""}`}
+                className={`slot ${on ? "slot-on" : ""} ${
+                  glow.has(d) ? "slot-glow" : ""
+                } ${d === today.getDate() ? "slot-today" : ""}`}
                 onClick={() => tap(d)}
               >
                 {on ? (

@@ -6,6 +6,7 @@ import PixelSprite from "./PixelSprite";
 import { BUNNY } from "@/lib/sprites";
 import type { Word } from "@/lib/types";
 
+/** 한 판에 낼 문제 수. 단어가 모자라면 있는 만큼만 낸다. */
 const QN = 5;
 const shuffle = <T,>(a: T[]) =>
   a
@@ -13,15 +14,24 @@ const shuffle = <T,>(a: T[]) =>
     .sort((x, y) => x[0] - y[0])
     .map(([, v]) => v);
 
-type Screen = "home" | "quiz" | "result";
+const norm = (s: string) => s.trim().toLowerCase();
+
+type Screen = "home" | "quiz" | "result" | "list";
+
+/** 목록에서 고른 단어를 고치는 중일 때의 입력값 */
+type EditState = { id: string; en: string; ko: string };
 
 export default function ToeicView({
   words,
   onAdd,
+  onUpdate,
+  onRemove,
   today,
 }: {
   words: Word[];
   onAdd: (en: string, ko: string) => Promise<unknown>;
+  onUpdate: (id: string, en: string, ko: string) => Promise<unknown>;
+  onRemove: (id: string) => Promise<unknown>;
   today: Date;
 }) {
   const [screen, setScreen] = useState<Screen>("home");
@@ -30,6 +40,9 @@ export default function ToeicView({
   const [ko, setKo] = useState("");
   const [msg, setMsg] = useState("");
   const [jump, setJump] = useState(false);
+  const [edit, setEdit] = useState<EditState | null>(null);
+  const [editMsg, setEditMsg] = useState("");
+  const [find, setFind] = useState("");
 
   const [quiz, setQuiz] = useState<Word[]>([]);
   const [qi, setQi] = useState(0);
@@ -54,6 +67,10 @@ export default function ToeicView({
   const todayN = words.filter((w) => w.createdAt >= dayStart).length;
   const weekN = words.filter((w) => w.createdAt >= weekStart).length;
 
+  /** 같은 영단어가 이미 있는지 (자기 자신은 빼고) */
+  const duplicateOf = (text: string, exceptId?: string) =>
+    words.find((w) => w.id !== exceptId && norm(w.en) === norm(text));
+
   const saveWord = async () => {
     const e = en.trim();
     const k = ko.trim();
@@ -61,28 +78,79 @@ export default function ToeicView({
       setMsg("단어와 뜻을 모두 적어주세요");
       return;
     }
-    setEn("");
-    setKo("");
-    enRef.current?.focus();
-    hop();
+    const same = duplicateOf(e);
+    if (same) {
+      setMsg(`이미 있어요 · ${same.en} : ${same.ko}`);
+      return;
+    }
     try {
       await onAdd(e, k);
+      // 저장이 끝난 다음에 지운다. 실패하면 적은 내용이 남아 있어야 한다.
+      setEn("");
+      setKo("");
+      enRef.current?.focus();
+      hop();
       setMsg(`${e} 저장했어요`);
     } catch {
       setMsg("저장하지 못했어요");
     }
   };
 
+  const openEdit = (w: Word) => {
+    setEdit({ id: w.id, en: w.en, ko: w.ko });
+    setEditMsg("");
+  };
+
+  const saveEdit = async () => {
+    if (!edit) return;
+    const e = edit.en.trim();
+    const k = edit.ko.trim();
+    if (!e || !k) {
+      setEditMsg("단어와 뜻을 모두 적어주세요");
+      return;
+    }
+    const same = duplicateOf(e, edit.id);
+    if (same) {
+      setEditMsg(`이미 있어요 · ${same.en} : ${same.ko}`);
+      return;
+    }
+    try {
+      await onUpdate(edit.id, e, k);
+      setEdit(null);
+    } catch {
+      setEditMsg("수정하지 못했어요");
+    }
+  };
+
+  const removeEdit = async () => {
+    if (!edit) return;
+    try {
+      await onRemove(edit.id);
+      setEdit(null);
+    } catch {
+      setEditMsg("삭제하지 못했어요");
+    }
+  };
+
   const makeOptions = (list: Word[], index: number) => {
     const w = list[index];
-    const wrong = shuffle(words.filter((x) => x.en !== w.en))
-      .slice(0, 3)
-      .map((x) => x.ko);
+    // 뜻이 같은 단어를 오답으로 쓰면 보기에 정답이 두 번 나온다. 뜻 기준으로 거른다.
+    const seen = new Set([w.ko]);
+    const wrong: string[] = [];
+    for (const x of shuffle(words)) {
+      if (wrong.length === 3) break;
+      if (seen.has(x.ko)) continue;
+      seen.add(x.ko);
+      wrong.push(x.ko);
+    }
     setOpts(shuffle([w.ko, ...wrong]));
     setPicked(null);
   };
 
+  const canQuiz = words.length > 0;
+
   const startQuiz = () => {
+    if (!canQuiz) return;
     const picked = shuffle([...words]).slice(0, QN);
     setQuiz(picked);
     setQi(0);
@@ -101,8 +169,11 @@ export default function ToeicView({
     });
   };
 
+  // 등록한 단어가 다섯 개가 안 되면 뽑힌 만큼만 푼다
+  const total = quiz.length;
+
   const next = () => {
-    if (qi < QN - 1) {
+    if (qi < total - 1) {
       setQi(qi + 1);
       makeOptions(quiz, qi + 1);
     } else {
@@ -113,6 +184,101 @@ export default function ToeicView({
 
   const right = marks.filter(Boolean).length;
   const wrongWords = quiz.filter((_, i) => !marks[i]);
+
+  if (screen === "list") {
+    const key = norm(find);
+    // 최근에 등록한 단어가 맨 위로
+    const list = [...words]
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .filter(
+        (w) => !key || norm(w.en).includes(key) || w.ko.includes(find.trim())
+      );
+
+    return (
+      <>
+        <div className="flex items-center justify-between mb-[14px]">
+          <button
+            className="w-[38px] h-[34px] border-[3px] border-ink bg-white text-[11px] shadow-[3px_3px_0_var(--band-dark)]"
+            onClick={() => setScreen("home")}
+          >
+            ✕
+          </button>
+          <span className="text-[11px]">단어 {words.length}개</span>
+          <span className="w-[38px]" />
+        </div>
+
+        <div className="field">
+          <input
+            value={find}
+            onChange={(e) => setFind(e.target.value)}
+            placeholder="단어나 뜻으로 찾기"
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
+          />
+        </div>
+
+        {words.length === 0 ? (
+          <div className="empty text-center">아직 등록한 단어가 없어요</div>
+        ) : list.length === 0 ? (
+          <div className="empty text-center">찾는 단어가 없어요</div>
+        ) : (
+          list.map((w) => (
+            <button
+              key={w.id}
+              type="button"
+              className="item"
+              onClick={() => openEdit(w)}
+            >
+              <span className="item-body">
+                <span className="block text-[12px] break-all">{w.en}</span>
+                <span className="block mt-1 text-[10px] text-ink-soft break-all">
+                  {w.ko}
+                </span>
+              </span>
+              <span className="text-[9px] text-ink-soft flex-none">수정</span>
+            </button>
+          ))
+        )}
+
+        {edit && (
+          <Popup
+            title="단어 고치기"
+            onClose={() => setEdit(null)}
+            footer={
+              <>
+                <button className="btn" onClick={saveEdit}>
+                  저장하기
+                </button>
+                <button className="btn btn-danger" onClick={removeEdit}>
+                  삭제하기
+                </button>
+              </>
+            }
+          >
+            <div className="field">
+              <label>영단어</label>
+              <input
+                value={edit.en}
+                onChange={(e) => setEdit({ ...edit, en: e.target.value })}
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
+              />
+            </div>
+            <div className="field">
+              <label>뜻</label>
+              <input
+                value={edit.ko}
+                onChange={(e) => setEdit({ ...edit, ko: e.target.value })}
+              />
+            </div>
+            <div className="empty text-center">{editMsg}</div>
+          </Popup>
+        )}
+      </>
+    );
+  }
 
   if (screen === "quiz") {
     const w = quiz[qi];
@@ -126,10 +292,10 @@ export default function ToeicView({
             ✕
           </button>
           <span className="text-[11px]">
-            {qi + 1} / {QN}
+            {qi + 1} / {total}
           </span>
           <span className="flex gap-[3px]">
-            {Array.from({ length: QN }, (_, i) => (
+            {Array.from({ length: total }, (_, i) => (
               <i
                 key={i}
                 className={`qdot ${
@@ -165,7 +331,7 @@ export default function ToeicView({
 
         {picked && (
           <button className="btn" onClick={next}>
-            {qi === QN - 1 ? "결과 보기" : "다음 문제"}
+            {qi === total - 1 ? "결과 보기" : "다음 문제"}
           </button>
         )}
       </>
@@ -177,12 +343,12 @@ export default function ToeicView({
       <>
         <div className="score">
           <b className="font-display text-[26px] block mb-3">
-            {right}/{QN}
+            {right}/{total}
           </b>
           <span className="text-[11px]">
-            {right === QN
+            {right === total
               ? "전부 맞았어요!"
-              : right >= QN - 1
+              : right >= total - 1
               ? "거의 다 맞았어요"
               : "다시 한 번 볼까요"}
           </span>
@@ -245,7 +411,11 @@ export default function ToeicView({
           </svg>
           단어 등록
         </button>
-        <button className="duo-btn bg-band" onClick={startQuiz}>
+        <button
+          className="duo-btn bg-band"
+          onClick={startQuiz}
+          disabled={!canQuiz}
+        >
           <svg
             width="26"
             height="26"
@@ -263,6 +433,23 @@ export default function ToeicView({
           랜덤 테스트
         </button>
       </div>
+
+      <button
+        className="btn btn-ghost"
+        onClick={() => {
+          setEdit(null);
+          setFind("");
+          setScreen("list");
+        }}
+      >
+        등록한 단어 {words.length}개 보기
+      </button>
+
+      {!canQuiz && (
+        <div className="empty text-center">
+          단어를 먼저 등록하면 테스트를 볼 수 있어요
+        </div>
+      )}
 
       <div className="flex-1 flex flex-col items-center justify-center gap-[14px] pt-[6px] pb-[10px]">
         <div className="bubble !mb-0">

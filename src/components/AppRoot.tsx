@@ -11,6 +11,7 @@ import PixelSprite from "@/components/PixelSprite";
 import { BUNNY } from "@/lib/sprites";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { useEvents, useStickers, useTasks, useWords } from "@/lib/store";
+import { useToday } from "@/lib/useToday";
 import { SEM_START } from "@/lib/config";
 import { DOW, pad, weekOf, ymd } from "@/lib/date";
 import type { TabKey } from "@/lib/types";
@@ -47,21 +48,54 @@ function Loading() {
   return <div className="empty text-center">불러오는 중</div>;
 }
 
+function Failed() {
+  return (
+    <div className="empty text-center">
+      불러오지 못했어요
+      <br />
+      인터넷 연결을 확인하고 다시 들어와주세요
+    </div>
+  );
+}
+
 function App({ uid }: { uid: string }) {
-  const [today] = useState(() => new Date());
+  const today = useToday();
   const [tab, setTab] = useState<TabKey>("cal");
   const { logout } = useAuth();
 
-  const monthKey = `${today.getFullYear()}-${pad(today.getMonth() + 1)}`;
-  const { events, save: saveEvent, remove: removeEvent } = useEvents(uid);
+  // 스티커는 지난 달도 넘겨볼 수 있다
+  const [starCursor, setStarCursor] = useState(
+    () => new Date(today.getFullYear(), today.getMonth(), 1)
+  );
+  const monthKey = `${starCursor.getFullYear()}-${pad(
+    starCursor.getMonth() + 1
+  )}`;
+
+  const {
+    events,
+    error: eventsError,
+    save: saveEvent,
+    remove: removeEvent,
+  } = useEvents(uid);
   const {
     tasks,
+    error: tasksError,
     save: saveTask,
     toggle: toggleTask,
     remove: removeTask,
   } = useTasks(uid);
-  const { words, add: addWord } = useWords(uid);
-  const { days: stickers, toggle: toggleSticker } = useStickers(uid, monthKey);
+  const {
+    words,
+    error: wordsError,
+    add: addWord,
+    update: updateWord,
+    remove: removeWord,
+  } = useWords(uid);
+  const {
+    days: stickers,
+    error: stickersError,
+    toggle: toggleSticker,
+  } = useStickers(uid, monthKey);
 
   const week = weekOf(ymd(today), SEM_START);
   const weekLeft = (tasks ?? []).filter(
@@ -74,10 +108,8 @@ function App({ uid }: { uid: string }) {
 
       <header className="appbar">
         <div className="sprinkle" />
-        <h1 className="font-display text-[13px] leading-[1.4] text-white relative [text-shadow:2px_2px_0_var(--pink-deep)]">
-          Study
-          <br />
-          Diary
+        <h1 className="font-pixel text-[17px] leading-[1.4] text-white relative [text-shadow:2px_2px_0_var(--pink-deep)]">
+          정연공듀
         </h1>
         <div className="relative text-right leading-[1.5]">
           <div className="text-[11px]">
@@ -97,7 +129,9 @@ function App({ uid }: { uid: string }) {
 
       <div className={`scroll ${tab === "toeic" ? "flex flex-col" : ""}`}>
         {tab === "cal" &&
-          (events === null ? (
+          (eventsError ? (
+            <Failed />
+          ) : events === null ? (
             <Loading />
           ) : (
             <CalendarView
@@ -110,7 +144,9 @@ function App({ uid }: { uid: string }) {
           ))}
 
         {tab === "lec" &&
-          (tasks === null ? (
+          (tasksError ? (
+            <Failed />
+          ) : tasks === null ? (
             <Loading />
           ) : (
             <LectureView
@@ -123,20 +159,36 @@ function App({ uid }: { uid: string }) {
           ))}
 
         {tab === "toeic" &&
-          (words === null ? (
+          (wordsError ? (
+            <Failed />
+          ) : words === null ? (
             <Loading />
           ) : (
-            <ToeicView words={words} onAdd={addWord} today={today} />
+            <ToeicView
+              words={words}
+              onAdd={addWord}
+              onUpdate={updateWord}
+              onRemove={removeWord}
+              today={today}
+            />
           ))}
 
         {tab === "star" &&
-          (stickers === null ? (
+          (stickersError ? (
+            <Failed />
+          ) : stickers === null ? (
             <Loading />
           ) : (
             <StickerView
               stickers={stickers}
               onToggle={toggleSticker}
               today={today}
+              cursor={starCursor}
+              onMoveMonth={(diff) =>
+                setStarCursor(
+                  (c) => new Date(c.getFullYear(), c.getMonth() + diff, 1)
+                )
+              }
             />
           ))}
       </div>

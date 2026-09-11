@@ -28,6 +28,12 @@ export default function LectureView({
   today: Date;
 }) {
   const [edit, setEdit] = useState<EditState | null>(null);
+  const [msg, setMsg] = useState("");
+
+  const openEdit = (next: EditState) => {
+    setEdit(next);
+    setMsg("");
+  };
 
   const courseOf = (id: string) =>
     COURSES.find((c) => c.id === id) ?? COURSES[0];
@@ -38,24 +44,36 @@ export default function LectureView({
   );
 
   const save = async () => {
-    if (!edit || !edit.title.trim()) return;
+    if (!edit) return;
+    if (!edit.title.trim()) {
+      setMsg("제목을 적어주세요");
+      return;
+    }
     const done = edit.id
       ? tasks.find((t) => t.id === edit.id)?.done ?? false
       : false;
-    await onSave(edit.id, {
-      kind: edit.kind,
-      courseId: edit.courseId,
-      title: edit.title.trim(),
-      date: edit.date,
-      done,
-    });
-    setEdit(null);
+    try {
+      await onSave(edit.id, {
+        kind: edit.kind,
+        courseId: edit.courseId,
+        title: edit.title.trim(),
+        date: edit.date,
+        done,
+      });
+      setEdit(null);
+    } catch {
+      setMsg("저장하지 못했어요");
+    }
   };
 
   const remove = async () => {
     if (!edit?.id) return;
-    await onRemove(edit.id);
-    setEdit(null);
+    try {
+      await onRemove(edit.id);
+      setEdit(null);
+    } catch {
+      setMsg("삭제하지 못했어요");
+    }
   };
 
   return (
@@ -63,7 +81,7 @@ export default function LectureView({
       <button
         className="btn mb-4"
         onClick={() =>
-          setEdit({
+          openEdit({
             id: null,
             kind: "강의",
             courseId: COURSES[0].id,
@@ -74,6 +92,8 @@ export default function LectureView({
       >
         ＋ 강의 · 과제 추가
       </button>
+
+      {!edit && msg && <div className="empty text-center">{msg}</div>}
 
       {weeks.map((w) => {
         const list = tasks
@@ -104,24 +124,32 @@ export default function LectureView({
                 <div
                   key={t.id}
                   className={`item ${t.done ? "item-done" : ""}`}
-                  onClick={() =>
-                    setEdit({
-                      id: t.id,
-                      kind: t.kind,
-                      courseId: t.courseId,
-                      title: t.title,
-                      date: t.date,
-                    })
-                  }
                 >
-                  <div
+                  <button
+                    type="button"
+                    aria-label={`${t.title} 다 했는지 표시`}
+                    aria-pressed={t.done}
                     className={`check ${t.done ? "check-on" : ""}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      void onToggle(t.id, !t.done);
+                    onClick={() => {
+                      onToggle(t.id, !t.done).then(
+                        () => setMsg(""),
+                        () => setMsg("표시를 바꾸지 못했어요")
+                      );
                     }}
                   />
-                  <div className="flex-1 min-w-0">
+                  <button
+                    type="button"
+                    className="item-body"
+                    onClick={() =>
+                      openEdit({
+                        id: t.id,
+                        kind: t.kind,
+                        courseId: t.courseId,
+                        title: t.title,
+                        date: t.date,
+                      })
+                    }
+                  >
                     <span
                       className={`block text-[12px] ${
                         t.done ? "line-through" : ""
@@ -132,7 +160,7 @@ export default function LectureView({
                     <span className="block mt-1 text-[10px] text-ink-soft">
                       {c.name} · {shortDate(t.date)}
                     </span>
-                  </div>
+                  </button>
                   <span className="kind" style={{ background: c.color }}>
                     {t.kind}
                   </span>
@@ -215,7 +243,7 @@ export default function LectureView({
           </div>
 
           <div className="empty text-center">
-            {weekOf(edit.date, SEM_START)}주차에 들어갑니다
+            {msg || `${weekOf(edit.date, SEM_START)}주차에 들어갑니다`}
           </div>
         </Popup>
       )}

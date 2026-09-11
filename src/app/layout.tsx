@@ -2,15 +2,14 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Study Diary",
+  title: "정연공듀",
   description: "학교 일정 · 강의 · 토익을 한 곳에서",
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // 확대는 막지 않는다. 입력칸 글씨가 16px 라서 폰에서 저절로 커지지도 않는다.
   viewportFit: "cover",
   themeColor: "#FFD9E8",
 };

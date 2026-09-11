@@ -33,10 +33,8 @@ export default function LoginScreen() {
       <div className="edge edge-down" />
 
       <div className="flex-1 flex flex-col items-center justify-center px-7 gap-5">
-        <h1 className="font-display text-[20px] leading-[1.5] text-center text-pink [text-shadow:3px_3px_0_#fff,6px_6px_0_var(--band-dark)]">
-          Study
-          <br />
-          Diary
+        <h1 className="font-pixel text-[26px] leading-[1.5] text-center text-pink [text-shadow:3px_3px_0_#fff,6px_6px_0_var(--band-dark)]">
+          정연공듀
         </h1>
 
         <div className="w-[108px]">

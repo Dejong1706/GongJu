@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Popup from "./Popup";
-import { COURSES, PALETTE } from "@/lib/config";
-import { DOW, isSameDay, monthGrid, parseYmd, ymd } from "@/lib/date";
+import { COURSES, PALETTE, SEM_NAME, SEM_START, SEM_WEEKS } from "@/lib/config";
+import { DOW, isSameDay, monthGrid, parseYmd, weekOf, ymd } from "@/lib/date";
 import type { NewEvent, SchoolEvent } from "@/lib/types";
 
 type EditState = {
@@ -31,10 +31,21 @@ export default function CalendarView({
   );
   const [dayOpen, setDayOpen] = useState<Date | null>(null);
   const [edit, setEdit] = useState<EditState | null>(null);
+  const [msg, setMsg] = useState("");
 
   const year = cursor.getFullYear();
   const month = cursor.getMonth() + 1;
   const cells = useMemo(() => monthGrid(year, month), [year, month]);
+
+  // 학기 진행 상황은 오늘 기준으로 적는다
+  const week = weekOf(ymd(today), SEM_START);
+  const weeksLeft = SEM_WEEKS - week + 1;
+  const semText =
+    week < 1
+      ? "개강 전"
+      : weeksLeft > 0
+      ? `${weeksLeft}주 남음`
+      : "종강했어요";
 
   const moveMonth = (diff: number) =>
     setCursor(new Date(year, month - 1 + diff, 1));
@@ -42,23 +53,40 @@ export default function CalendarView({
   const coursesOf = (d: Date) =>
     COURSES.filter((c) => c.days.includes(d.getDay()));
 
+  const openEdit = (next: EditState) => {
+    setEdit(next);
+    setMsg("");
+  };
+
   const openAdd = (d: Date) =>
-    setEdit({ id: null, date: ymd(d), title: "", color: PALETTE[0] });
+    openEdit({ id: null, date: ymd(d), title: "", color: PALETTE[0] });
 
   const save = async () => {
-    if (!edit || !edit.title.trim()) return;
-    await onSave(edit.id, {
-      date: edit.date,
-      title: edit.title.trim(),
-      color: edit.color,
-    });
-    setEdit(null);
+    if (!edit) return;
+    if (!edit.title.trim()) {
+      setMsg("제목을 적어주세요");
+      return;
+    }
+    try {
+      await onSave(edit.id, {
+        date: edit.date,
+        title: edit.title.trim(),
+        color: edit.color,
+      });
+      setEdit(null);
+    } catch {
+      setMsg("저장하지 못했어요");
+    }
   };
 
   const remove = async () => {
     if (!edit?.id) return;
-    await onRemove(edit.id);
-    setEdit(null);
+    try {
+      await onRemove(edit.id);
+      setEdit(null);
+    } catch {
+      setMsg("삭제하지 못했어요");
+    }
   };
 
   return (
@@ -81,7 +109,7 @@ export default function CalendarView({
           <strong className="text-[15px] text-center">
             {year}. {String(month).padStart(2, "0")}
             <span className="block mt-[3px] text-[10px] font-normal text-ink-soft">
-              2학기 · 14주 남음
+              {SEM_NAME} · {semText}
             </span>
           </strong>
           <button className="cal-arrow" onClick={() => moveMonth(1)}>
@@ -106,10 +134,13 @@ export default function CalendarView({
           {cells.map(({ date, inMonth }, i) => {
             const isToday = isSameDay(date, today);
             return (
-              <div
+              <button
                 key={i}
+                type="button"
+                disabled={!inMonth}
+                aria-label={`${date.getMonth() + 1}월 ${date.getDate()}일`}
                 className={`day ${isToday ? "day-today" : ""} ${
-                  inMonth ? "" : "opacity-[.28] pointer-events-none"
+                  inMonth ? "" : "opacity-[.28]"
                 }`}
                 onClick={() => setDayOpen(date)}
               >
@@ -142,7 +173,7 @@ export default function CalendarView({
                         />
                       ))}
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -192,11 +223,12 @@ export default function CalendarView({
             <div className="empty">아직 없어요</div>
           ) : (
             eventsOf(dayOpen).map((e) => (
-              <div
+              <button
                 key={e.id}
+                type="button"
                 className="mrow active:bg-cream"
                 onClick={() => {
-                  setEdit({
+                  openEdit({
                     id: e.id,
                     date: e.date,
                     title: e.title,
@@ -211,7 +243,7 @@ export default function CalendarView({
                 />
                 <span className="text-[12px] flex-1">{e.title}</span>
                 <span className="text-[9px] text-ink-soft">수정</span>
-              </div>
+              </button>
             ))
           )}
         </Popup>
@@ -272,8 +304,10 @@ export default function CalendarView({
             </div>
           </div>
           <div className="empty text-center">
-            {parseYmd(edit.date).getMonth() + 1}월{" "}
-            {parseYmd(edit.date).getDate()}일에 저장됩니다
+            {msg ||
+              `${parseYmd(edit.date).getMonth() + 1}월 ${parseYmd(
+                edit.date
+              ).getDate()}일에 저장됩니다`}
           </div>
         </Popup>
       )}

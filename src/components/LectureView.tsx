@@ -1,0 +1,195 @@
+"use client";
+
+import { useState } from "react";
+import Popup from "./Popup";
+import { COURSES, SEM_START, uid } from "@/lib/mock";
+import { shortDate, weekOf, weekRange, ymd } from "@/lib/date";
+import type { Task, TaskKind } from "@/lib/types";
+
+type EditState = {
+  id: string | null;
+  kind: TaskKind;
+  courseId: string;
+  title: string;
+  date: string;
+};
+
+export default function LectureView({
+  tasks,
+  setTasks,
+  today,
+}: {
+  tasks: Task[];
+  setTasks: (fn: (prev: Task[]) => Task[]) => void;
+  today: Date;
+}) {
+  const [edit, setEdit] = useState<EditState | null>(null);
+
+  const courseOf = (id: string) => COURSES.find((c) => c.id === id) ?? COURSES[0];
+
+  // 이번 주가 맨 위, 아래로 갈수록 과거
+  const weeks = [...new Set(tasks.map((t) => weekOf(t.date, SEM_START)))].sort((a, b) => b - a);
+
+  const toggle = (id: string) =>
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t)));
+
+  const save = () => {
+    if (!edit || !edit.title.trim()) return;
+    setTasks((prev) =>
+      edit.id
+        ? prev.map((t) =>
+            t.id === edit.id
+              ? { ...t, kind: edit.kind, courseId: edit.courseId, title: edit.title.trim(), date: edit.date }
+              : t
+          )
+        : [
+            ...prev,
+            {
+              id: uid(),
+              kind: edit.kind,
+              courseId: edit.courseId,
+              title: edit.title.trim(),
+              date: edit.date,
+              done: false,
+            },
+          ]
+    );
+    setEdit(null);
+  };
+
+  const remove = () => {
+    if (!edit?.id) return;
+    setTasks((prev) => prev.filter((t) => t.id !== edit.id));
+    setEdit(null);
+  };
+
+  return (
+    <>
+      <button
+        className="btn mb-4"
+        onClick={() =>
+          setEdit({ id: null, kind: "강의", courseId: COURSES[0].id, title: "", date: ymd(today) })
+        }
+      >
+        ＋ 강의 · 과제 추가
+      </button>
+
+      {weeks.map((w) => {
+        const list = tasks
+          .filter((t) => weekOf(t.date, SEM_START) === w)
+          .sort((a, b) => Number(a.done) - Number(b.done) || a.date.localeCompare(b.date));
+        const left = list.filter((t) => !t.done).length;
+
+        return (
+          <div key={w} className="mb-[18px]">
+            <div className="wk-head">
+              <span>
+                <b className="text-[13px]">{w}주차</b>
+                <span className="ml-[7px] text-[10px] font-normal text-ink-soft">
+                  {weekRange(w, SEM_START)}
+                </span>
+              </span>
+              <span className={`wk-left ${left === 0 ? "wk-left-clear" : ""}`}>
+                {left > 0 ? `${left}개 남음` : "다 했어요"}
+              </span>
+            </div>
+
+            {list.map((t) => {
+              const c = courseOf(t.courseId);
+              return (
+                <div
+                  key={t.id}
+                  className={`item ${t.done ? "item-done" : ""}`}
+                  onClick={() =>
+                    setEdit({ id: t.id, kind: t.kind, courseId: t.courseId, title: t.title, date: t.date })
+                  }
+                >
+                  <div
+                    className={`check ${t.done ? "check-on" : ""}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggle(t.id);
+                    }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <span className={`block text-[12px] ${t.done ? "line-through" : ""}`}>{t.title}</span>
+                    <span className="block mt-1 text-[10px] text-ink-soft">
+                      {c.name} · {shortDate(t.date)}
+                    </span>
+                  </div>
+                  <span className="kind" style={{ background: c.color }}>{t.kind}</span>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+
+      {edit && (
+        <Popup
+          title={edit.id ? "수정하기" : "강의 · 과제 추가"}
+          onClose={() => setEdit(null)}
+          footer={
+            <>
+              <button className="btn" onClick={save}>저장하기</button>
+              {edit.id && <button className="btn btn-danger" onClick={remove}>삭제하기</button>}
+            </>
+          }
+        >
+          <div className="field">
+            <label>종류</label>
+            <div className="flex gap-[7px]">
+              {(["강의", "과제"] as TaskKind[]).map((k) => (
+                <button
+                  key={k}
+                  className={`toggle-btn ${edit.kind === k ? "toggle-on" : ""}`}
+                  onClick={() => setEdit({ ...edit, kind: k })}
+                >
+                  {k}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="field">
+            <label>과목</label>
+            <div className="flex gap-[6px] flex-wrap">
+              {COURSES.map((c) => (
+                <button
+                  key={c.id}
+                  className={`subj-btn ${edit.courseId === c.id ? "subj-on" : ""}`}
+                  onClick={() => setEdit({ ...edit, courseId: c.id })}
+                >
+                  <i className="w-[9px] h-[9px] block flex-none" style={{ background: c.color }} />
+                  {c.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="field">
+            <label>제목</label>
+            <input
+              value={edit.title}
+              placeholder="마케팅 기초"
+              onChange={(e) => setEdit({ ...edit, title: e.target.value })}
+            />
+          </div>
+
+          <div className="field">
+            <label>날짜</label>
+            <input
+              type="date"
+              value={edit.date}
+              onChange={(e) => setEdit({ ...edit, date: e.target.value })}
+            />
+          </div>
+
+          <div className="empty text-center">
+            {weekOf(edit.date, SEM_START)}주차에 들어갑니다
+          </div>
+        </Popup>
+      )}
+    </>
+  );
+}

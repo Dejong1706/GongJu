@@ -13,10 +13,11 @@ const AppRoot = dynamic(() => import("@/components/AppRoot"), {
   loading: () => (
     <div className="device">
       <div className="island" />
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex flex-col items-center justify-center gap-3">
         <div className="bunny w-[100px]">
           <PixelSprite sprite={BUNNY} />
         </div>
+        <p className="text-sm text-gray-500">잠깐만</p>
       </div>
     </div>
   ),

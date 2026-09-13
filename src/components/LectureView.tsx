@@ -38,10 +38,17 @@ export default function LectureView({
   const courseOf = (id: string) =>
     COURSES.find((c) => c.id === id) ?? COURSES[0];
 
+  // 오늘이 몇 주차인지
+  const curWeek = weekOf(ymd(today), SEM_START);
+
+  // 종료일이 따로 없으니, 아직 체크 못 한 지난 주차 항목은 이번 주차로 끌어온다
+  const displayWeek = (t: Task) => {
+    const w = weekOf(t.date, SEM_START);
+    return !t.done && w < curWeek ? curWeek : w;
+  };
+
   // 이번 주가 맨 위, 아래로 갈수록 과거
-  const weeks = [...new Set(tasks.map((t) => weekOf(t.date, SEM_START)))].sort(
-    (a, b) => b - a
-  );
+  const weeks = [...new Set(tasks.map(displayWeek))].sort((a, b) => b - a);
 
   const save = async () => {
     if (!edit) return;
@@ -97,12 +104,59 @@ export default function LectureView({
 
       {weeks.map((w) => {
         const list = tasks
-          .filter((t) => weekOf(t.date, SEM_START) === w)
+          .filter((t) => displayWeek(t) === w)
           .sort(
             (a, b) =>
               Number(a.done) - Number(b.done) || a.date.localeCompare(b.date)
           );
         const left = list.filter((t) => !t.done).length;
+
+        const renderItem = (t: Task) => {
+          const c = courseOf(t.courseId);
+          return (
+            <div key={t.id} className={`item ${t.done ? "item-done" : ""}`}>
+              <button
+                type="button"
+                aria-label={`${t.title} 다 했는지 표시`}
+                aria-pressed={t.done}
+                className={`check ${t.done ? "check-on" : ""}`}
+                onClick={() => {
+                  onToggle(t.id, !t.done).then(
+                    () => setMsg(""),
+                    () => setMsg("표시를 바꾸지 못했어요")
+                  );
+                }}
+              />
+              <button
+                type="button"
+                className="item-body"
+                onClick={() =>
+                  openEdit({
+                    id: t.id,
+                    kind: t.kind,
+                    courseId: t.courseId,
+                    title: t.title,
+                    date: t.date,
+                  })
+                }
+              >
+                <span
+                  className={`block text-[12px] ${
+                    t.done ? "line-through" : ""
+                  }`}
+                >
+                  {t.title}
+                </span>
+                <span className="block mt-1 text-[10px] text-ink-soft">
+                  {c.name} · {shortDate(t.date)}
+                </span>
+              </button>
+              <span className="kind" style={{ background: c.color }}>
+                {t.kind}
+              </span>
+            </div>
+          );
+        };
 
         return (
           <div key={w} className="mb-[18px]">
@@ -118,52 +172,13 @@ export default function LectureView({
               </span>
             </div>
 
-            {list.map((t) => {
-              const c = courseOf(t.courseId);
+            {(["강의", "과제"] as TaskKind[]).map((kind) => {
+              const group = list.filter((t) => t.kind === kind);
+              if (group.length === 0) return null;
               return (
-                <div
-                  key={t.id}
-                  className={`item ${t.done ? "item-done" : ""}`}
-                >
-                  <button
-                    type="button"
-                    aria-label={`${t.title} 다 했는지 표시`}
-                    aria-pressed={t.done}
-                    className={`check ${t.done ? "check-on" : ""}`}
-                    onClick={() => {
-                      onToggle(t.id, !t.done).then(
-                        () => setMsg(""),
-                        () => setMsg("표시를 바꾸지 못했어요")
-                      );
-                    }}
-                  />
-                  <button
-                    type="button"
-                    className="item-body"
-                    onClick={() =>
-                      openEdit({
-                        id: t.id,
-                        kind: t.kind,
-                        courseId: t.courseId,
-                        title: t.title,
-                        date: t.date,
-                      })
-                    }
-                  >
-                    <span
-                      className={`block text-[12px] ${
-                        t.done ? "line-through" : ""
-                      }`}
-                    >
-                      {t.title}
-                    </span>
-                    <span className="block mt-1 text-[10px] text-ink-soft">
-                      {c.name} · {shortDate(t.date)}
-                    </span>
-                  </button>
-                  <span className="kind" style={{ background: c.color }}>
-                    {t.kind}
-                  </span>
+                <div key={kind}>
+                  <div className="cat-head">{kind}</div>
+                  {group.map(renderItem)}
                 </div>
               );
             })}

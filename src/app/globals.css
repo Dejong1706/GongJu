@@ -406,6 +406,21 @@
   .wk-left-clear {
     background: var(--mint);
   }
+  .cat-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0 7px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+  .cat-head::after {
+    content: "";
+    flex: 1;
+    border-top: 2px dashed var(--ink-soft);
+  }
   .item {
     display: flex;
     align-items: center;

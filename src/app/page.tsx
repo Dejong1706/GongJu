@@ -17,7 +17,11 @@ const AppRoot = dynamic(() => import("@/components/AppRoot"), {
         <div className="bunny w-[100px]">
           <PixelSprite sprite={BUNNY} />
         </div>
-        <p className="text-sm text-gray-500">잠깐만</p>
+        <p className="loading-wait" aria-label="잠깐만">
+          <span>잠</span>
+          <span>깐</span>
+          <span>만</span>
+        </p>
       </div>
     </div>
   ),

@@ -636,7 +636,33 @@
   }
   .slot-today {
     border-color: var(--pink);
-    box-shadow: inset 0 0 0 2px var(--band);
+    background: var(--band);
+    box-shadow: inset 0 0 0 2px #fff;
+    animation: slot-today-pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes slot-today-pulse {
+    0%,
+    100% {
+      box-shadow: inset 0 0 0 2px #fff;
+    }
+    50% {
+      box-shadow: inset 0 0 0 2px #fff, 0 0 0 3px var(--pink);
+    }
+  }
+  /* 오늘 칸: 숫자 대신 '붙이기' 안내 */
+  .slot-add {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    gap: 2px;
+    font-size: 8px;
+    color: var(--pink-deep);
+    font-weight: 700;
+  }
+  .slot-add b {
+    font-size: 15px;
   }
   /* 오늘이 아닌 칸은 보기만 한다 */
   .slot-locked {

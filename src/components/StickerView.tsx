@@ -145,6 +145,11 @@ export default function StickerView({
                     <PixelSprite sprite={PANDA} className="stamp" />
                     {glow.has(d) && <Spark />}
                   </>
+                ) : isToday ? (
+                  <span className="slot-add">
+                    <b>＋</b>
+                    붙이기
+                  </span>
                 ) : (
                   <span className="text-[10px] text-[#D9BFCF]">{d}</span>
                 )}

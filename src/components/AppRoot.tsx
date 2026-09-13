@@ -63,6 +63,7 @@ function App({ uid }: { uid: string }) {
   const [tab, setTab] = useState<TabKey>("cal");
   const { logout } = useAuth();
 
+  console.log("123")
   // 스티커는 지난 달도 넘겨볼 수 있다
   const [starCursor, setStarCursor] = useState(
     () => new Date(today.getFullYear(), today.getMonth(), 1)

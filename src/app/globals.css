@@ -9,7 +9,7 @@
   font-display: swap;
 }
 
-/* 로딩 화면 '잠깐만' — 흰색, 본문과 같은 폰트, 글자별로 통통 튄다 */
+/* 로딩 화면 '잠깐만' — 흰색, 본문과 같은 폰트, 검은 외곽선 */
 .loading-wait {
   display: flex;
   gap: 2px;
@@ -18,26 +18,6 @@
   -webkit-text-stroke: 1px #000;
   text-shadow: 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000,
     -1px -1px 0 #000;
-}
-.loading-wait span {
-  display: inline-block;
-  animation: wait-bounce 1.2s ease-in-out infinite;
-}
-.loading-wait span:nth-child(2) {
-  animation-delay: 0.15s;
-}
-.loading-wait span:nth-child(3) {
-  animation-delay: 0.3s;
-}
-@keyframes wait-bounce {
-  0%,
-  60%,
-  100% {
-    transform: translateY(0);
-  }
-  30% {
-    transform: translateY(-9px);
-  }
 }
 
 :root {

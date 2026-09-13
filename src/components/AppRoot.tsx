@@ -35,10 +35,15 @@ function Splash() {
   return (
     <div className="device">
       <div className="island" />
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex flex-col items-center justify-center gap-3">
         <div className="bunny w-[100px]">
           <PixelSprite sprite={BUNNY} />
         </div>
+        <p className="loading-wait" aria-label="잠깐만">
+          <span>잠</span>
+          <span>깐</span>
+          <span>만</span>
+        </p>
       </div>
     </div>
   );

@@ -40,6 +40,10 @@ export const BUNNY: Sprite = {
   palette: { K: INK, W: "#FFFFFF", P: "#FFB7D0", E: INK, B: "#FFA5C3" },
 };
 
+/**
+ * 눈을 한 칸 올려 자리를 만들고, 코 아래에 넓게 웃는 입을 넣었다.
+ * 예전에는 입이 ∧ (가운데가 위, 양끝이 아래) 라 울상으로 보였다.
+ */
 export const PANDA: Sprite = {
   rows: [
     "..KK......KK..",
@@ -47,12 +51,12 @@ export const PANDA: Sprite = {
     ".KKKK....KKKK.",
     ".KKKKKKKKKKKK.",
     "KWWWWWWWWWWWWK",
-    "KWWWWWWWWWWWWK",
     "KWKKKWWWWKKKWK",
     "KWKWKWWWWKWKWK",
     "KWKKKWWWWKKKWK",
-    "KPPWWWKKWWWPPK",
-    "KPPWWKWWKWWPPK",
+    "KWWWWWKKWWWWWK",
+    "KPPWKWWWWKWPPK",
+    "KPPWWKKKKWWPPK",
     "KWWWWWWWWWWWWK",
     ".KWWWWWWWWWWK.",
     "..KKKKKKKKKK..",

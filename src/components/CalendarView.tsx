@@ -212,7 +212,9 @@ export default function CalendarView({
                     style={{ background: c.color }}
                   />
                   <span className="text-[12px] flex-1">{c.name}</span>
-                  <span className="text-[9px] text-ink-soft">{c.time}</span>
+                  <span className="text-[9px] text-ink-soft flex-none whitespace-nowrap">
+                    {c.start}~{c.end}
+                  </span>
                 </div>
               ))}
             </>

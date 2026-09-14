@@ -6,7 +6,8 @@ export type Course = {
   short: string;
   color: string;
   days: number[]; // 0=일 ~ 6=토
-  time: string;
+  start: string; // "HH:MM"
+  end: string; // "HH:MM"
 };
 
 export type SchoolEvent = {

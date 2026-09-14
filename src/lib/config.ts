@@ -26,7 +26,8 @@ export const COURSES: Course[] = [
     short: "아태",
     color: "#F58A80",
     days: [2],
-    time: "19:00",
+    start: "19:30",
+    end: "20:45",
   },
   {
     id: "bizeng",
@@ -34,7 +35,8 @@ export const COURSES: Course[] = [
     short: "영어",
     color: "#F0C36B",
     days: [3],
-    time: "19:00",
+    start: "19:30",
+    end: "20:45",
   },
   {
     id: "startup",
@@ -42,7 +44,8 @@ export const COURSES: Course[] = [
     short: "혁신",
     color: "#9CCB6B",
     days: [4],
-    time: "19:00",
+    start: "19:30",
+    end: "21:15",
   },
   {
     id: "market",
@@ -50,7 +53,8 @@ export const COURSES: Course[] = [
     short: "해외",
     color: "#6FCFB0",
     days: [6],
-    time: "10:00",
+    start: "10:30",
+    end: "11:45",
   },
   {
     id: "policy",
@@ -58,7 +62,8 @@ export const COURSES: Course[] = [
     short: "통상",
     color: "#8FB4F2",
     days: [6],
-    time: "11:30",
+    start: "12:00",
+    end: "13:15",
   },
   {
     id: "trade",
@@ -66,7 +71,8 @@ export const COURSES: Course[] = [
     short: "무역",
     color: "#FFA45C",
     days: [6],
-    time: "13:00",
+    start: "13:30",
+    end: "14:45",
   },
   {
     id: "cte",
@@ -74,6 +80,7 @@ export const COURSES: Course[] = [
     short: "소통",
     color: "#B08BE8",
     days: [6],
-    time: "15:00",
+    start: "15:00",
+    end: "17:45",
   },
 ];

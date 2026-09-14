@@ -397,6 +397,14 @@
     height: 5px;
     border: 1px solid rgba(110, 61, 87, 0.45);
   }
+  /* 다 못 그린 일정 개수. 줄 하나 자리만 차지한다. */
+  .more-ev {
+    height: 7px;
+    font-size: 8px;
+    line-height: 7px;
+    text-align: center;
+    color: var(--ink-soft);
+  }
 
   /* ── 강의 ─────────────────────────── */
   .wk-head {

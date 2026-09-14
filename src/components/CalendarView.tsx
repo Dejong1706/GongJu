@@ -133,12 +133,18 @@ export default function CalendarView({
         <div className="grid grid-cols-7 gap-[2px]">
           {cells.map(({ date, inMonth }, i) => {
             const isToday = isSameDay(date, today);
+            // 4개부터는 두 줄만 긋고 나머지는 +N 으로 접는다. 칸 높이가 늘어나지 않게.
+            const dayEvents = inMonth ? eventsOf(date) : [];
+            const bars = dayEvents.length > 3 ? dayEvents.slice(0, 2) : dayEvents;
+            const more = dayEvents.length - bars.length;
             return (
               <button
                 key={i}
                 type="button"
                 disabled={!inMonth}
-                aria-label={`${date.getMonth() + 1}월 ${date.getDate()}일`}
+                aria-label={`${date.getMonth() + 1}월 ${date.getDate()}일${
+                  dayEvents.length > 0 ? ` · 일정 ${dayEvents.length}개` : ""
+                }`}
                 className={`day ${isToday ? "day-today" : ""} ${
                   inMonth ? "" : "opacity-[.28]"
                 }`}
@@ -162,16 +168,14 @@ export default function CalendarView({
                     ))}
                 </div>
                 <div className="w-full flex flex-col gap-[2px] px-[2px]">
-                  {inMonth &&
-                    eventsOf(date)
-                      .slice(0, 3)
-                      .map((e) => (
-                        <i
-                          key={e.id}
-                          className="bar-ev"
-                          style={{ background: e.color }}
-                        />
-                      ))}
+                  {bars.map((e) => (
+                    <i
+                      key={e.id}
+                      className="bar-ev"
+                      style={{ background: e.color }}
+                    />
+                  ))}
+                  {more > 0 && <span className="more-ev">+{more}</span>}
                 </div>
               </button>
             );

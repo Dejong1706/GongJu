@@ -104,9 +104,13 @@ function App({ uid }: { uid: string }) {
   } = useStickers(uid, monthKey);
 
   const week = weekOf(ymd(today), SEM_START);
-  // 강의 목록과 같은 기준으로 센다. 밀린 항목도 이번 주에 포함된다.
+  /*
+   * 캘린더 말풍선은 "안 들은 강의" 만 센다. 과제까지 섞으면 헷갈린다.
+   * 주차는 강의 목록과 같은 기준(밀린 것은 이번 주로) 을 쓴다.
+   */
   const weekLeft = (tasks ?? []).filter(
-    (t) => !t.done && displayWeek(t, week, SEM_START) === week
+    (t) =>
+      t.kind === "강의" && !t.done && displayWeek(t, week, SEM_START) === week
   ).length;
 
   return (

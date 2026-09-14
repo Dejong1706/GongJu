@@ -18,6 +18,13 @@ const ICONS: Record<TabKey, React.ReactNode> = {
       <rect x="3" y="12" width="2" height="2" fill="#FFD9E8" /><rect x="9" y="12" width="8" height="2" />
     </svg>
   ),
+  tt: (
+    <svg width="16" height="16" viewBox="0 0 18 18" shapeRendering="crispEdges" fill="currentColor">
+      <rect x="1" y="2" width="16" height="2" /><rect x="1" y="2" width="2" height="14" />
+      <rect x="15" y="2" width="2" height="14" /><rect x="1" y="14" width="16" height="2" />
+      <rect x="1" y="7" width="16" height="2" /><rect x="7" y="2" width="2" height="14" />
+    </svg>
+  ),
   toeic: (
     <svg width="16" height="16" viewBox="0 0 18 18" shapeRendering="crispEdges" fill="currentColor">
       <rect x="2" y="1" width="14" height="2" /><rect x="2" y="1" width="2" height="16" />
@@ -37,6 +44,7 @@ const ICONS: Record<TabKey, React.ReactNode> = {
 const LABELS: [TabKey, string][] = [
   ["cal", "캘린더"],
   ["lec", "강의"],
+  ["tt", "시간표"],
   ["toeic", "토익"],
   ["star", "스티커"],
 ];

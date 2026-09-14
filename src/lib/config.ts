@@ -28,6 +28,8 @@ export const COURSES: Course[] = [
     days: [2],
     start: "19:30",
     end: "20:45",
+    building: "숭덕경상관",
+    room: "02110",
   },
   {
     id: "bizeng",
@@ -37,6 +39,8 @@ export const COURSES: Course[] = [
     days: [3],
     start: "19:30",
     end: "20:45",
+    building: "숭덕경상관",
+    room: "02201",
   },
   {
     id: "startup",
@@ -46,6 +50,8 @@ export const COURSES: Course[] = [
     days: [4],
     start: "19:30",
     end: "21:15",
+    building: "조만식기념관",
+    room: "12203",
   },
   {
     id: "market",
@@ -55,6 +61,8 @@ export const COURSES: Course[] = [
     days: [6],
     start: "10:30",
     end: "11:45",
+    building: "숭덕경상관",
+    room: "02111",
   },
   {
     id: "policy",
@@ -64,6 +72,8 @@ export const COURSES: Course[] = [
     days: [6],
     start: "12:00",
     end: "13:15",
+    building: "숭덕경상관",
+    room: "02109",
   },
   {
     id: "trade",
@@ -73,6 +83,8 @@ export const COURSES: Course[] = [
     days: [6],
     start: "13:30",
     end: "14:45",
+    building: "숭덕경상관",
+    room: "02111",
   },
   {
     id: "cte",
@@ -82,5 +94,7 @@ export const COURSES: Course[] = [
     days: [6],
     start: "15:00",
     end: "17:45",
+    building: "진리관",
+    room: "11106",
   },
 ];

@@ -1,4 +1,4 @@
-export type TabKey = "cal" | "lec" | "toeic" | "star";
+export type TabKey = "cal" | "lec" | "tt" | "toeic" | "star";
 
 export type Course = {
   id: string;
@@ -8,6 +8,8 @@ export type Course = {
   days: number[]; // 0=일 ~ 6=토
   start: string; // "HH:MM"
   end: string; // "HH:MM"
+  building: string; // 건물 이름
+  room: string; // 강의실 번호
 };
 
 export type SchoolEvent = {

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import CalendarView from "@/components/CalendarView";
 import LectureView from "@/components/LectureView";
+import TimetableView from "@/components/TimetableView";
 import ToeicView from "@/components/ToeicView";
 import StickerView from "@/components/StickerView";
 import TabBar from "@/components/TabBar";
@@ -163,6 +164,9 @@ function App({ uid }: { uid: string }) {
               today={today}
             />
           ))}
+
+        {/* 시간표는 설정값이라 불러올 게 없다 */}
+        {tab === "tt" && <TimetableView today={today} />}
 
         {tab === "toeic" &&
           (wordsError ? (

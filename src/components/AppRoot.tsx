@@ -13,7 +13,7 @@ import { AuthProvider, useAuth } from "@/lib/auth";
 import { useEvents, useStickers, useTasks, useWords } from "@/lib/store";
 import { useToday } from "@/lib/useToday";
 import { SEM_START } from "@/lib/config";
-import { DOW, pad, weekOf, ymd } from "@/lib/date";
+import { DOW, displayWeek, pad, weekOf, ymd } from "@/lib/date";
 import type { TabKey } from "@/lib/types";
 
 export default function AppRoot() {
@@ -103,8 +103,9 @@ function App({ uid }: { uid: string }) {
   } = useStickers(uid, monthKey);
 
   const week = weekOf(ymd(today), SEM_START);
+  // 강의 목록과 같은 기준으로 센다. 밀린 항목도 이번 주에 포함된다.
   const weekLeft = (tasks ?? []).filter(
-    (t) => !t.done && weekOf(t.date, SEM_START) === week
+    (t) => !t.done && displayWeek(t, week, SEM_START) === week
   ).length;
 
   return (

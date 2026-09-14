@@ -43,3 +43,18 @@ export const shortDate = (s: string) => {
   const d = parseYmd(s);
   return `${d.getMonth() + 1}/${d.getDate()}`;
 };
+
+/**
+ * 화면에서 묶일 주차. 종료일이 따로 없으니
+ * 아직 체크 못 한 지난 주차 항목은 이번 주차로 끌어온다.
+ *
+ * 강의 목록과 캘린더 말풍선이 같은 숫자를 세도록 여기 두고 같이 쓴다.
+ */
+export const displayWeek = (
+  task: { date: string; done: boolean },
+  curWeek: number,
+  semStart: Date
+) => {
+  const w = weekOf(task.date, semStart);
+  return !task.done && w < curWeek ? curWeek : w;
+};

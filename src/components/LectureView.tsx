@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Popup from "./Popup";
 import { COURSES, SEM_START } from "@/lib/config";
-import { shortDate, weekOf, weekRange, ymd } from "@/lib/date";
+import { displayWeek, shortDate, weekOf, weekRange, ymd } from "@/lib/date";
 import type { NewTask, Task, TaskKind } from "@/lib/types";
 
 type EditState = {
@@ -41,14 +41,12 @@ export default function LectureView({
   // 오늘이 몇 주차인지
   const curWeek = weekOf(ymd(today), SEM_START);
 
-  // 종료일이 따로 없으니, 아직 체크 못 한 지난 주차 항목은 이번 주차로 끌어온다
-  const displayWeek = (t: Task) => {
-    const w = weekOf(t.date, SEM_START);
-    return !t.done && w < curWeek ? curWeek : w;
-  };
+  const weekOfTask = (t: Task) => displayWeek(t, curWeek, SEM_START);
 
   // 이번 주가 맨 위, 아래로 갈수록 과거
-  const weeks = [...new Set(tasks.map(displayWeek))].sort((a, b) => b - a);
+  const weeks = [...new Set(tasks.map((t) => weekOfTask(t)))].sort(
+    (a, b) => b - a
+  );
 
   const save = async () => {
     if (!edit) return;
@@ -104,7 +102,7 @@ export default function LectureView({
 
       {weeks.map((w) => {
         const list = tasks
-          .filter((t) => displayWeek(t) === w)
+          .filter((t) => weekOfTask(t) === w)
           .sort(
             (a, b) =>
               Number(a.done) - Number(b.done) || a.date.localeCompare(b.date)

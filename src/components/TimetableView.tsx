@@ -1,6 +1,9 @@
 "use client";
 
 import Image from "next/image";
+// 정적 import 라야 흐린 미리보기(blurDataURL)와 크기를 빌드 때 뽑아준다.
+// 지도를 갈아끼워도 코드에 적힌 크기가 낡을 일이 없다.
+import mapImage from "../../public/map.png";
 import { COURSES } from "@/lib/config";
 import { DOW } from "@/lib/date";
 import type { Course } from "@/lib/types";
@@ -43,16 +46,20 @@ export default function TimetableView({ today }: { today: Date }) {
   return (
     <>
       {/*
-        원본이 1254px 이라 next/image 로 줄여서 내보낸다.
-        4분의 1 로 줄면 건물 이름이 뭉개져서 여기서는 부드럽게 깐다.
+        priority: 시간표 탭의 첫 화면이라 lazy 로 미루지 않는다.
+          이 탭을 열 때만 마운트되므로 다른 탭에서는 받지 않는다.
+        sizes="250px": 실제 상자는 365px 쯤이지만, 브라우저는 여기에
+          화면 배율을 곱해 srcset 에서 고른다. 손그림 지도라 3배까지는
+          필요 없어서, 배율 3 인 폰이 750px(57KB) 을 집도록 낮춰 적었다.
+          그대로 두면 1200px(104KB) 을 받는다.
       */}
       <div className="tt-map">
         <Image
-          src="/map.png"
+          src={mapImage}
           alt="숭실대학교 캠퍼스 지도"
-          width={1254}
-          height={1254}
-          sizes="(max-width: 420px) 100vw, 393px"
+          placeholder="blur"
+          priority
+          sizes="250px"
         />
       </div>
 

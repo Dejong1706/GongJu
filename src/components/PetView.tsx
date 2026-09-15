@@ -222,6 +222,16 @@ export default function PetView({
   );
 }
 
+/** 아직 안 산 칸에 붙는 자물쇠 */
+function Lock() {
+  return (
+    <svg className="good-lock" width="13" height="13" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" fill="none" stroke="#6E3D57" strokeWidth="2.5" />
+      <rect x="4" y="10" width="16" height="11" rx="1.5" fill="#6E3D57" />
+    </svg>
+  );
+}
+
 function Good({
   name,
   price,
@@ -237,18 +247,26 @@ function Good({
   onTap: () => void;
   children: React.ReactNode;
 }) {
+  const label = !owned
+    ? `${price}점`
+    : active
+    ? "장착 중"
+    : price === 0
+    ? "기본"
+    : "가진 것";
+
   return (
     <button
       type="button"
       className={`good ${active ? "good-on" : ""} ${owned ? "" : "good-buy"}`}
       aria-pressed={active}
+      aria-label={`${name} · ${owned ? label : `${price}점, 아직 없음`}`}
       onClick={onTap}
     >
+      {!owned && <Lock />}
       <span className="good-thumb">{children}</span>
       <span className="good-name">{name}</span>
-      <span className="good-price">
-        {owned ? (active ? "쓰는 중" : "가진 것") : price === 0 ? "기본" : `${price}점`}
-      </span>
+      <span className="good-price">{label}</span>
     </button>
   );
 }

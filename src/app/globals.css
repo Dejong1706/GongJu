@@ -979,6 +979,7 @@
     overflow-y: auto;
   }
   .good {
+    position: relative;
     border: 2px solid var(--ink);
     background: var(--cream);
     padding: 6px 3px;
@@ -989,11 +990,31 @@
     gap: 4px;
     overflow: hidden;
   }
+  /* 장착 중 — 칸 전체가 분홍, 아래 글자는 진한 알약으로 못 박는다 */
   .good-on {
     background: var(--band);
   }
+  .good-on .good-price {
+    background: var(--ink);
+    color: #fff;
+    padding: 1px 5px;
+  }
+  /* 아직 안 산 것 — 흐린 회색에 자물쇠. 값은 그대로 읽혀야 한다 */
   .good-buy {
     border-style: dashed;
+    background: #efe7ec;
+  }
+  .good-buy .good-thumb {
+    filter: grayscale(1);
+    opacity: 0.4;
+  }
+  .good-buy .good-name {
+    color: var(--ink-soft);
+  }
+  .good-lock {
+    position: absolute;
+    top: 3px;
+    right: 3px;
   }
   .good-thumb {
     height: 34px;

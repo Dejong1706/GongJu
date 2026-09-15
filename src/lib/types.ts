@@ -43,7 +43,9 @@ export type NewTask = Omit<Task, "id">;
 
 /** 판다 방의 상태. users/{uid}/pet/state 문서 하나에 통째로 들어간다. */
 export type Pet = {
-  /** 지금까지 쓴 포인트. 번 포인트는 스티커에서 다시 계산하므로 저장하지 않는다 */
+  /** 지금까지 번 포인트. 스티커를 붙이고 뗄 때 그만큼 더하고 뺀다 */
+  earned: number;
+  /** 지금까지 쓴 포인트 */
   spent: number;
   /** 산 것들의 id */
   owned: string[];

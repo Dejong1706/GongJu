@@ -6,11 +6,13 @@ import {
   collection,
   deleteDoc,
   doc,
+  increment,
   onSnapshot,
   orderBy,
   query,
   setDoc,
   updateDoc,
+  writeBatch,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { monthPoints } from "./pet";
@@ -158,11 +160,27 @@ export function useStickers(uid: string, monthKey: string) {
     (d: number) => {
       const cur = latest.current;
       const next = cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d];
+      // 뗄 때는 음수가 된다. 10개째 보너스도 개수로 다시 계산해서 그만큼 되돌린다.
+      const gain = monthPoints(next.length) - monthPoints(cur.length);
+
       latest.current = next;
       setDays(next); // 눌렀을 때 바로 반응하도록
-      return setDoc(doc(db, "users", uid, "stickers", monthKey), {
-        days: next,
-      });
+
+      /*
+       * 스티커와 포인트를 한 배치로 묶는다. 따로 쓰면 둘 중 하나만 성공했을 때
+       * 붙인 스티커에 점수가 안 붙거나 그 반대가 된다.
+       * increment 는 서버에서 더해주므로 지금 값을 읽어올 필요가 없다.
+       */
+      const batch = writeBatch(db);
+      batch.set(doc(db, "users", uid, "stickers", monthKey), { days: next });
+      if (gain !== 0) {
+        batch.set(
+          doc(db, "users", uid, "pet", "state"),
+          { earned: increment(gain) },
+          { merge: true }
+        );
+      }
+      return batch.commit();
     },
     [uid, monthKey]
   );
@@ -172,39 +190,9 @@ export function useStickers(uid: string, monthKey: string) {
 
 /* ── 판다 키우기 ───────────────────── */
 
-/**
- * 지금까지 번 포인트. 스티커 문서(달마다 하나)를 전부 읽어서 계산한다.
- * 따로 적립해두지 않는 이유 — 스티커가 유일한 수급처라 언제든 다시 셀 수 있고,
- * 두 군데에 적어두면 어긋날 일만 생긴다.
- */
-export function useEarned(uid: string) {
-  const [earned, setEarned] = useState<number | null>(null);
-  const [error, setError] = useState(false);
-
-  useEffect(() => {
-    return onSnapshot(
-      col(uid, "stickers"),
-      (snap) => {
-        let sum = 0;
-        snap.forEach((d) => {
-          const days = (d.data()?.days as number[] | undefined) ?? [];
-          sum += monthPoints(days.length);
-        });
-        setError(false);
-        setEarned(sum);
-      },
-      (err) => {
-        console.error("stickers 합계 실패", err);
-        setError(true);
-      }
-    );
-  }, [uid]);
-
-  return { earned, error };
-}
-
 /** 처음 열었을 때 — 민무늬 벽, 맨바닥, 아무것도 안 걸친 판다 */
 export const EMPTY_PET: Pet = {
+  earned: 0,
   spent: 0,
   owned: [],
   worn: {},
@@ -236,11 +224,18 @@ export function usePet(uid: string) {
     );
   }, [uid]);
 
+  /*
+   * earned 만 빼고 쓴다. 통째로 덮으면 방금 붙인 스티커 점수를
+   * 화면이 들고 있던 옛날 값으로 되돌려버릴 수 있다.
+   * 포인트를 더하는 쪽은 스티커 배치 하나뿐이어야 어긋나지 않는다.
+   */
   const write = useCallback(
     (next: Pet) => {
       latest.current = next;
       setPet(next); // 눌렀을 때 바로 반응하도록
-      return setDoc(doc(db, "users", uid, "pet", "state"), next);
+      const { earned: _earned, ...rest } = next;
+      void _earned;
+      return setDoc(doc(db, "users", uid, "pet", "state"), rest, { merge: true });
     },
     [uid]
   );

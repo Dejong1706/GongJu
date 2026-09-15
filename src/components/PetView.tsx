@@ -50,12 +50,10 @@ function Purse({ n }: { n: number }) {
 
 export default function PetView({
   pet,
-  earned,
   onChange,
   onError,
 }: {
   pet: Pet;
-  earned: number;
   onChange: (next: Pet) => Promise<void>;
   onError: (msg: string) => void;
 }) {
@@ -63,7 +61,8 @@ export default function PetView({
   const [cat, setCat] = useState<Cat>("옷");
   const [msg, setMsg] = useState("");
 
-  const left = Math.max(0, earned - pet.spent);
+  // 스티커를 떼면 번 점수가 줄어서 잠깐 음수가 될 수 있다
+  const left = Math.max(0, pet.earned - pet.spent);
   const owns = useMemo(() => new Set(pet.owned), [pet.owned]);
 
   const save = (next: Pet, failed: string) => {

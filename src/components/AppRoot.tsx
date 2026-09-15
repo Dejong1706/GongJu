@@ -11,7 +11,7 @@ import LoginScreen from "@/components/LoginScreen";
 import PixelSprite from "@/components/PixelSprite";
 import { BUNNY } from "@/lib/sprites";
 import { AuthProvider, useAuth } from "@/lib/auth";
-import { useEarned, useEvents, usePet, useStickers, useTasks, useWords } from "@/lib/store";
+import { useEvents, usePet, useStickers, useTasks, useWords } from "@/lib/store";
 import { useToday } from "@/lib/useToday";
 import { SEM_START } from "@/lib/config";
 import { DOW, displayWeek, pad, weekOf, ymd } from "@/lib/date";
@@ -103,7 +103,6 @@ function App({ uid }: { uid: string }) {
     toggle: toggleSticker,
   } = useStickers(uid, monthKey);
   const { pet, error: petError, write: writePet } = usePet(uid);
-  const { earned } = useEarned(uid);
 
   const week = weekOf(ymd(today), SEM_START);
   /*
@@ -207,7 +206,6 @@ function App({ uid }: { uid: string }) {
               }
               pet={pet}
               petError={petError}
-              earned={earned}
               onChangePet={writePet}
             />
           ))}

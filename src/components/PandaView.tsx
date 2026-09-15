@@ -15,7 +15,6 @@ export default function PandaView({
   onMoveMonth,
   pet,
   petError,
-  earned,
   onChangePet,
 }: {
   stickers: number[];
@@ -25,7 +24,6 @@ export default function PandaView({
   onMoveMonth: (diff: number) => void;
   pet: Pet | null;
   petError: boolean;
-  earned: number | null;
   onChangePet: (next: Pet) => Promise<void>;
 }) {
   // 매일 하는 일이 스티커라 그쪽을 먼저 연다
@@ -70,11 +68,11 @@ export default function PandaView({
           <br />
           인터넷 연결을 확인하고 다시 들어와주세요
         </div>
-      ) : pet === null || earned === null ? (
+      ) : pet === null ? (
         <div className="empty text-center">불러오는 중</div>
       ) : (
         <>
-          <PetView pet={pet} earned={earned} onChange={onChangePet} onError={setMsg} />
+          <PetView pet={pet} onChange={onChangePet} onError={setMsg} />
           {msg && <div className="empty text-center">{msg}</div>}
         </>
       )}

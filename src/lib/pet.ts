@@ -6,7 +6,12 @@ const INK = "#3A2230";
  * 판다 방. 48 x 68 칸이고 판다는 (16,25) 에 선다.
  * 걸레받이가 44 줄이라 바닥에 놓는 소품은 아랫변이 44 에 닿아야 한다.
  */
-export const ROOM = { w: 48, h: 68, base: 44, floorTop: 45 } as const;
+/*
+ * h 만 줄이면 바닥 깊이가 줄어든다. 걸레받이와 소품·판다 좌표가 전부
+ * 44 줄 위에 고정돼 있어서 아무것도 따라 옮길 필요가 없다.
+ * 68 이었을 때는 폰에서 스크롤해야 바닥과 상점 버튼이 보였다.
+ */
+export const ROOM = { w: 48, h: 57, base: 44, floorTop: 45 } as const;
 export const PANDA_AT = { x: 16, y: 25 } as const;
 /** 판다가 오른쪽으로 몇 칸까지 걸어갔다 오는지 */
 export const WALK = 14;

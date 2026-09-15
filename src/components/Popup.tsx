@@ -11,11 +11,14 @@ export default function Popup({
   onClose,
   children,
   footer,
+  headLeft,
 }: {
   title: string;
   onClose: () => void;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  /** 제목 자리에 대신 넣을 것 (상점의 포인트 표시). title 은 읽어주기용으로 남는다 */
+  headLeft?: React.ReactNode;
 }) {
   const box = useRef<HTMLDivElement>(null);
 
@@ -62,7 +65,7 @@ export default function Popup({
         tabIndex={-1}
       >
         <div className="pop-head">
-          <b className="text-[13px]">{title}</b>
+          {headLeft ?? <b className="text-[13px]">{title}</b>}
           <button className="pop-x" onClick={onClose} aria-label="닫기">
             ✕
           </button>

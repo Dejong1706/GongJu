@@ -5,13 +5,13 @@ import CalendarView from "@/components/CalendarView";
 import LectureView from "@/components/LectureView";
 import TimetableView from "@/components/TimetableView";
 import ToeicView from "@/components/ToeicView";
-import StickerView from "@/components/StickerView";
+import PandaView from "@/components/PandaView";
 import TabBar from "@/components/TabBar";
 import LoginScreen from "@/components/LoginScreen";
 import PixelSprite from "@/components/PixelSprite";
 import { BUNNY } from "@/lib/sprites";
 import { AuthProvider, useAuth } from "@/lib/auth";
-import { useEvents, useStickers, useTasks, useWords } from "@/lib/store";
+import { useEarned, useEvents, usePet, useStickers, useTasks, useWords } from "@/lib/store";
 import { useToday } from "@/lib/useToday";
 import { SEM_START } from "@/lib/config";
 import { DOW, displayWeek, pad, weekOf, ymd } from "@/lib/date";
@@ -102,6 +102,8 @@ function App({ uid }: { uid: string }) {
     error: stickersError,
     toggle: toggleSticker,
   } = useStickers(uid, monthKey);
+  const { pet, error: petError, write: writePet } = usePet(uid);
+  const { earned } = useEarned(uid);
 
   const week = weekOf(ymd(today), SEM_START);
   /*
@@ -187,15 +189,15 @@ function App({ uid }: { uid: string }) {
             />
           ))}
 
-        {tab === "star" &&
+        {tab === "panda" &&
           (stickersError ? (
             <Failed />
           ) : stickers === null ? (
             <Loading />
           ) : (
-            <StickerView
+            <PandaView
               stickers={stickers}
-              onToggle={toggleSticker}
+              onToggleSticker={toggleSticker}
               today={today}
               cursor={starCursor}
               onMoveMonth={(diff) =>
@@ -203,6 +205,10 @@ function App({ uid }: { uid: string }) {
                   (c) => new Date(c.getFullYear(), c.getMonth() + diff, 1)
                 )
               }
+              pet={pet}
+              petError={petError}
+              earned={earned}
+              onChangePet={writePet}
             />
           ))}
       </div>

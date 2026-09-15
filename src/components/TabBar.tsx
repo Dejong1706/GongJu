@@ -32,7 +32,7 @@ const ICONS: Record<TabKey, React.ReactNode> = {
       <rect x="5" y="5" width="8" height="2" /><rect x="5" y="9" width="5" height="2" />
     </svg>
   ),
-  star: (
+  panda: (
     <svg width="16" height="16" viewBox="0 0 18 18" shapeRendering="crispEdges" fill="currentColor">
       <rect x="8" y="1" width="2" height="16" /><rect x="1" y="8" width="16" height="2" />
       <rect x="4" y="4" width="2" height="2" /><rect x="12" y="4" width="2" height="2" />
@@ -46,7 +46,7 @@ const LABELS: [TabKey, string][] = [
   ["lec", "강의"],
   ["tt", "시간표"],
   ["toeic", "토익"],
-  ["star", "스티커"],
+  ["panda", "판다"],
 ];
 
 export default function TabBar({

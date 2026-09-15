@@ -1,4 +1,4 @@
-export type TabKey = "cal" | "lec" | "tt" | "toeic" | "star";
+export type TabKey = "cal" | "lec" | "tt" | "toeic" | "panda";
 
 export type Course = {
   id: string;
@@ -40,3 +40,17 @@ export type Word = {
 /** 저장할 때는 id 가 없다 (Firestore 가 만들어준다) */
 export type NewEvent = Omit<SchoolEvent, "id">;
 export type NewTask = Omit<Task, "id">;
+
+/** 판다 방의 상태. users/{uid}/pet/state 문서 하나에 통째로 들어간다. */
+export type Pet = {
+  /** 지금까지 쓴 포인트. 번 포인트는 스티커에서 다시 계산하므로 저장하지 않는다 */
+  spent: number;
+  /** 산 것들의 id */
+  owned: string[];
+  /** 몸에 걸친 것 — 자리마다 하나씩 */
+  worn: { head?: string | null; body?: string | null };
+  /** 방에 놓은 것 */
+  placed: { wall?: string | null; floorL?: string | null; floorR?: string | null };
+  wall: string;
+  floor: string;
+};

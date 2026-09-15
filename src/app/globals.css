@@ -811,4 +811,217 @@
       opacity: 0.25;
     }
   }
+
+  /* ── 판다 키우기 ──────────────────── */
+  .seg {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border: 2px solid var(--ink);
+    margin-bottom: 12px;
+    flex: none;
+  }
+  .seg button {
+    min-height: 42px;
+    font-size: 12px;
+    background: #fff;
+    color: var(--ink);
+  }
+  .seg button.seg-on {
+    background: var(--pink);
+    color: #fff;
+  }
+
+  .pet-stage {
+    position: relative;
+    line-height: 0;
+  }
+  /* 방 그림에만 걸어야 한다. .pet-stage svg 로 두면
+     안에 떠 있는 상점 버튼의 카트 아이콘까지 100% 로 늘어난다. */
+  .pet-stage > .pet-room > svg.room {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 3px solid var(--ink);
+  }
+
+  /* 판다가 방을 좌우로 오간다.
+     SVG 안이라 translateX 1px = 도트 한 칸. steps() 로 끊어야 도트가 안 어긋난다. */
+  .pet-walk {
+    animation: pet-stroll 18s steps(14) infinite;
+  }
+  @keyframes pet-stroll {
+    0%,
+    6% {
+      transform: translateX(0px);
+    }
+    44%,
+    50% {
+      transform: translateX(14px);
+    }
+    88%,
+    100% {
+      transform: translateX(0px);
+    }
+  }
+  /* 걸을 때 한 칸씩 들썩인다.
+     steps(2) 로 0 → -1px 을 나누면 중간값 -0.5px 이 나와서, 뒤에 창문처럼
+     촘촘한 무늬가 있으면 반 칸 어긋나 깨져 보인다. 그래서 정수 구간만 잇는다. */
+  .pet-bob {
+    animation: pet-waddle 1.2s steps(1) infinite;
+  }
+  @keyframes pet-waddle {
+    0%,
+    49% {
+      transform: translateY(0px);
+    }
+    50%,
+    100% {
+      transform: translateY(-1px);
+    }
+  }
+  .pet-hit {
+    cursor: pointer;
+  }
+  .pet-heart {
+    animation: pet-heartpop 0.9s steps(1) forwards;
+  }
+  @keyframes pet-heartpop {
+    0%,
+    8% {
+      transform: translateY(3px);
+    }
+    9%,
+    18% {
+      transform: translateY(1px);
+    }
+    19%,
+    100% {
+      transform: translateY(0px);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pet-walk,
+    .pet-bob,
+    .pet-heart {
+      animation: none;
+    }
+  }
+
+  /* 상점 — 방 왼쪽 아래에 뜬 동그란 버튼 */
+  .pet-shop {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border: 3px solid var(--ink);
+    box-shadow: 3px 3px 0 rgba(58, 34, 48, 0.35);
+  }
+  .pet-shop:active {
+    transform: translate(3px, 3px);
+    box-shadow: none;
+  }
+
+  /* 포인트 알약. 상점을 열었을 때만 보인다 */
+  .purse {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    line-height: 1;
+    background: #fff;
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    padding: 4px 10px 4px 6px;
+  }
+  .purse-coin {
+    width: 14px;
+    display: block;
+    flex: none;
+  }
+
+  .shop-cat {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border: 2px solid var(--ink);
+    margin-bottom: 10px;
+  }
+  .shop-cat button {
+    min-height: 36px;
+    font-size: 11px;
+    background: var(--cream);
+    color: var(--ink-soft);
+    border-right: 2px solid var(--ink);
+  }
+  .shop-cat button:last-child {
+    border-right: 0;
+  }
+  .shop-cat button.on {
+    background: var(--band);
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  /* 칸 높이를 고정하고 위로 몰아 붙인다. 이게 없으면 한 줄짜리 탭에서
+     그 한 줄이 남은 높이를 다 차지해 칸이 길쭉해진다. */
+  .shop-goods {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: 84px;
+    align-content: start;
+    gap: 7px;
+    height: 197px;
+    overflow-y: auto;
+  }
+  .good {
+    border: 2px solid var(--ink);
+    background: var(--cream);
+    padding: 6px 3px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    overflow: hidden;
+  }
+  .good-on {
+    background: var(--band);
+  }
+  .good-buy {
+    border-style: dashed;
+  }
+  .good-thumb {
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .good-thumb svg {
+    max-height: 34px;
+    width: auto;
+  }
+  .shop-dot {
+    display: block;
+    width: 34px;
+  }
+  .shop-swatch {
+    display: block;
+    width: 30px;
+    height: 30px;
+    border: 2px solid var(--ink);
+  }
+  .good-name {
+    font-size: 9px;
+    line-height: 1.3;
+  }
+  .good-price {
+    font-size: 8px;
+    color: var(--pink-deep);
+  }
+
 }

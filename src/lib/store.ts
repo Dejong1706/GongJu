@@ -13,7 +13,8 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import type { NewEvent, NewTask, SchoolEvent, Task, Word } from "./types";
+import { monthPoints } from "./pet";
+import type { NewEvent, NewTask, Pet, SchoolEvent, Task, Word } from "./types";
 
 /**
  * Firestore 구조
@@ -167,4 +168,82 @@ export function useStickers(uid: string, monthKey: string) {
   );
 
   return { days, error, toggle };
+}
+
+/* ── 판다 키우기 ───────────────────── */
+
+/**
+ * 지금까지 번 포인트. 스티커 문서(달마다 하나)를 전부 읽어서 계산한다.
+ * 따로 적립해두지 않는 이유 — 스티커가 유일한 수급처라 언제든 다시 셀 수 있고,
+ * 두 군데에 적어두면 어긋날 일만 생긴다.
+ */
+export function useEarned(uid: string) {
+  const [earned, setEarned] = useState<number | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    return onSnapshot(
+      col(uid, "stickers"),
+      (snap) => {
+        let sum = 0;
+        snap.forEach((d) => {
+          const days = (d.data()?.days as number[] | undefined) ?? [];
+          sum += monthPoints(days.length);
+        });
+        setError(false);
+        setEarned(sum);
+      },
+      (err) => {
+        console.error("stickers 합계 실패", err);
+        setError(true);
+      }
+    );
+  }, [uid]);
+
+  return { earned, error };
+}
+
+/** 처음 열었을 때 — 민무늬 벽, 맨바닥, 아무것도 안 걸친 판다 */
+export const EMPTY_PET: Pet = {
+  spent: 0,
+  owned: [],
+  worn: {},
+  placed: {},
+  wall: "w0",
+  floor: "f0",
+};
+
+export function usePet(uid: string) {
+  const [pet, setPet] = useState<Pet | null>(null);
+  const [error, setError] = useState(false);
+  const latest = useRef<Pet>(EMPTY_PET);
+
+  useEffect(() => {
+    const ref = doc(db, "users", uid, "pet", "state");
+    return onSnapshot(
+      ref,
+      (snap) => {
+        // 문서가 없으면 만들지 않고 기본값으로 읽는다. 처음 사는 순간에 생긴다.
+        const next = { ...EMPTY_PET, ...(snap.data() as Partial<Pet> | undefined) };
+        latest.current = next;
+        setError(false);
+        setPet(next);
+      },
+      (err) => {
+        console.error("pet 구독 실패", err);
+        setError(true);
+      }
+    );
+  }, [uid]);
+
+  const write = useCallback(
+    (next: Pet) => {
+      latest.current = next;
+      setPet(next); // 눌렀을 때 바로 반응하도록
+      return setDoc(doc(db, "users", uid, "pet", "state"), next);
+    },
+    [uid]
+  );
+
+  return { pet, error, write, latest };
 }

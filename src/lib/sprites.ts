@@ -63,3 +63,68 @@ export const PANDA: Sprite = {
   ],
   palette: { K: INK, W: "#FFFFFF", P: "#FFA5C3" },
 };
+
+/* ── 판다 키우기 ─────────────────────────────
+   방은 48 x 68 칸. 판다를 (16,25) 에 세우면
+   귀 25~27 · 머리위선 28 · 눈 31~33 · 코 35 · 발끝 43 · 걸레받이 44 가 된다.
+   소품 좌표는 전부 이 기준에 맞춰져 있다.
+   ───────────────────────────────────────── */
+
+/** 아기 판다. 머리가 열다섯 줄, 몸이 네 줄이라 아기 비율이 된다. */
+export const BABY: Sprite = {
+  rows: [
+    "...KK......KK...",
+    "..KKKK....KKKK..",
+    "..KKKK....KKKK..",
+    "..KKKKKKKKKKKK..",
+    ".KWWWWWWWWWWWWK.",
+    ".KWWWWWWWWWWWWK.",
+    ".KWWKKWWWWKKWWK.",
+    ".KWWKKWWWWKKWWK.",
+    ".KWWKKWWWWKKWWK.",
+    ".KWWWWWWWWWWWWK.",
+    ".KPPWWWKKWWWPPK.",
+    ".KPPWWWWWWWWPPK.",
+    ".KWWWWWWWWWWWWK.",
+    "..KWWWWWWWWWWK..",
+    "...KKKKKKKKKK...",
+    ".....KKWWKK.....",
+    "....KKWWWWKK....",
+    "....KKWWWWKK....",
+    "....KKKKKKKK....",
+  ],
+  palette: { K: INK, W: "#FFFFFF", P: "#FFA5C3" },
+};
+
+/** 판다를 누르면 머리 위로 뜬다. 아래 꼬리가 판다를 가리킨다. */
+export const HEART: Sprite = {
+  rows: [
+    ".KKKKKKK.",
+    "KWWWWWWWK",
+    "KW.R.R.WK",
+    "KWRRRRRWK",
+    "KWRRRRRWK",
+    "KW.RRR.WK",
+    "KWW.R.WWK",
+    "KWWWWWWWK",
+    ".KKWKKKK.",
+    "..KWK....",
+    "...K.....",
+  ],
+  palette: { K: INK, W: "#FFFFFF", R: "#E2648F" },
+};
+
+/** 포인트 옆에 붙는 동전 */
+export const COIN: Sprite = {
+  rows: [
+    "..KKKK..",
+    ".KNNNNK.",
+    "KNWNNNNK",
+    "KNNNNNNK",
+    "KNNNNNNK",
+    "KNNNNNNK",
+    ".KNNNNK.",
+    "..KKKK..",
+  ],
+  palette: { K: INK, N: "#FFD34D", W: "#FFFFFF" },
+};

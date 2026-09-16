@@ -51,8 +51,11 @@ export type Pet = {
   owned: string[];
   /** 몸에 걸친 것 — 자리마다 하나씩 */
   worn: { head?: string | null; body?: string | null };
-  /** 방에 놓은 것 */
-  placed: { wall?: string | null; floorL?: string | null; floorR?: string | null };
+  /**
+   * 방에 꺼내놓은 소품과 그 자리. 목록에 있으면 방에 있는 것이고, 빼면 치운 것이다.
+   * 맵이 아니라 배열인 건 Firestore 때문이다 — merge 로 쓰면 맵은 키가 안 지워진다.
+   */
+  spots: { id: string; x: number; y: number }[];
   wall: string;
   floor: string;
 };

@@ -10,6 +10,8 @@ import {
   FLOORS,
   ITEMS,
   WALLS,
+  isWorn,
+  itemById,
   type Cat,
   type Item,
   type Surface,
@@ -58,6 +60,8 @@ export default function PetView({
   onError: (msg: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  // 가구를 옮기는 동안에는 상점을 닫아두고 판다도 세워둔다
+  const [editing, setEditing] = useState(false);
   const [cat, setCat] = useState<Cat>("옷");
   const [msg, setMsg] = useState("");
   /* 살 때는 반드시 한 번 묻는다. 제일 비싼 게 300점이라 잘못 눌러 날리면 아프다 */
@@ -75,7 +79,11 @@ export default function PetView({
     });
   };
 
-  /** 안 샀으면 사고(묻고 나서), 샀으면 입었다 벗었다 한다 */
+  /** 지금 입고 있거나 방에 나와 있는지 */
+  const isOut = (it: Item) =>
+    isWorn(it) ? pet.worn[it.slot] === it.id : pet.spots.some((s) => s.id === it.id);
+
+  /** 안 샀으면 사고(묻고 나서), 샀으면 입었다 벗었다 · 꺼냈다 치웠다 한다 */
   const tapItem = (it: Item) => {
     setMsg("");
     if (!owns.has(it.id)) {
@@ -92,19 +100,22 @@ export default function PetView({
               ...pet,
               spent: pet.spent + it.price,
               owned: [...pet.owned, it.id],
-              ...equip(pet, it, true),
+              ...withItem(pet, it, true),
             },
             "사지 못했어요"
           ),
       });
       return;
     }
-    const wearing =
-      it.slot === "head" || it.slot === "body"
-        ? pet.worn[it.slot] === it.id
-        : pet.placed[it.slot] === it.id;
-    save({ ...pet, ...equip(pet, it, !wearing) }, "바꾸지 못했어요");
+    save({ ...pet, ...withItem(pet, it, !isOut(it)) }, "바꾸지 못했어요");
   };
+
+  /** 끌어다 놓은 자리를 저장한다. 끌고 있는 동안이 아니라 손을 뗐을 때 한 번만 쓴다 */
+  const moveItem = (id: string, x: number, y: number) =>
+    save(
+      { ...pet, spots: pet.spots.map((s) => (s.id === id ? { id, x, y } : s)) },
+      "자리를 옮기지 못했어요"
+    );
 
   const tapSurface = (s: Surface, kind: "wall" | "floor") => {
     setMsg("");
@@ -131,10 +142,26 @@ export default function PetView({
   return (
     <>
       <div className="pet-stage">
-        <PetRoom pet={pet} />
+        <PetRoom pet={pet} editing={editing} onMove={moveItem} />
+
+        {editing && <p className="pet-tip">가구를 끌어서 옮겨보세요</p>}
+
+        <button
+          className={`pet-fix ${editing ? "pet-fix-on" : ""}`}
+          type="button"
+          aria-pressed={editing}
+          onClick={() => {
+            setEditing((v) => !v);
+            setMsg("");
+          }}
+        >
+          {editing ? "끝내기" : "옮기기"}
+        </button>
+
         <button
           className="pet-shop"
           type="button"
+          hidden={editing}
           onClick={() => {
             setOpen(true);
             setMsg("");
@@ -214,11 +241,8 @@ export default function PetView({
                   name={it.name}
                   price={it.price}
                   owned={owns.has(it.id)}
-                  active={
-                    it.slot === "head" || it.slot === "body"
-                      ? pet.worn[it.slot] === it.id
-                      : pet.placed[it.slot] === it.id
-                  }
+                  active={isOut(it)}
+                  activeLabel={isWorn(it) ? "장착 중" : "꺼내놓음"}
                   onTap={() => tapItem(it)}
                 >
                   <span className="shop-dot">
@@ -306,6 +330,7 @@ function Good({
   price,
   owned,
   active,
+  activeLabel = "장착 중",
   onTap,
   children,
 }: {
@@ -313,13 +338,14 @@ function Good({
   price: number;
   owned: boolean;
   active: boolean;
+  activeLabel?: string;
   onTap: () => void;
   children: React.ReactNode;
 }) {
   const label = !owned
     ? `${price}점`
     : active
-    ? "장착 중"
+    ? activeLabel
     : price === 0
     ? "기본"
     : "가진 것";
@@ -341,9 +367,14 @@ function Good({
 }
 
 /** 같은 자리는 하나만 걸친다 */
-function equip(pet: Pet, it: Item, on: boolean): Partial<Pet> {
-  if (it.slot === "head" || it.slot === "body") {
-    return { worn: { ...pet.worn, [it.slot]: on ? it.id : null } };
-  }
-  return { placed: { ...pet.placed, [it.slot]: on ? it.id : null } };
+/**
+ * 입는 것은 자리마다 하나, 방에 두는 것은 목록에 넣고 빼는 것으로 끝난다.
+ * 창문처럼 `only` 표를 단 것끼리는 하나만 걸린다 — 일곱 종이 다 같은 창문 자리라서다.
+ */
+function withItem(pet: Pet, it: Item, on: boolean): Partial<Pet> {
+  if (isWorn(it)) return { worn: { ...pet.worn, [it.slot]: on ? it.id : null } };
+  const rest = pet.spots.filter(
+    (s) => s.id !== it.id && !(on && it.only && itemById(s.id)?.only === it.only)
+  );
+  return { spots: on ? [...rest, { id: it.id, x: it.at[0], y: it.at[1] }] : rest };
 }

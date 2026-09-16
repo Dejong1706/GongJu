@@ -15,7 +15,7 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { PER_TASK, monthPoints } from "./pet";
+import { PER_TASK, monthPoints, spotsFromPlaced } from "./pet";
 import type { NewEvent, NewTask, Pet, SchoolEvent, Task, Word } from "./types";
 
 /**
@@ -220,7 +220,7 @@ export const EMPTY_PET: Pet = {
   spent: 0,
   owned: [],
   worn: {},
-  placed: {},
+  spots: [],
   wall: "w0",
   floor: "f0",
 };
@@ -236,7 +236,10 @@ export function usePet(uid: string) {
       ref,
       (snap) => {
         // 문서가 없으면 만들지 않고 기본값으로 읽는다. 처음 사는 순간에 생긴다.
-        const next = { ...EMPTY_PET, ...(snap.data() as Partial<Pet> | undefined) };
+        const raw = snap.data() as (Partial<Pet> & { placed?: Record<string, string | null> }) | undefined;
+        const next = { ...EMPTY_PET, ...raw };
+        // 자리를 저장하기 전에 놓아둔 것들은 소품마다 정해둔 처음 자리로 옮겨준다
+        if (!raw?.spots && raw?.placed) next.spots = spotsFromPlaced(raw.placed);
         latest.current = next;
         setError(false);
         setPet(next);

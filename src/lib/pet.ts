@@ -3,19 +3,46 @@ import type { Sprite } from "./sprites";
 const INK = "#3A2230";
 
 /**
- * 판다 방. 판다는 (10,28) 에 서고 오른쪽으로 WALK 칸을 오간다.
- * 걸레받이가 44 줄이라 바닥에 놓는 소품은 아랫변이 44 에 닿아야 한다.
+ * 판다 방 — 세 면으로 세운다.
  *
- * h 만 줄이면 바닥 깊이만 줄어든다 — 나머지가 전부 44 줄 위에 고정돼 있어서
- * 따라 옮길 것이 없다. 68 이었을 때는 폰에서 스크롤해야 상점 버튼이 보였다.
+ * 벽을 세 장 그리는 게 아니라 **열마다 바닥이 시작하는 높이를 다르게** 준 것이다.
+ * 가운데 `side` ~ `w - side` 는 뒷벽이라 늘 같은 줄에서 바닥이 시작하고,
+ * 양옆 `side` 칸은 앞으로 올수록 바닥이 내려온다. 그래서 바닥이 사다리꼴이 된다.
+ *
+ * 아래 세 함수가 **벽·바닥·걸레받이·판다가 다닐 곳을 전부** 정한다.
+ * 방 크기를 바꾸고 싶으면 이 숫자 넷만 만지면 나머지는 따라온다.
+ * 폰(가로 393px)에서 한 칸이 4.0px, 방 높이가 366px — 스크롤 없이 한 화면에 들어간다.
  */
-export const ROOM = { w: 48, h: 57, base: 44, floorTop: 45 } as const;
-export const PANDA_AT = { x: 10, y: 28 } as const;   // 16줄이라 발끝이 44
-/** 판다가 오른쪽으로 몇 칸까지 걸어갔다 오는지 */
-export const WALK = 14;
+export const ROOM = { w: 80, h: 92, base: 54, floorTop: 55, side: 12 } as const;
 export const BASEBOARD = "#8A6B7C";
+/** 가구는 두 칸 격자에 붙는다. 손가락으로 끌면 한 칸은 못 맞춘다 */
+export const SNAP = 2;
 
-export type Slot = "head" | "body" | "wall" | "floorL" | "floorR";
+/** 그 열에서 바닥이 시작하는 줄. 옆벽이면 앞으로 올수록 내려온다 */
+export function floorTopAt(x: number) {
+  const d = ROOM.h - ROOM.floorTop;
+  if (x < ROOM.side) return Math.round(ROOM.floorTop + ((ROOM.side - x) * d) / ROOM.side);
+  if (x >= ROOM.w - ROOM.side)
+    return Math.round(ROOM.floorTop + ((x - (ROOM.w - ROOM.side - 1)) * d) / ROOM.side);
+  return ROOM.floorTop;
+}
+/** 그 줄에서 바닥의 왼쪽·오른쪽 끝. 위 함수를 거꾸로 푼 것이라 늘 맞물린다 */
+export const floorLeftAt = (y: number) =>
+  Math.max(0, ROOM.side - ((y - ROOM.floorTop) * ROOM.side) / (ROOM.h - ROOM.floorTop));
+export const floorRightAt = (y: number) =>
+  Math.min(
+    ROOM.w,
+    ROOM.w - ROOM.side + ((y - ROOM.floorTop) * ROOM.side) / (ROOM.h - ROOM.floorTop)
+  );
+
+/** 판다 16 x 16. 처음 서 있는 자리 — 그다음부터는 스스로 돌아다닌다 */
+export const PANDA = { w: 16, h: 16, x: 30, y: 62 } as const;
+
+/**
+ * head·body 는 판다가 입는 것, 나머지는 방에 두는 것.
+ * flat 은 바닥에 까는 것이라 늘 맨 아래에 깔린다 (판다가 그 위를 밟고 지나간다).
+ */
+export type Slot = "head" | "body" | "wall" | "floor" | "flat";
 export type Cat = "옷" | "벽지" | "타일" | "기타";
 
 export type Item = {
@@ -24,10 +51,19 @@ export type Item = {
   cat: Cat;
   slot: Slot;
   price: number;
-  /** 방 안에서의 왼쪽 위 모서리 */
+  /**
+   * 입는 것이면 **판다 왼쪽 위에서 잰 자리**(음수가 될 수 있다),
+   * 방에 두는 것이면 **처음 꺼냈을 때 놓이는 자리**. 그다음부터는 끌어다 옮긴 자리를 저장한다.
+   */
   at: readonly [number, number];
+  /** 같은 표를 단 것끼리는 하나만 놓인다 (창문 일곱 종) */
+  only?: string;
   sprite: Sprite;
 };
+
+/** 자리로 판단한다. id 목록으로 들고 있으면 이름을 바꿀 때 빠뜨린다 (한 번 그랬다) */
+export const isWorn = (it: Item): it is Item & { slot: "head" | "body" } =>
+  it.slot === "head" || it.slot === "body";
 
 const P: Record<string, string> = {
   K: INK,
@@ -40,6 +76,9 @@ const P: Record<string, string> = {
   T: "#D98E6A",   // 화분
   B: "#B4835C",
   b: "#8E6544",   // 책상
+  R: "#E2648F",   // 공
+  Q: "#F6A8C6",
+  q: "#E08AAC",   // 러그
 };
 
 const s = (rows: string[], keys: string): Sprite => ({
@@ -66,11 +105,11 @@ const BOW = [
 
 /*
   창문 24 x 22. 테두리 2칸, 안쪽 20 x 18 에 십자 창살.
-  판다 뒤 벽 한가운데(12,8) 에 걸려서 방 분위기를 결정한다.
+  뒷벽(12~67) 한가운데에 걸려서 방 분위기를 결정한다.
   틀은 공통이고 하늘색·땅색·부품 몇 개만 갈아 끼우면 새 창문이 된다.
 */
 const WIN = { w: 24, h: 22, ix: 2, iy: 2, iw: 20, ih: 18 };
-export const WIN_AT: readonly [number, number] = [12, 8];
+export const WIN_AT: readonly [number, number] = [28, 10];
 
 const SUN = [".SS.", "SSSS", "SSSS", ".SS."];
 const CLOUD = [".CCC.", "CCCCC"];
@@ -110,7 +149,7 @@ const win = (
   parts: Part[] = [], dots: [number, number][] = [], dotChar = "C",
   extra: Record<string, string> = {}
 ): Item => ({
-  id, name, cat: "기타", slot: "wall", price, at: WIN_AT,
+  id, name, cat: "기타", slot: "wall", price, at: WIN_AT, only: "win",
   sprite: {
     rows: windowRows(parts, dots, dotChar),
     palette: { K: INK, S: "#FFD34D", C: "#FFFFFF", L: "#5FA34E", T: "#8E6544", F: "#FF7BAC", ...sky, ...extra },
@@ -141,7 +180,7 @@ export const ITEMS: Item[] = [
     cat: "옷",
     slot: "head",
     price: 180,
-    at: [11, 29],
+    at: [1, 1],
     // 챙을 머리보다 한 칸씩만 넓게. 더 넓으면 갓처럼 보인다
     sprite: s(["..NNNNNNNNNN..", ".NNNNNNNNNNNN.", "nnnnnnnnnnnnnn"], "Nn"),
   },
@@ -151,7 +190,7 @@ export const ITEMS: Item[] = [
     cat: "옷",
     slot: "head",
     price: 60,
-    at: [11, 24],
+    at: [1, -4],
     sprite: { rows: BOW, palette: { K: INK, R: "#FF8FBC", d: "#E2648F" } },
   },
   {
@@ -160,7 +199,7 @@ export const ITEMS: Item[] = [
     cat: "옷",
     slot: "head",
     price: 60,
-    at: [11, 24],
+    at: [1, -4],
     sprite: { rows: BOW, palette: { K: INK, R: "#8FC4F0", d: "#5A93C9" } },
   },
   {
@@ -169,16 +208,16 @@ export const ITEMS: Item[] = [
     cat: "옷",
     slot: "body",
     price: 220,
-    at: [13, 41],
+    at: [3, 13],
     sprite: s(["...U..U...", "..UUUUUU..", "..uuuuuu.."], "Uu"),
   },
   {
     id: "plant",
     name: "화분",
     cat: "기타",
-    slot: "floorL",
+    slot: "floor",
     price: 140,
-    at: [1, 35],
+    at: [10, 62],
     sprite: s(
       [
         "..GG.GG.",
@@ -198,9 +237,9 @@ export const ITEMS: Item[] = [
     id: "desk",
     name: "책상",
     cat: "기타",
-    slot: "floorR",
+    slot: "floor",
     price: 300,
-    at: [36, 36],
+    at: [56, 60],
     sprite: s(
       [
         "BBBBBBBBBBBB",
@@ -215,8 +254,76 @@ export const ITEMS: Item[] = [
       "Bb"
     ),
   },
+  {
+    id: "rug",
+    name: "분홍 러그",
+    cat: "기타",
+    slot: "flat",
+    price: 100,
+    at: [28, 74],
+    // 네 모서리를 두 칸씩 깎아 타원처럼 보이게 했다
+    sprite: s(
+      [
+        "..QQQQQQQQQQQQQQQQ..",
+        "QQQQQQQQQQQQQQQQQQQQ",
+        "QqqqqqqqqqqqqqqqqqqQ",
+        "QQQQQQQQQQQQQQQQQQQQ",
+        "..QQQQQQQQQQQQQQQQ..",
+      ],
+      "Qq"
+    ),
+  },
+  {
+    id: "ball",
+    name: "공",
+    cat: "기타",
+    slot: "floor",
+    price: 40,
+    at: [46, 84],
+    sprite: s([".RRRR.", "RRWWRR", "RWWWWR", "RWWWWR", "RRWWRR", ".RRRR."], "RW"),
+  },
+  {
+    id: "frame",
+    name: "액자",
+    cat: "기타",
+    slot: "wall",
+    price: 120,
+    at: [16, 16],
+    // 창문과 같은 하늘·풀색을 써서 창밖 풍경을 담아놓은 것처럼 보이게 했다
+    sprite: {
+      rows: [
+        "KKKKKKKKKK",
+        "KWWWWWWWWK",
+        "KWAAAAAAWK",
+        "KWAAASSAWK",
+        "KWAAASSAWK",
+        "KWALLAAAWK",
+        "KWALLAAAWK",
+        "KWEEEEEEWK",
+        "KWWWWWWWWK",
+        "KKKKKKKKKK",
+      ],
+      palette: { K: INK, W: "#FFFFFF", A: "#A8D8F0", S: "#FFD34D", L: "#5FA34E", E: "#8FC97A" },
+    },
+  },
   ...WINDOWS,
 ];
+
+/**
+ * 자리를 저장하기 전에 쓰던 방식에서 옮겨오기.
+ * 예전에는 소품마다 자리가 코드에 박혀 있고 "왼쪽 바닥·오른쪽 바닥" 한 칸씩만 썼다.
+ * 그때 놓아둔 것들을 새 자리(소품마다 정해둔 처음 자리)로 옮겨준다.
+ * 한 번 저장되고 나면 다시 탈 일이 없지만, 지워버리면 놓아둔 게 사라진다.
+ */
+export function spotsFromPlaced(placed: Record<string, string | null | undefined>) {
+  return Object.values(placed ?? {})
+    .filter((id): id is string => !!id)
+    .map((id) => {
+      const it = ITEMS.find((i) => i.id === id);
+      return it ? { id, x: it.at[0], y: it.at[1] } : null;
+    })
+    .filter((v): v is { id: string; x: number; y: number } => !!v);
+}
 
 /** 벽지 · 타일은 스프라이트가 아니라 면을 칠하는 방식이라 따로 둔다 */
 export type Surface = {

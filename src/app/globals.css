@@ -844,43 +844,12 @@
     border: 3px solid var(--ink);
   }
 
-  /* 판다가 방을 좌우로 오간다.
-     SVG 안이라 translateX 1px = 도트 한 칸. steps() 로 끊어야 도트가 안 어긋난다. */
-  .pet-walk {
-    animation: pet-stroll 18s steps(14) infinite;
-  }
-  @keyframes pet-stroll {
-    0%,
-    6% {
-      transform: translateX(0px);
-    }
-    44%,
-    50% {
-      transform: translateX(14px);
-    }
-    88%,
-    100% {
-      transform: translateX(0px);
-    }
-  }
-  /* 걸을 때 한 칸씩 들썩인다.
-     steps(2) 로 0 → -1px 을 나누면 중간값 -0.5px 이 나와서, 뒤에 창문처럼
-     촘촘한 무늬가 있으면 반 칸 어긋나 깨져 보인다. 그래서 정수 구간만 잇는다. */
-  .pet-bob {
-    animation: pet-waddle 1.2s steps(1) infinite;
-  }
-  @keyframes pet-waddle {
-    0%,
-    49% {
-      transform: translateY(0px);
-    }
-    50%,
-    100% {
-      transform: translateY(-1px);
-    }
-  }
   .pet-hit {
     cursor: pointer;
+  }
+  .pet-grab {
+    cursor: grab;
+    touch-action: none;
   }
   .pet-heart {
     animation: pet-heartpop 0.9s steps(1) forwards;
@@ -900,8 +869,6 @@
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .pet-walk,
-    .pet-bob,
     .pet-heart {
       animation: none;
     }
@@ -922,9 +889,42 @@
     border: 3px solid var(--ink);
     box-shadow: 3px 3px 0 rgba(58, 34, 48, 0.35);
   }
-  .pet-shop:active {
+  .pet-shop:active,
+  .pet-fix:active {
     transform: translate(3px, 3px);
     box-shadow: none;
+  }
+  /* 옮기기 — 상점 반대편. 누르면 가구마다 집는 자리가 생긴다 */
+  .pet-fix {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    min-width: 46px;
+    height: 46px;
+    padding: 0 10px;
+    border-radius: 23px;
+    font-size: 10px;
+    background: #fff;
+    color: var(--ink);
+    border: 3px solid var(--ink);
+    box-shadow: 3px 3px 0 rgba(58, 34, 48, 0.35);
+  }
+  .pet-fix-on {
+    background: var(--pink);
+    color: #fff;
+  }
+  /* 가구를 옮기는 동안 방 위에 뜨는 안내 띠 */
+  .pet-tip {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    top: 10px;
+    background: rgba(58, 34, 48, 0.82);
+    color: #fff;
+    font-size: 9px;
+    line-height: 1.5;
+    padding: 6px 8px;
+    text-align: center;
   }
 
   /* 포인트 알약. 상점을 열었을 때만 보인다 */

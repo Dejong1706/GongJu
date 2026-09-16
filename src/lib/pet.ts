@@ -250,6 +250,12 @@ export const CATS: Cat[] = ["옷", "벽지", "타일", "기타"];
 
 /** 스티커 하나에 20점, 그 달에 열 개 모을 때마다 100점 더 */
 export const PER_STICKER = 20;
+/**
+ * 강의·과제 하나를 다 했다고 표시할 때마다.
+ * 스티커(20) 보다 조금 높은 선. 50 으로 뒀더니 금방 체크되는 쉬운 과제까지 같은 값이라
+ * 한 달이면 상점을 다 털 수 있었다.
+ */
+export const PER_TASK = 30;
 export const BONUS_EVERY = 10;
 export const BONUS = 100;
 

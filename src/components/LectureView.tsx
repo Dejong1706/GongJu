@@ -24,7 +24,7 @@ export default function LectureView({
   tasks: Task[];
   onSave: (id: string | null, data: NewTask) => Promise<void>;
   onToggle: (id: string, done: boolean) => Promise<void>;
-  onRemove: (id: string) => Promise<void>;
+  onRemove: (id: string, done: boolean) => Promise<void>;
   today: Date;
 }) {
   const [edit, setEdit] = useState<EditState | null>(null);
@@ -73,8 +73,10 @@ export default function LectureView({
 
   const remove = async () => {
     if (!edit?.id) return;
+    // 다 했다고 표시돼 있었으면 받은 점수도 같이 돌려줘야 한다
+    const done = tasks.find((t) => t.id === edit.id)?.done ?? false;
     try {
-      await onRemove(edit.id);
+      await onRemove(edit.id, done);
       setEdit(null);
     } catch {
       setMsg("삭제하지 못했어요");

@@ -15,7 +15,7 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { monthPoints } from "./pet";
+import { PER_TASK, monthPoints } from "./pet";
 import type { NewEvent, NewTask, Pet, SchoolEvent, Task, Word } from "./types";
 
 /**
@@ -90,14 +90,38 @@ export function useTasks(uid: string) {
     [uid]
   );
 
+  /* 스티커와 같은 규칙 — 체크하면 주고, 풀면 그만큼 되돌려받는다 */
   const toggle = useCallback(
-    (id: string, done: boolean) =>
-      updateDoc(doc(db, "users", uid, "tasks", id), { done }),
+    (id: string, done: boolean) => {
+      const batch = writeBatch(db);
+      batch.update(doc(db, "users", uid, "tasks", id), { done });
+      batch.set(
+        doc(db, "users", uid, "pet", "state"),
+        { earned: increment(done ? PER_TASK : -PER_TASK) },
+        { merge: true }
+      );
+      return batch.commit();
+    },
     [uid]
   );
 
+  /*
+   * 다 했다고 표시된 것을 지우면 점수도 같이 회수한다.
+   * 안 그러면 만들고 → 체크하고 → 지우기를 되풀이해 점수를 불릴 수 있다.
+   */
   const remove = useCallback(
-    (id: string) => deleteDoc(doc(db, "users", uid, "tasks", id)),
+    (id: string, done: boolean) => {
+      const ref = doc(db, "users", uid, "tasks", id);
+      if (!done) return deleteDoc(ref);
+      const batch = writeBatch(db);
+      batch.delete(ref);
+      batch.set(
+        doc(db, "users", uid, "pet", "state"),
+        { earned: increment(-PER_TASK) },
+        { merge: true }
+      );
+      return batch.commit();
+    },
     [uid]
   );
 

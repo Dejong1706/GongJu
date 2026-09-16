@@ -1046,6 +1046,26 @@
   }
 
 
+  /* 살까 묻는 팝업 · 모자라다고 알리는 팝업 */
+  .buy-ask {
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.8;
+    padding: 10px 4px;
+  }
+  .buy-ask b {
+    color: var(--pink-deep);
+  }
+  /* 확인·취소는 가로로. .pop-foot 이 세로라 한 줄로 감싸서 되돌린다 */
+  .buy-keys {
+    display: flex;
+    gap: 10px;
+  }
+  .buy-keys .btn {
+    width: auto;
+    flex: 1;
+  }
+
   /* ── 타이머 ─────────────────────────
      공부하는 동안만 쓰는 화면이라 앱 껍데기(날짜줄·아래 메뉴)를 통째로 덮는다.
      .scroll 안에 있지만 position 이 없는 부모를 건너뛰고 .device 를 기준으로 눕는다 —

@@ -60,6 +60,9 @@ export default function PetView({
   const [open, setOpen] = useState(false);
   const [cat, setCat] = useState<Cat>("옷");
   const [msg, setMsg] = useState("");
+  /* 살 때는 반드시 한 번 묻는다. 제일 비싼 게 300점이라 잘못 눌러 날리면 아프다 */
+  const [ask, setAsk] = useState<Ask | null>(null);
+  const [short, setShort] = useState<Short | null>(null);
 
   // 스티커를 떼면 번 점수가 줄어서 잠깐 음수가 될 수 있다
   const left = Math.max(0, pet.earned - pet.spent);
@@ -72,23 +75,28 @@ export default function PetView({
     });
   };
 
-  /** 안 샀으면 사고, 샀으면 입었다 벗었다 한다 */
+  /** 안 샀으면 사고(묻고 나서), 샀으면 입었다 벗었다 한다 */
   const tapItem = (it: Item) => {
     setMsg("");
     if (!owns.has(it.id)) {
       if (left < it.price) {
-        setMsg(`${it.price - left}점 더 모으면 살 수 있어요`);
+        setShort({ price: it.price });
         return;
       }
-      save(
-        {
-          ...pet,
-          spent: pet.spent + it.price,
-          owned: [...pet.owned, it.id],
-          ...equip(pet, it, true),
-        },
-        "사지 못했어요"
-      );
+      setAsk({
+        name: it.name,
+        price: it.price,
+        buy: () =>
+          save(
+            {
+              ...pet,
+              spent: pet.spent + it.price,
+              owned: [...pet.owned, it.id],
+              ...equip(pet, it, true),
+            },
+            "사지 못했어요"
+          ),
+      });
       return;
     }
     const wearing =
@@ -103,13 +111,18 @@ export default function PetView({
     const free = s.price === 0;
     if (!free && !owns.has(s.id)) {
       if (left < s.price) {
-        setMsg(`${s.price - left}점 더 모으면 살 수 있어요`);
+        setShort({ price: s.price });
         return;
       }
-      save(
-        { ...pet, spent: pet.spent + s.price, owned: [...pet.owned, s.id], [kind]: s.id },
-        "사지 못했어요"
-      );
+      setAsk({
+        name: s.name,
+        price: s.price,
+        buy: () =>
+          save(
+            { ...pet, spent: pet.spent + s.price, owned: [...pet.owned, s.id], [kind]: s.id },
+            "사지 못했어요"
+          ),
+      });
       return;
     }
     save({ ...pet, [kind]: s.id }, "바꾸지 못했어요");
@@ -218,9 +231,65 @@ export default function PetView({
           <div className="empty text-center min-h-[26px]">{msg}</div>
         </Popup>
       )}
+
+      {ask && (
+        <Popup
+          title="구매"
+          onClose={() => setAsk(null)}
+          footer={
+            <div className="buy-keys">
+              <button
+                className="btn"
+                onClick={() => {
+                  ask.buy();
+                  setAsk(null);
+                }}
+              >
+                확인
+              </button>
+              <button className="btn btn-ghost" onClick={() => setAsk(null)}>
+                취소
+              </button>
+            </div>
+          }
+        >
+          <p className="buy-ask">
+            <b>{ask.name}</b>
+            {particle(ask.name)} 구매하시겠습니까?
+          </p>
+        </Popup>
+      )}
+
+      {short && (
+        <Popup
+          title="포인트 부족"
+          onClose={() => setShort(null)}
+          footer={
+            <button className="btn" onClick={() => setShort(null)}>
+              확인
+            </button>
+          }
+        >
+          <p className="buy-ask">
+            <b>{short.price - left}포인트</b>가 모자랍니다
+          </p>
+        </Popup>
+      )}
     </>
   );
 }
+
+/** 이름 끝에 받침이 있으면 "을", 없으면 "를" */
+function particle(name: string) {
+  const code = name.charCodeAt(name.length - 1);
+  if (code < 0xac00 || code > 0xd7a3) return "을(를)";
+  return (code - 0xac00) % 28 === 0 ? "를" : "을";
+}
+
+/** 살지 물어볼 것 — 누를 때 값을 붙잡아 둔다 */
+type Ask = { name: string; price: number; buy: () => void };
+/** 못 사는 이유를 보여줄 것 — 얼마가 모자란지만 센다 */
+type Short = { price: number };
 
 /** 아직 안 산 칸에 붙는 자물쇠 */
 function Lock() {

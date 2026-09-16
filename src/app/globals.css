@@ -1045,4 +1045,64 @@
     color: var(--pink-deep);
   }
 
+
+  /* ── 타이머 ─────────────────────────
+     공부하는 동안만 쓰는 화면이라 앱 껍데기(날짜줄·아래 메뉴)를 통째로 덮는다.
+     .scroll 안에 있지만 position 이 없는 부모를 건너뛰고 .device 를 기준으로 눕는다 —
+     .dim 과 같은 수법이라 .scroll 의 overflow 에도 안 잘린다. */
+  .timer-full {
+    position: absolute;
+    inset: 0;
+    z-index: 50;
+    background: #0a0508;
+  }
+  .scroll:has(.timer-full) {
+    overflow: hidden;
+  }
+  .timer-panel {
+    position: absolute;
+  }
+  /* 시계는 화면 한가운데, 버튼은 그 아래 — 자리는 TimerView 가 재서 넣는다 */
+  .timer-clock,
+  .timer-keys {
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .timer-clock {
+    top: 50%;
+  }
+  .timer-clock svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .timer-keys {
+    display: flex;
+    gap: 14px;
+  }
+  /* 시계가 주인공이라 버튼은 작고 조용하게. 앱의 .btn 과 달리 그림자를 안 쓴다 */
+  .timer-key {
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    color: var(--pink);
+    background: transparent;
+    border: 2px solid var(--pink);
+    padding: 9px 18px;
+    min-width: 96px;
+  }
+  /* 누른 표시는 색을 뒤집어 낸다 — 움직이지 않는다 */
+  .timer-key:active {
+    background: var(--pink);
+    color: #0a0508;
+  }
+  .timer-key-quiet {
+    color: #9a6d80;
+    border-color: #563546;
+  }
+  .timer-key-quiet:active {
+    background: #563546;
+    color: #ffeaf3;
+  }
+
 }

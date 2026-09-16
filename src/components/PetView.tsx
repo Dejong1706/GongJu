@@ -35,6 +35,24 @@ function swatch(s: Surface) {
     style.backgroundImage =
       `repeating-linear-gradient(90deg,${s.accent} 0 1px,transparent 1px 8px),` +
       `repeating-linear-gradient(180deg,${s.accent} 0 1px,transparent 1px 8px)`;
+  } else if (s.kind === "panel") {
+    style.backgroundImage =
+      `linear-gradient(180deg,transparent 0 55%,${s.accent} 55% 100%),` +
+      `repeating-linear-gradient(90deg,transparent 0 6px,${s.accent} 6px 7px)`;
+  } else if (s.kind === "flower") {
+    style.backgroundImage =
+      `radial-gradient(${s.accent2 ?? s.accent} 1px,transparent 1.2px),` +
+      `radial-gradient(${s.accent} 2.4px,transparent 2.6px)`;
+    style.backgroundSize = "10px 10px";
+  } else if (s.kind === "parquet") {
+    style.backgroundImage =
+      `repeating-linear-gradient(90deg,${s.accent} 0 1px,transparent 1px 7px),` +
+      `repeating-linear-gradient(180deg,${s.accent} 0 1px,transparent 1px 7px)`;
+    style.backgroundSize = "14px 14px";
+  } else if (s.kind === "marble") {
+    style.backgroundImage =
+      `linear-gradient(115deg,transparent 0 44%,${s.accent} 44% 46%,` +
+      `transparent 46% 70%,${s.accent} 70% 71%,transparent 71%)`;
   }
   return <span className="shop-swatch" style={style} />;
 }

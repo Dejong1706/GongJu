@@ -40,9 +40,13 @@ export const PANDA = { w: 16, h: 16, x: 30, y: 62 } as const;
 
 /**
  * head·body 는 판다가 입는 것, 나머지는 방에 두는 것.
- * flat 은 바닥에 까는 것이라 늘 맨 아래에 깔린다 (판다가 그 위를 밟고 지나간다).
+ *
+ * - flat: 바닥에 까는 것(러그). 늘 맨 아래에 깔린다 — 판다가 그 위를 밟고 지나간다
+ * - floor: 바닥에 놓는 것. 발끝 높이로 판다와 앞뒤를 가린다
+ * - top: 가구 위에 얹는 것(책상 위 화분). 바닥 가구보다 나중에 그려야 안 숨는다
+ * - wall: 벽에 거는 것. 늘 판다 뒤
  */
-export type Slot = "head" | "body" | "wall" | "floor" | "flat";
+export type Slot = "head" | "body" | "wall" | "floor" | "top" | "flat";
 export type Cat = "옷" | "벽지" | "타일" | "기타";
 
 export type Item = {
@@ -73,12 +77,20 @@ const P: Record<string, string> = {
   U: "#6FA8DC",
   u: "#4A7DB5",   // 멜빵바지
   G: "#7FBF8F",
-  T: "#D98E6A",   // 화분
-  B: "#B4835C",
-  b: "#8E6544",   // 책상
+  g: "#5A9A6A",   // 잎 · 진한 잎
+  T: "#D98E6A",   // 화분 흙
+  /*
+   * 가구는 흰색이다. 흰 가구는 밝은 벽지·타일 위에서 통째로 묻히므로
+   * **h 로 실루엣 둘레를 한 겹 두른다.** 이게 없으면 민무늬 벽에서 가구가 사라진다.
+   */
+  H: "#FDFAFC",
+  h: "#D5C7D0",   // 가구 · 가구 테두리
   R: "#E2648F",   // 공
   Q: "#F6A8C6",
   q: "#E08AAC",   // 러그
+  Z: "#C89B6A",
+  z: "#A97C4E",   // 곰 인형
+  p: "#FFA5C3",   // 인형 코
 };
 
 const s = (rows: string[], keys: string): Sprite => ({
@@ -242,16 +254,16 @@ export const ITEMS: Item[] = [
     at: [56, 60],
     sprite: s(
       [
-        "BBBBBBBBBBBB",
-        "bbbbbbbbbbbb",
-        "B..........B",
-        "B..........B",
-        "B..........B",
-        "B..........B",
-        "B..........B",
-        "B..........B",
+        "hhhhhhhhhhhh",
+        "HHHHHHHHHHHH",
+        "hhhhhhhhhhhh",
+        "hH........Hh",
+        "hH........Hh",
+        "hH........Hh",
+        "hH........Hh",
+        "hh........hh",
       ],
-      "Bb"
+      "Hh"
     ),
   },
   {
@@ -260,17 +272,250 @@ export const ITEMS: Item[] = [
     cat: "기타",
     slot: "flat",
     price: 100,
-    at: [28, 74],
-    // 네 모서리를 두 칸씩 깎아 타원처럼 보이게 했다
+    at: [26, 74],
+    // 28 x 8. 판다(16폭) 가 올라서도 자리가 남아야 깔개로 보인다
     sprite: s(
       [
-        "..QQQQQQQQQQQQQQQQ..",
-        "QQQQQQQQQQQQQQQQQQQQ",
-        "QqqqqqqqqqqqqqqqqqqQ",
-        "QQQQQQQQQQQQQQQQQQQQ",
-        "..QQQQQQQQQQQQQQQQ..",
+        "......QQQQQQQQQQQQQQQQ......",
+        "...QQQQQQQQQQQQQQQQQQQQQQ...",
+        ".QQQQQQQQQQQQQQQQQQQQQQQQQQ.",
+        "QQQqqqqqqqqqqqqqqqqqqqqqqQQQ",
+        "QQQqqqqqqqqqqqqqqqqqqqqqqQQQ",
+        ".QQQQQQQQQQQQQQQQQQQQQQQQQQ.",
+        "...QQQQQQQQQQQQQQQQQQQQQQ...",
+        "......QQQQQQQQQQQQQQQQ......",
       ],
       "Qq"
+    ),
+  },
+  /*
+    ── 가구 ──
+    같은 책상이라도 모양이 달라야 고르는 재미가 있다. 전부 흰색이고,
+    상판 아래 한 줄을 테두리색으로 깔아 두께를 낸다 — 이게 없으면 판자 한 장으로 보인다.
+  */
+  {
+    id: "bed",
+    name: "침대",
+    cat: "기타",
+    slot: "floor",
+    price: 320,
+    at: [9, 56],
+    // 프레임도 베개도 흰색이라 붙어 보인다. 베개 둘레를 테두리로 끊어 떼어놨다
+    sprite: s(
+      [
+        "hhh...................",
+        "hHh...................",
+        "hHhhhhhhhhhhhhhhhhhhhh",
+        "hHhWWWWWWWQQQQQQQQQQQh",
+        "hHhWWWWWWWQQQQQQQQQQQh",
+        "hHhWWWWWWWQqqqqqqqqqQh",
+        "hHhWWWWWWWQQQQQQQQQQQh",
+        "hHhhhhhhhhQQQQQQQQQQQh",
+        "hHhQQQQQQQQQQQQQQQQQQh",
+        "hhhhhhhhhhhhhhhhhhhhhh",
+        "hHh................hHh",
+        "hhh................hhh",
+      ],
+      "HhWQq"
+    ),
+  },
+  {
+    id: "desk2",
+    name: "공부 책상",
+    cat: "기타",
+    slot: "floor",
+    price: 280,
+    at: [46, 58],
+    sprite: s(
+      [
+        "hhhhhhhhhhhhhh",
+        "HHHHHHHHHHHHHH",
+        "hhhhhhhhhhhhhh",
+        "hH.....hHHHHHh",
+        "hH.....hhhhhhh",
+        "hH.....hHHHHHh",
+        "hH.....hhhhhhh",
+        "hH.....hHHHHHh",
+        "hH.....hH...Hh",
+        "hh.....hh...hh",
+      ],
+      "Hh"
+    ),
+  },
+  {
+    id: "table",
+    name: "둥근 탁자",
+    cat: "기타",
+    slot: "floor",
+    price: 180,
+    at: [34, 66],
+    sprite: s(
+      [
+        "..hhhhhhhh..",
+        "hHHHHHHHHHHh",
+        "hhhhhhhhhhhh",
+        "....hHHh....",
+        "....hHHh....",
+        "....hHHh....",
+        "..hhHHHHhh..",
+        "..hhhhhhhh..",
+      ],
+      "Hh"
+    ),
+  },
+  {
+    id: "shelf",
+    name: "책장",
+    cat: "기타",
+    slot: "floor",
+    price: 300,
+    at: [60, 55],
+    // 흰 책장에 책만 색을 준다. 칸을 나누는 줄도 테두리색이라 책이 도드라진다
+    sprite: s(
+      [
+        "hhhhhhhhhhhh",
+        "hHHHHHHHHHHh",
+        "hRRUUGGNNRRh",
+        "hRRUUGGNNRRh",
+        "hhhhhhhhhhhh",
+        "hUUNNRRGGUUh",
+        "hUUNNRRGGUUh",
+        "hhhhhhhhhhhh",
+        "hGGRRUUNNGGh",
+        "hGGRRUUNNGGh",
+        "hhhhhhhhhhhh",
+        "hHHHHHHHHHHh",
+        "hHHHHHHHHHHh",
+        "hhh......hhh",
+      ],
+      "HhRUGN"
+    ),
+  },
+  {
+    id: "lamp",
+    name: "스탠드",
+    cat: "기타",
+    slot: "floor",
+    price: 120,
+    at: [33, 57],
+    sprite: s(
+      [
+        ".NNNN.",
+        "NNNNNN",
+        "NNNNNN",
+        ".nnnn.",
+        "..hH..",
+        "..hH..",
+        "..hH..",
+        "..hH..",
+        "..hH..",
+        "..hH..",
+        ".hHHh.",
+        "hhHHhh",
+      ],
+      "NnHh"
+    ),
+  },
+  /* 인형은 판다와 같은 한 칸짜리 눈을 쓴다. 두 칸으로 키우면 주인공이 둘로 보인다 */
+  {
+    id: "bear",
+    name: "곰 인형",
+    cat: "기타",
+    slot: "floor",
+    price: 90,
+    at: [36, 78],
+    sprite: s(
+      [
+        "ZZ....ZZ",
+        "ZZZZZZZZ",
+        "ZKZZZZKZ",
+        "ZZZWWZZZ",
+        "ZZZWKWZZ",
+        "ZZZZZZZZ",
+        "zZZZZZZz",
+        "zzZZZZzz",
+        ".zzzzzz.",
+      ],
+      "ZzKW"
+    ),
+  },
+  {
+    id: "bunny",
+    name: "토끼 인형",
+    cat: "기타",
+    slot: "floor",
+    price: 90,
+    at: [24, 76],
+    sprite: s(
+      [
+        ".WW..WW.",
+        ".WW..WW.",
+        ".WW..WW.",
+        ".WWWWWW.",
+        "WWWWWWWW",
+        "WKWWWWKW",
+        "WWWppWWW",
+        "WWWWWWWW",
+        ".WWWWWW.",
+        "..WWWW..",
+      ],
+      "WKp"
+    ),
+  },
+  /*
+    ── 가구 위에 얹는 것 ──
+    바닥이 아니라 책상·탁자·책장 위에 올린다. 바닥 가구보다 **나중에 그려야**
+    책상 위에 올려도 책상 뒤로 숨지 않는다 (PetRoom 의 그리는 차례 참고).
+  */
+  {
+    id: "pot",
+    name: "작은 화분",
+    cat: "기타",
+    slot: "top",
+    price: 60,
+    at: [54, 51],
+    sprite: s(["..GG..", ".GGGG.", "GGgGGG", ".GGGG.", "..GG..", "TTTTTT", ".TTTT."], "GgT"),
+  },
+  {
+    id: "cactus",
+    name: "선인장",
+    cat: "기타",
+    slot: "top",
+    price: 60,
+    at: [36, 60],
+    sprite: s(
+      ["..GG..", "G.GG..", "GGGG.G", ".GGGGG", "..gG..", "..GG..", "TTTTTT", ".TTTT."],
+      "GgT"
+    ),
+  },
+  {
+    id: "books",
+    name: "책 더미",
+    cat: "기타",
+    slot: "top",
+    price: 50,
+    at: [47, 53],
+    sprite: s([".RRRRRR.", ".RRRRRR.", "UUUUUUUU", "UUUUUUUU", "GGGGGGGG"], "RUG"),
+  },
+  {
+    id: "clock",
+    name: "벽시계",
+    cat: "기타",
+    slot: "wall",
+    price: 100,
+    at: [56, 14],
+    sprite: s(
+      [
+        "..KKKK..",
+        ".KWWWWK.",
+        "KWWKWWWK",
+        "KWWKWWWK",
+        "KWWKKWWK",
+        "KWWWWWWK",
+        ".KWWWWK.",
+        "..KKKK..",
+      ],
+      "KW"
     ),
   },
   {
@@ -332,7 +577,9 @@ export type Surface = {
   price: number;
   base: string;
   accent?: string;
-  kind?: "dot" | "stripe" | "plank" | "check" | "grid";
+  /** 꽃 벽지의 꽃술처럼 색이 하나 더 필요할 때 */
+  accent2?: string;
+  kind?: "dot" | "stripe" | "panel" | "flower" | "plank" | "check" | "grid" | "parquet" | "marble";
 };
 
 export const WALLS: Surface[] = [
@@ -342,6 +589,17 @@ export const WALLS: Surface[] = [
   { id: "w3", name: "하늘", price: 80, base: "#D8E8F5" },
   { id: "w4", name: "물방울", price: 160, base: "#F7E3EE", accent: "#E5C4D8", kind: "dot" },
   { id: "w5", name: "줄무늬", price: 160, base: "#FFF3F8", accent: "#F0D6E4", kind: "stripe" },
+  // 값을 한 단계 올린 것들. 무늬가 한 겹 더 들어가거나 벽이 위아래로 나뉜다
+  { id: "w6", name: "몰딩 벽", price: 220, base: "#F7F1F5", accent: "#E6DAE4", kind: "panel" },
+  {
+    id: "w7",
+    name: "작은 꽃",
+    price: 220,
+    base: "#FFF7FB",
+    accent: "#EFC3D8",
+    accent2: "#FFD98A",
+    kind: "flower",
+  },
 ];
 
 export const FLOORS: Surface[] = [
@@ -351,6 +609,8 @@ export const FLOORS: Surface[] = [
   { id: "f3", name: "타일", price: 160, base: "#DDE9EC", accent: "#B9CFD5", kind: "grid" },
   { id: "f4", name: "분홍 카펫", price: 80, base: "#F6CFDF" },
   { id: "f5", name: "잔디", price: 140, base: "#A9D3A0", accent: "#8CBB83", kind: "check" },
+  { id: "f6", name: "쪽매 마루", price: 220, base: "#E9D9C6", accent: "#C9AE92", kind: "parquet" },
+  { id: "f7", name: "대리석", price: 240, base: "#F3F1F5", accent: "#D6D0DC", kind: "marble" },
 ];
 
 export const CATS: Cat[] = ["옷", "벽지", "타일", "기타"];

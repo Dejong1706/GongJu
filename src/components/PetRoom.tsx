@@ -99,6 +99,42 @@ function backdrop(wall: Surface, floor: Surface) {
             <rect key={`wd${x}-${y}`} x={x} y={y} width={1} height={1} fill={wall.accent} />
           );
       }
+    /*
+     * 몰딩 벽 — 아랫단을 한 톤 눌러 깔고 경계에 줄 하나.
+     * 줄을 **그 열의 바닥에서 같은 높이**에 두면 옆벽에서 저절로 기울어 방이 깊어 보인다.
+     */
+    if (wall.kind === "panel") {
+      const my = h - 18;
+      if (my > 2) {
+        const deep = shade(wall.accent ?? wall.base, 0.93);
+        out.push(
+          <rect key={`wp${x}`} x={x} y={my + 1} width={1} height={h - my - 1} fill={wall.accent} />
+        );
+        out.push(<rect key={`wm${x}`} x={x} y={my} width={1} height={1} fill={deep} />);
+        if (x % 7 === 3)
+          out.push(
+            <rect key={`wv${x}`} x={x} y={my + 2} width={1} height={h - my - 2} fill={deep} />
+          );
+      }
+    }
+    /* 작은 꽃 — 가운데 한 점에 꽃잎 넉 장. 줄마다 반 칸씩 엇갈리게 놓는다 */
+    if (wall.kind === "flower") {
+      const fp = pd * 2;
+      const fh = Math.round(fp / 2);
+      for (let fy = 5; fy < h - 1; fy += fp) {
+        const fo = Math.floor(fy / fp) % 2 ? fh : 0;
+        const dx = (((x - fo) % fp) + fp) % fp;
+        if (dx === 0) {
+          out.push(<rect key={`fa${x}-${fy}`} x={x} y={fy - 1} width={1} height={1} fill={wall.accent} />);
+          out.push(
+            <rect key={`fb${x}-${fy}`} x={x} y={fy} width={1} height={1} fill={wall.accent2 ?? wall.accent} />
+          );
+          out.push(<rect key={`fc${x}-${fy}`} x={x} y={fy + 1} width={1} height={1} fill={wall.accent} />);
+        } else if (dx === 1 || dx === fp - 1) {
+          out.push(<rect key={`fd${x}-${fy}`} x={x} y={fy} width={1} height={1} fill={wall.accent} />);
+        }
+      }
+    }
   }
   const seam = shade(wall.base, 0.9);
   [ROOM.side - 1, ROOM.w - ROOM.side].forEach((x) => {
@@ -114,7 +150,7 @@ function backdrop(wall: Surface, floor: Surface) {
       );
   }
 
-  /** 그 줄에서 바닥이 차지하는 가로 구간만 칠한다 */
+  /** 그 줄에서 바닥이 차지하는 가로 구간만 칠한다 (무늬는 전부 이걸로 눕는다) */
   const span = (key: string, y: number) => {
     const a = Math.ceil(floorLeftAt(y));
     const b = Math.floor(floorRightAt(y));
@@ -141,6 +177,71 @@ function backdrop(wall: Surface, floor: Surface) {
           />
         );
       }
+  }
+  if (floor.kind === "parquet") {
+    /*
+     * 쪽매 마루 — 칸마다 결을 가로 · 세로로 번갈아 깐다.
+     * 나무 조각을 엇갈려 붙인 것처럼 보이게 하는 건 이것뿐이다.
+     */
+    const bands = [ROOM.floorTop, ...rows, ROOM.h];
+    for (let b = 0; b + 1 < bands.length; b++) {
+      span(`pq${b}`, bands[b]);
+      const mid = Math.round((bands[b] + bands[b + 1]) / 2);
+      for (let y = bands[b]; y < bands[b + 1]; y++) {
+        const l = floorLeftAt(y);
+        const w = floorRightAt(y) - l;
+        if (w < 2) continue;
+        for (let c = 0; c < 4; c++) {
+          const x0 = Math.round(l + (w * c) / 4);
+          const x1 = Math.round(l + (w * (c + 1)) / 4);
+          if ((c + b) % 2 === 0) {
+            if (y === mid)
+              out.push(
+                <rect key={`ph${b}-${c}`} x={x0} y={y} width={x1 - x0} height={1} fill={floor.accent} />
+              );
+          } else {
+            out.push(
+              <rect key={`pv${b}-${y}-${c}a`} x={Math.round(x0 + (x1 - x0) / 3)} y={y} width={1} height={1} fill={floor.accent} />
+            );
+            out.push(
+              <rect key={`pv${b}-${y}-${c}b`} x={Math.round(x0 + ((x1 - x0) * 2) / 3)} y={y} width={1} height={1} fill={floor.accent} />
+            );
+          }
+        }
+      }
+    }
+  }
+  if (floor.kind === "marble") {
+    /* 대리석 — 칸을 크게 잡고 결을 몇 줄만 흘린다. 촘촘하면 싸 보인다 */
+    rows.forEach((y, i) => {
+      if (i % 2 === 0) span(`mr${y}`, y);
+    });
+    for (let i = 1; i < 3; i++)
+      for (let y = ROOM.floorTop; y < ROOM.h; y++) {
+        const l = floorLeftAt(y);
+        const r = floorRightAt(y);
+        if (r - l < 2) continue;
+        out.push(
+          <rect key={`mv${i}-${y}`} x={Math.round(l + ((r - l) * i) / 3)} y={y} width={1} height={1} fill={floor.accent} />
+        );
+      }
+    const vein = shade(floor.accent ?? floor.base, 0.96);
+    [
+      [0.28, 0.12],
+      [0.62, 0.45],
+      [0.4, 0.74],
+    ].forEach(([u, t], vi) => {
+      const y0 = Math.round(ROOM.floorTop + (ROOM.h - ROOM.floorTop) * t);
+      for (let k = 0; k < 10; k++) {
+        const y = y0 + k;
+        if (y >= ROOM.h) break;
+        const l = floorLeftAt(y);
+        const r = floorRightAt(y);
+        out.push(
+          <rect key={`mk${vi}-${k}`} x={Math.round(l + (r - l) * (u + k * 0.006))} y={y} width={1} height={1} fill={vein} />
+        );
+      }
+    });
   }
   if (floor.kind === "check") {
     const bands = [ROOM.floorTop, ...rows, ROOM.h];
@@ -182,6 +283,13 @@ export function fit(it: Item, x: number, y: number) {
     return {
       x: clamp(x, ROOM.side, ROOM.w - ROOM.side - w),
       y: clamp(y, 1, ROOM.base - h - 1),
+    };
+  }
+  if (it.slot === "top") {
+    // 가구 위로 올라가야 하니 걸레받이 위까지 허용한다. 좌우는 방 안이기만 하면 된다
+    return {
+      x: clamp(x, 0, ROOM.w - w),
+      y: clamp(y, ROOM.base - h - 14, ROOM.h - h),
     };
   }
   const ny = clamp(y, ROOM.floorTop - Math.floor(h / 2), ROOM.h - h);
@@ -297,7 +405,11 @@ export default function PetRoom({
     }));
 
   const pandaFeet = pos.y + PANDA.h;
-  const onFloor = out.filter((o) => o.it.slot === "floor");
+  const feetOf = (o: { y: number; it: Item }) => o.y + o.it.sprite.rows.length;
+  const byFeet = (slot: string) =>
+    out.filter((o) => o.it.slot === slot).sort((a, b) => feetOf(a) - feetOf(b));
+  const onFloor = byFeet("floor");
+  const onTop = byFeet("top");
 
   const worn = [pet.worn.head, pet.worn.body]
     .map((id) => (id ? itemById(id) : undefined))
@@ -369,13 +481,27 @@ export default function PetRoom({
           SVG 에는 z-index 가 없어서 그리는 순서가 곧 순서다.
         */}
         {onFloor
-          .filter((o) => o.y + o.it.sprite.rows.length <= pandaFeet)
+          .filter((o) => feetOf(o) <= pandaFeet)
+          .map((o) => (
+            <Piece key={o.it.id} sprite={o.it.sprite} x={o.x} y={o.y} />
+          ))}
+        {/*
+          가구 위에 얹는 것은 **같은 차례 안에서 바닥 가구보다 뒤에** 그린다.
+          그래야 책상 위 화분이 책상에 안 가리면서도, 앞을 지나가는 판다에는 가린다.
+        */}
+        {onTop
+          .filter((o) => feetOf(o) <= pandaFeet)
           .map((o) => (
             <Piece key={o.it.id} sprite={o.it.sprite} x={o.x} y={o.y} />
           ))}
         {pandaG}
         {onFloor
-          .filter((o) => o.y + o.it.sprite.rows.length > pandaFeet)
+          .filter((o) => feetOf(o) > pandaFeet)
+          .map((o) => (
+            <Piece key={o.it.id} sprite={o.it.sprite} x={o.x} y={o.y} />
+          ))}
+        {onTop
+          .filter((o) => feetOf(o) > pandaFeet)
           .map((o) => (
             <Piece key={o.it.id} sprite={o.it.sprite} x={o.x} y={o.y} />
           ))}

@@ -1066,6 +1066,17 @@
     flex: 1;
   }
 
+  /* 토익 결과에 붙는 점수 알림 */
+  .got {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 3px 10px;
+    font-size: 10px;
+    color: #fff;
+    background: var(--pink);
+    border: 2px solid var(--ink);
+  }
+
   /* ── 타이머 ─────────────────────────
      공부하는 동안만 쓰는 화면이라 앱 껍데기(날짜줄·아래 메뉴)를 통째로 덮는다.
      .scroll 안에 있지만 position 이 없는 부모를 건너뛰고 .device 를 기준으로 눕는다 —
@@ -1100,6 +1111,15 @@
   .timer-keys {
     display: flex;
     gap: 14px;
+  }
+  /* 25분을 채웠을 때 잠깐 뜨는 줄 */
+  .timer-got {
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    white-space: nowrap;
+    font-size: 11px;
+    color: var(--pink);
   }
   /* 시계가 주인공이라 버튼은 작고 조용하게. 앱의 .btn 과 달리 그림자를 안 쓴다 */
   .timer-key {

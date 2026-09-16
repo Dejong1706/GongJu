@@ -58,4 +58,13 @@ export type Pet = {
   spots: { id: string; x: number; y: number }[];
   wall: string;
   floor: string;
+  /*
+   * 하루에 몇 번까지만 주는 것들의 기록.
+   * 다른 값과 달리 **날짜가 바뀌면 처음부터**라서, 언제 줬는지를 같이 들고 있어야 한다.
+   */
+  /** 토익 퀴즈 점수를 준 날 (YYYY-MM-DD) */
+  quizDay?: string;
+  /** 타이머 점수를 준 날과 그 날 준 횟수 */
+  focusDay?: string;
+  focusCount?: number;
 };

@@ -615,19 +615,60 @@ export const FLOORS: Surface[] = [
 
 export const CATS: Cat[] = ["옷", "벽지", "타일", "기타"];
 
-/** 스티커 하나에 20점, 그 달에 열 개 모을 때마다 100점 더 */
-export const PER_STICKER = 20;
-/**
- * 강의·과제 하나를 다 했다고 표시할 때마다.
- * 스티커(20) 보다 조금 높은 선. 50 으로 뒀더니 금방 체크되는 쉬운 과제까지 같은 값이라
- * 한 달이면 상점을 다 털 수 있었다.
+/*
+ * ── 포인트 ─────────────────────────
+ *
+ * 값을 한 군데에 몰지 않고 **하는 일마다 조금씩** 준다.
+ * 예전에는 스티커와 체크에만 붙어 있어서, 체크(5초) 와 공부(3시간) 의 값이 같았다.
+ *
+ * 상점 전체가 6,530점이고 부지런하면 하루 70점쯤 되니 **넉 달**이면 다 모은다.
+ * 속도를 바꾸려면 아래 값만 만지면 된다 — 셈하는 곳은 전부 이 상수를 본다.
  */
-export const PER_TASK = 30;
+
+/** 스티커 하나. 그 달에 열 개 모을 때마다 100점 더 */
+export const PER_STICKER = 15;
 export const BONUS_EVERY = 10;
 export const BONUS = 100;
+/** 스티커를 이어 붙인 날이 이만큼 갈 때마다 */
+export const STREAK_EVERY = 7;
+export const STREAK_BONUS = 50;
+/** 강의·과제 하나를 다 했다고 표시할 때마다 */
+export const PER_TASK = 20;
+/** 토익 퀴즈를 다 맞혔을 때. 하루 한 번만 준다 */
+export const PER_QUIZ = 30;
+/**
+ * 타이머를 **일시정지 없이** 이만큼 잴 때마다. 하루 네 번까지.
+ * 조건 없이 시간당으로 주면 켜두기 게임이 된다 — 이 둘이 그걸 막는 전부다.
+ */
+export const PER_FOCUS = 10;
+export const FOCUS_MIN = 25;
+export const FOCUS_CAP = 4;
 
 export const monthPoints = (count: number) =>
   count * PER_STICKER + Math.floor(count / BONUS_EVERY) * BONUS;
+
+/**
+ * 이어 붙인 날이 7일 갈 때마다 50점.
+ *
+ * 개수가 아니라 **이어진 길이**를 세므로, 떼면 그만큼 되돌아간다 (연타로 못 불린다).
+ * 달을 넘는 연속은 안 센다 — 스티커 문서가 달마다 따로라 지난 달을 읽어와야 하는데,
+ * 그 한 번을 위해 읽기를 늘릴 만큼의 값은 아니라고 봤다.
+ */
+export function streakPoints(days: number[]) {
+  let total = 0;
+  let run = 0;
+  let prev = -99;
+  for (const d of [...days].sort((a, b) => a - b)) {
+    run = d === prev + 1 ? run + 1 : 1;
+    prev = d;
+    if (run % STREAK_EVERY === 0) total += STREAK_BONUS;
+  }
+  return total;
+}
+
+/** 그 달 스티커로 번 점수 전부 */
+export const stickerPoints = (days: number[]) =>
+  monthPoints(days.length) + streakPoints(days);
 
 export const itemById = (id: string) => ITEMS.find((i) => i.id === id);
 export const wallById = (id: string) => WALLS.find((w) => w.id === id) ?? WALLS[0];

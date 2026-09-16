@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { FOCUS_MIN } from "./pet";
 import { ymd } from "./date";
 
 /**
@@ -23,7 +24,14 @@ type Saved = {
   acc: number;
   /** 돌고 있으면 시작한 시각, 멈춰 있으면 null */
   since: number | null;
+  /**
+   * 지금 돌고 있는 이 판에서 점수를 준 횟수.
+   * 일시정지하면 판이 끝나므로 0 으로 돌아간다 — 25분을 **이어서** 채워야 준다는 뜻이다.
+   */
+  paid: number;
 };
+
+const FOCUS_MS = FOCUS_MIN * 60 * 1000;
 
 function read(): Saved | null {
   try {
@@ -31,7 +39,12 @@ function read(): Saved | null {
     if (!raw) return null;
     const s = JSON.parse(raw) as Partial<Saved>;
     if (typeof s.day !== "string" || typeof s.acc !== "number") return null;
-    return { day: s.day, acc: s.acc, since: typeof s.since === "number" ? s.since : null };
+    return {
+      day: s.day,
+      acc: s.acc,
+      since: typeof s.since === "number" ? s.since : null,
+      paid: typeof s.paid === "number" ? s.paid : 0,
+    };
   } catch {
     return null;
   }
@@ -45,10 +58,14 @@ function save(s: Saved) {
   }
 }
 
-export function useDayTimer(today: Date) {
+export function useDayTimer(today: Date, onFocus?: (times: number) => void) {
   const day = ymd(today);
-  const [state, setState] = useState<Saved>({ day, acc: 0, since: null });
+  const [state, setState] = useState<Saved>({ day, acc: 0, since: null, paid: 0 });
   const [now, setNow] = useState(() => Date.now());
+
+  // 알림 받을 쪽이 렌더마다 바뀌어도 아래 타이머를 다시 걸지 않게 붙잡아 둔다
+  const focusRef = useRef(onFocus);
+  focusRef.current = onFocus;
 
   /*
    * localStorage 는 첫 렌더가 아니라 여기서 읽는다.
@@ -60,7 +77,7 @@ export function useDayTimer(today: Date) {
       setState(old);
     } else {
       // 날이 바뀌었다. 0 부터 다시 — 돌아가는 중이었으면 계속 돌아간다
-      const fresh: Saved = { day, acc: 0, since: old?.since ? Date.now() : null };
+      const fresh: Saved = { day, acc: 0, since: old?.since ? Date.now() : null, paid: 0 };
       setState(fresh);
       save(fresh);
     }
@@ -70,7 +87,21 @@ export function useDayTimer(today: Date) {
   // 돌고 있을 때만 다시 그린다. 초만 보여주지만 0.2초마다 맞춰야 숫자가 늦게 안 바뀐다
   useEffect(() => {
     if (!state.since) return;
-    const id = setInterval(() => setNow(Date.now()), 200);
+    const id = setInterval(() => {
+      const t = Date.now();
+      setNow(t);
+
+      // 이 판에서 25분을 몇 번 채웠는지. 화면이 꺼져 있던 동안 두 번이 찼을 수도 있다
+      const cur = latest.current.state;
+      if (!cur.since) return;
+      const done = Math.floor((t - cur.since) / FOCUS_MS);
+      if (done > cur.paid) {
+        const next = { ...cur, paid: done };
+        setState(next);
+        save(next);
+        focusRef.current?.(done - cur.paid);
+      }
+    }, 200);
     return () => clearInterval(id);
   }, [state.since]);
 
@@ -100,13 +131,14 @@ export function useDayTimer(today: Date) {
   const start = useCallback(() => {
     const { state: s } = latest.current;
     if (s.since) return;
-    apply({ ...s, since: Date.now() });
+    apply({ ...s, since: Date.now(), paid: 0 });
   }, [apply]);
 
   const pause = useCallback(() => {
     const { state: s, ms: cur } = latest.current;
     if (!s.since) return;
-    apply({ day: s.day, acc: cur, since: null });
+    // 판이 끝났으니 준 횟수도 0 으로. 다음 판은 다시 25분부터다
+    apply({ day: s.day, acc: cur, since: null, paid: 0 });
   }, [apply]);
 
 

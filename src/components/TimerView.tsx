@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ClockFace, { FACE_H, faceWidth } from "./ClockFace";
+import { PER_FOCUS } from "@/lib/pet";
 import { pad } from "@/lib/date";
 import { useDayTimer } from "@/lib/timer";
 
@@ -17,11 +18,33 @@ const BELOW = 112;
 export default function TimerView({
   today,
   onBack,
+  onFocus,
 }: {
   today: Date;
   onBack: () => void;
+  /** 일시정지 없이 25분을 채울 때마다. 실제로 준 횟수를 돌려준다 */
+  onFocus?: (times: number) => Promise<number> | void;
 }) {
-  const { ms, running, start, pause } = useDayTimer(today);
+  /*
+   * 점수가 붙어도 화면에 아무 말이 없으면 받은 줄을 모른다.
+   * **실제로 준 횟수**를 받아서 그때만 띄운다 — 하루 네 번을 다 채운 뒤에는 안 뜬다.
+   */
+  const [got, setGot] = useState(0);
+  const gotTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const focus = useCallback(
+    (times: number) => {
+      Promise.resolve(onFocus?.(times)).then((given) => {
+        if (!given) return;
+        setGot(given * PER_FOCUS);
+        clearTimeout(gotTimer.current);
+        gotTimer.current = setTimeout(() => setGot(0), 4000);
+      });
+    },
+    [onFocus]
+  );
+  useEffect(() => () => clearTimeout(gotTimer.current), []);
+
+  const { ms, running, start, pause } = useDayTimer(today, focus);
 
   /*
    * 가로로 쓰는 화면이다.
@@ -80,6 +103,12 @@ export default function TimerView({
         <div className="timer-clock" style={{ width: clockW }}>
           <ClockFace text={text} fill="var(--pink)" />
         </div>
+
+        {got > 0 && (
+          <p className="timer-got" style={{ top: keysY - 34 }}>
+            25분 채웠어요 · +{got}점
+          </p>
+        )}
 
         <div className="timer-keys" style={{ top: keysY }}>
           <button

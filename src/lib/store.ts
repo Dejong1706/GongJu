@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import {
   addDoc,
   collection,
@@ -15,7 +15,14 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { PER_TASK, monthPoints, spotsFromPlaced } from "./pet";
+import {
+  FOCUS_CAP,
+  PER_FOCUS,
+  PER_QUIZ,
+  PER_TASK,
+  spotsFromPlaced,
+  stickerPoints,
+} from "./pet";
 import type { NewEvent, NewTask, Pet, SchoolEvent, Task, Word } from "./types";
 
 /**
@@ -184,8 +191,11 @@ export function useStickers(uid: string, monthKey: string) {
     (d: number) => {
       const cur = latest.current;
       const next = cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d];
-      // 뗄 때는 음수가 된다. 10개째 보너스도 개수로 다시 계산해서 그만큼 되돌린다.
-      const gain = monthPoints(next.length) - monthPoints(cur.length);
+      /*
+       * 뗄 때는 음수가 된다. 10개째 보너스도, 이어 붙인 날 보너스도
+       * **그 달 전체를 다시 계산한 차이**라서 그만큼 그대로 되돌아간다.
+       */
+      const gain = stickerPoints(next) - stickerPoints(cur);
 
       latest.current = next;
       setDays(next); // 눌렀을 때 바로 반응하도록
@@ -224,6 +234,43 @@ export const EMPTY_PET: Pet = {
   wall: "w0",
   floor: "f0",
 };
+
+/**
+ * 토익 퀴즈 · 타이머 보상.
+ *
+ * 스티커·과제와 달리 **하루에 몇 번**이 정해져 있다. 그 기록(언제 줬는지, 몇 번 줬는지)을
+ * 판다 문서에 같이 두는 건, 포인트를 건드리는 곳과 세는 곳이 갈리면 어긋나기 때문이다.
+ * 날짜는 화면에서 받는다 — 여기서 new Date() 를 부르면 자정을 넘겨도 어제에 머문다.
+ */
+export function useRewards(uid: string, pet: Pet | null, today: string) {
+  const ref = useMemo(() => doc(db, "users", uid, "pet", "state"), [uid]);
+
+  /** 퀴즈를 다 맞혔을 때. 오늘 이미 줬으면 아무 일도 안 한다. 줬으면 true */
+  const quiz = useCallback(async () => {
+    if (!pet || pet.quizDay === today) return false;
+    await setDoc(ref, { earned: increment(PER_QUIZ), quizDay: today }, { merge: true });
+    return true;
+  }, [pet, today, ref]);
+
+  /** 일시정지 없이 25분을 채울 때마다. 하루 네 번까지 */
+  const focus = useCallback(
+    async (times: number) => {
+      if (!pet || times <= 0) return 0;
+      const done = pet.focusDay === today ? pet.focusCount ?? 0 : 0;
+      const give = Math.min(times, FOCUS_CAP - done);
+      if (give <= 0) return 0;               // 오늘 네 번을 다 채웠다
+      await setDoc(
+        ref,
+        { earned: increment(PER_FOCUS * give), focusDay: today, focusCount: done + give },
+        { merge: true }
+      );
+      return give;
+    },
+    [pet, today, ref]
+  );
+
+  return { quiz, focus };
+}
 
 export function usePet(uid: string) {
   const [pet, setPet] = useState<Pet | null>(null);

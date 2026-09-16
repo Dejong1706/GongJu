@@ -11,7 +11,7 @@ import LoginScreen from "@/components/LoginScreen";
 import PixelSprite from "@/components/PixelSprite";
 import { BUNNY } from "@/lib/sprites";
 import { AuthProvider, useAuth } from "@/lib/auth";
-import { useEvents, usePet, useStickers, useTasks, useWords } from "@/lib/store";
+import { useEvents, usePet, useRewards, useStickers, useTasks, useWords } from "@/lib/store";
 import { useToday } from "@/lib/useToday";
 import { SEM_START } from "@/lib/config";
 import { DOW, displayWeek, pad, weekOf, ymd } from "@/lib/date";
@@ -103,6 +103,8 @@ function App({ uid }: { uid: string }) {
     toggle: toggleSticker,
   } = useStickers(uid, monthKey);
   const { pet, error: petError, write: writePet } = usePet(uid);
+  // 하루에 몇 번까지만 주는 것들 — 토익 퀴즈 만점, 타이머 25분
+  const { quiz: rewardQuiz, focus: rewardFocus } = useRewards(uid, pet, ymd(today));
 
   const week = weekOf(ymd(today), SEM_START);
   /*
@@ -171,7 +173,7 @@ function App({ uid }: { uid: string }) {
           ))}
 
         {/* 시간표도 타이머도 불러올 게 없다 — 하나는 설정값, 하나는 이 폰에만 있다 */}
-        {tab === "tt" && <TimeView today={today} />}
+        {tab === "tt" && <TimeView today={today} onFocus={rewardFocus} />}
 
         {tab === "toeic" &&
           (wordsError ? (
@@ -185,6 +187,7 @@ function App({ uid }: { uid: string }) {
               onUpdate={updateWord}
               onRemove={removeWord}
               today={today}
+              onPerfect={rewardQuiz}
             />
           ))}
 

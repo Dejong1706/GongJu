@@ -13,7 +13,13 @@ type Sub = "tt" | "timer";
  * 탭을 옮기면 화면이 언마운트되지만 타이머는 흐른 시간이 아니라 시작한 시각을
  * localStorage 에 들고 있어서, 여기서 왔다 갔다 해도 시간이 안 끊긴다.
  */
-export default function TimeView({ today }: { today: Date }) {
+export default function TimeView({
+  today,
+  onFocus,
+}: {
+  today: Date;
+  onFocus?: (times: number) => Promise<number> | void;
+}) {
   // 탭 이름이 시간표라 그쪽을 먼저 연다
   const [sub, setSub] = useState<Sub>("tt");
 
@@ -41,7 +47,7 @@ export default function TimeView({ today }: { today: Date }) {
       {sub === "tt" ? (
         <TimetableView today={today} />
       ) : (
-        <TimerView today={today} onBack={() => setSub("tt")} />
+        <TimerView today={today} onBack={() => setSub("tt")} onFocus={onFocus} />
       )}
     </>
   );

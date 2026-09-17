@@ -22,5 +22,38 @@ const bunny: ItemDef = {
     ],
     "WKp"
   ),
+  // 옆은 귀가 뒤로 눕고 눈 하나 · 코끝, 뒤는 얼굴 없이 분홍 꼬리
+  views: {
+    right: s(
+      [
+        "..WW....",
+        ".WW.....",
+        ".WW.....",
+        "WWWWWW..",
+        "WWWWWWW.",
+        "WWWWKWWW",
+        "WWWWWWWp",
+        "WWWWWWW.",
+        ".WWWWWW.",
+        "..WWWW..",
+      ],
+      "WKp"
+    ),
+    back: s(
+      [
+        ".WW..WW.",
+        ".WW..WW.",
+        ".WW..WW.",
+        ".WWWWWW.",
+        "WWWWWWWW",
+        "WWWWWWWW",
+        "WWWWWWWW",
+        "WWWppWWW",
+        ".WWWWWW.",
+        "..WWWW..",
+      ],
+      "Wp"
+    ),
+  },
 };
 export default bunny;

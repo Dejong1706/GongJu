@@ -34,7 +34,7 @@ execFileSync(
 const appCss = readFileSync(join(root, "src", "app", "globals.css"), "utf8")
   .replace(/^@tailwind .*;$/gm, "")
   // 시안실은 Google Fonts 말고는 글꼴을 못 불러온다 (막히면 조용히 빈다). 기본 글꼴로 둔다
-  .replace(/@font-faces*{[^}]*}/g, "");
+  .replace(/@font-face\s*{[^}]*}/g, "");
 const css = appCss + "\n" + readFileSync(join(here, "preview.css"), "utf8");
 // </script> 가 묶음 안에 있으면 HTML 이 거기서 끊긴다
 const code = readFileSync(js, "utf8").replace(/<\/script/gi, "<\\/script");

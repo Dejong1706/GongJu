@@ -27,5 +27,46 @@ const shelf: ItemDef = {
     ],
     "HhRUGN"
   ),
+  // 옆 5 폭은 옆판 한 장, 뒤는 뒤판 — 칸 줄만 남기고 책은 안 보인다
+  views: {
+    right: s(
+      [
+        "hhhhh",
+        "hHHHh",
+        "hHHHh",
+        "hHHHh",
+        "hHHHh",
+        "hHHHh",
+        "hHHHh",
+        "hHHHh",
+        "hHHHh",
+        "hHHHh",
+        "hHHHh",
+        "hHHHh",
+        "hHHHh",
+        "hh.hh",
+      ],
+      "Hh"
+    ),
+    back: s(
+      [
+        "hhhhhhhhhhhh",
+        "hHHHHHHHHHHh",
+        "hHHHHHHHHHHh",
+        "hHHHHHHHHHHh",
+        "hhhhhhhhhhhh",
+        "hHHHHHHHHHHh",
+        "hHHHHHHHHHHh",
+        "hhhhhhhhhhhh",
+        "hHHHHHHHHHHh",
+        "hHHHHHHHHHHh",
+        "hhhhhhhhhhhh",
+        "hHHHHHHHHHHh",
+        "hHHHHHHHHHHh",
+        "hhh......hhh",
+      ],
+      "Hh"
+    ),
+  },
 };
 export default shelf;

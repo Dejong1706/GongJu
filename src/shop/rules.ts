@@ -1,5 +1,6 @@
 import type { Sprite } from "@/lib/sprites";
-import type { Cat, Item } from "./types";
+import type { Cat, Facing, Item } from "./types";
+import { flipRows } from "./common/draw";
 
 /**
  * 상점 등급 — **값으로 정한다** (9/17 사용자가 정한 구간).
@@ -28,6 +29,49 @@ export function spriteAt(it: Item, tick: number): Sprite {
     frameCache.set(it.id, frames);
   }
   return frames[tick % frames.length];
+}
+
+/*
+ * ── 방향 ─────────────────────────
+ *
+ * 위에서 내려다봤을 때 **시계방향** 순서. 오른쪽 화살표(↻) 는 다음 칸, 왼쪽(↺) 은 앞 칸.
+ * 저장된 방향이 없으면 그 아이템의 `face`(없으면 앞) — 방향이 생기기 전에 놓은 가구는 그대로 보인다
+ */
+export const FACINGS: Facing[] = ["front", "left", "back", "right"];
+export const FACING_NAME: Record<Facing, string> = { front: "앞", left: "왼쪽", back: "뒤", right: "오른쪽" };
+
+const flipSprite = (sp: Sprite): Sprite => ({ rows: flipRows(sp.rows), palette: sp.palette });
+
+/** 방향마다 그림. 뒤집어 채운 것도 **늘 같은 객체**라 방에서 다시 그리지 않는다 */
+const viewCache = new Map<string, Partial<Record<Facing, Sprite>>>();
+export function viewsOf(it: Item): Partial<Record<Facing, Sprite>> {
+  let v = viewCache.get(it.id);
+  if (!v) {
+    v = { ...it.views, [it.face ?? "front"]: it.sprite };
+    if (it.views) {
+      if (!v.left && v.right) v.left = flipSprite(v.right);
+      if (!v.right && v.left) v.right = flipSprite(v.left);
+    }
+    viewCache.set(it.id, v);
+  }
+  return v;
+}
+
+/** 그 방향 그림. 그 방향이 없거나 방향이 안 정해졌으면 기본 그림 */
+export const viewAt = (it: Item, f?: Facing): Sprite => (f && viewsOf(it)[f]) || it.sprite;
+
+export const canTurn = (it: Item) => !!it.views;
+
+/** dir 1 = 시계방향. 그림이 없는 방향은 건너뛴다 */
+export function turn(it: Item, f: Facing | undefined, dir: 1 | -1): Facing {
+  const views = viewsOf(it);
+  const cur = f && views[f] ? f : it.face ?? "front";
+  const i = FACINGS.indexOf(cur);
+  for (let k = 1; k < 4; k++) {
+    const next = FACINGS[(i + dir * k + 4) % 4];
+    if (views[next]) return next;
+  }
+  return cur;
 }
 
 /**

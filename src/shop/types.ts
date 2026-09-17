@@ -30,7 +30,20 @@ export type Item = {
    */
   anim?: string[][];
   sprite: Sprite;
+  /**
+   * `sprite` 가 바라보는 쪽. 없으면 앞. 침대처럼 **긴 쪽이 보이는 옆모습**이 기본인 것은 "right"
+   */
+  face?: Facing;
+  /**
+   * 다른 방향 그림 — 90도 돌린 그림이 아니라 **그쪽을 보고 놓인 모습**이다.
+   * 오른쪽 · 왼쪽 중 하나만 있으면 반대쪽은 좌우 뒤집기로 채운다 (`viewsOf`).
+   * 없는 방향은 돌릴 때 건너뛴다. 어느 쪽에서 봐도 같은 것(둥근 탁자) 은 안 단다
+   */
+  views?: Partial<Record<Facing, Sprite>>;
 };
+
+/** 가구 · 인형이 바라보는 쪽. 앞 = 보는 사람 쪽 */
+export type Facing = "front" | "left" | "back" | "right";
 
 /** 아이템 파일 하나에 적는 것. 칸(`cat`) 은 적지 않는다 — 들어 있는 폴더가 정한다 */
 export type ItemDef = Omit<Item, "cat">;

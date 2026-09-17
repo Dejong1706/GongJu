@@ -15,7 +15,7 @@ import {
   STREAK_EVERY,
   TASK_CAP,
 } from "@/lib/pet";
-import { UPDATES, UPDATE_LABEL } from "@/lib/updates";
+import { UPDATES, UPDATE_LABEL, type UpdateKind } from "@/lib/updates";
 
 type Page = "points" | "updates";
 
@@ -58,10 +58,14 @@ const WAYS = [
   },
 ];
 
-/** "2026-09-16" → "9월 16일" */
+/** 한 날짜 안에서 보여줄 순서 */
+const KINDS: UpdateKind[] = ["new", "change", "fix"];
+
+/** "2026-09-16" → "9월 16일 화요일" */
 const dateLabel = (d: string) => {
-  const [, m, day] = d.split("-").map(Number);
-  return `${m}월 ${day}일`;
+  const [y, m, day] = d.split("-").map(Number);
+  const dow = "일월화수목금토"[new Date(y, m - 1, day).getDay()];
+  return `${m}월 ${day}일 ${dow}요일`;
 };
 
 export default function GuidePopup({ onClose }: { onClose: () => void }) {
@@ -118,19 +122,32 @@ export default function GuidePopup({ onClose }: { onClose: () => void }) {
         </>
       ) : (
         <ol className="guide-log">
-          {UPDATES.map((u) => (
-            <li key={u.date}>
-              <div className="guide-date">{dateLabel(u.date)}</div>
-              <ul>
-                {u.items.map((it) => (
-                  <li key={it.text} className="guide-item">
-                    <span className={`guide-tag guide-tag-${it.kind}`}>
-                      {UPDATE_LABEL[it.kind]}
-                    </span>
-                    <span>{it.text}</span>
-                  </li>
-                ))}
-              </ul>
+          {UPDATES.map((u, i) => (
+            <li key={u.date} className="guide-day">
+              <div className="guide-day-head">
+                <span className="guide-date">{dateLabel(u.date)}</span>
+                {i === 0 && <span className="guide-latest">최신</span>}
+              </div>
+              {/*
+               * 줄마다 꼬리표를 붙이면 꼬리표가 글보다 눈에 먼저 들어온다.
+               * 종류별로 묶어 소제목을 한 번만 달고, 줄 앞에는 색 점만 둔다
+               */}
+              {KINDS.map((kind) => {
+                const items = u.items.filter((it) => it.kind === kind);
+                if (items.length === 0) return null;
+                return (
+                  <div key={kind} className="guide-group">
+                    <div className={`guide-kind guide-kind-${kind}`}>{UPDATE_LABEL[kind]}</div>
+                    <ul>
+                      {items.map((it) => (
+                        <li key={it.text} className={`guide-item guide-item-${kind}`}>
+                          {it.text}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
             </li>
           ))}
         </ol>

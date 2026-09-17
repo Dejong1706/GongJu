@@ -1245,47 +1245,84 @@
   .guide-tip b {
     color: var(--pink-deep);
   }
-  .guide-log > li + li {
-    margin-top: 12px;
+  /* 날짜 하나가 옅은 바탕의 큰 칸 하나. 테두리를 굵게 하면 버튼처럼 보여서 얇게 둔다 */
+  .guide-log {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .guide-day {
+    background: var(--cream);
+    border: 1px solid var(--line);
+    padding: 11px 12px 8px;
+  }
+  /* 가장 최근 날짜만 분홍빛을 조금 더 */
+  .guide-day:first-child {
+    background: #fff0f6;
+    border-color: var(--band-dark);
+  }
+  .guide-day-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-bottom: 7px;
+    margin-bottom: 7px;
+    border-bottom: 1px dashed var(--line);
   }
   .guide-date {
-    display: inline-block;
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 700;
     color: var(--ink);
-    background: var(--band);
-    border: 2px solid var(--ink);
-    padding: 2px 7px;
-    margin-bottom: 6px;
   }
-  .guide-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 6px;
-    font-size: 11px;
-    line-height: 1.5;
-    color: var(--ink);
-    padding: 3px 0;
-  }
-  .guide-tag {
-    flex: none;
+  .guide-latest {
     font-size: 9px;
     line-height: 1;
-    padding: 3px 4px;
-    margin-top: 1px;
-    border: 1px solid var(--ink);
-  }
-  .guide-tag-new {
-    background: var(--pink);
+    padding: 3px 5px;
     color: #fff;
+    background: var(--pink);
   }
-  .guide-tag-change {
+  .guide-group + .guide-group {
+    margin-top: 8px;
+  }
+  .guide-kind {
+    font-size: 10px;
+    font-weight: 700;
+    margin-bottom: 3px;
+  }
+  .guide-kind-new {
+    color: var(--pink-deep);
+  }
+  .guide-kind-change {
+    color: #3f9c7a;
+  }
+  .guide-kind-fix {
+    color: var(--ink-soft);
+  }
+  /* 줄 앞에는 종류 색 점만. 글이 먼저 읽히게 */
+  .guide-item {
+    position: relative;
+    padding: 2px 0 2px 12px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--ink);
+    word-break: keep-all;
+  }
+  .guide-item::before {
+    content: "";
+    position: absolute;
+    left: 1px;
+    top: 9px;
+    width: 5px;
+    height: 5px;
+  }
+  .guide-item-new::before {
+    background: var(--pink);
+  }
+  .guide-item-change::before {
     background: var(--mint);
-    color: var(--ink);
   }
-  .guide-tag-fix {
-    background: #fff;
-    color: var(--ink);
+  .guide-item-fix::before {
+    background: var(--ink-soft);
   }
 
 }

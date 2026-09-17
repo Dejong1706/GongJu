@@ -13,9 +13,9 @@ export type Update = {
 };
 
 export const UPDATE_LABEL: Record<UpdateKind, string> = {
-  new: "새로",
-  change: "바뀜",
-  fix: "고침",
+  new: "새로 생겼어요",
+  change: "바뀌었어요",
+  fix: "고쳤어요",
 };
 
 export const UPDATES: Update[] = [

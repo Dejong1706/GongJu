@@ -1,0 +1,48 @@
+/**
+ * 시안실 페이지 한 장 만들기 → tools/pet-preview/out/index.html
+ *
+ *   node tools/pet-preview/build.mjs
+ *
+ * 앱 코드(PetRoom · PetView · pet.ts) 를 esbuild 로 묶어 HTML 한 장에 넣는다.
+ * CSS 는 앱의 globals.css 에서 @tailwind 줄만 빼고 그대로 쓰고, preview.css 를 덧붙인다.
+ * 올리는 건 Artifact 도구로 — 주소는 history.md "시안실" 에 있다. **새 주소로 올리지 말 것**
+ */
+import { execFileSync } from "node:child_process";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const here = dirname(fileURLToPath(import.meta.url));
+const root = join(here, "..", "..");
+const out = join(here, "out");
+mkdirSync(out, { recursive: true });
+
+const js = join(out, "app.js");
+execFileSync(
+  process.platform === "win32" ? "npx.cmd" : "npx",
+  [
+    "--yes", "esbuild@0.28.2",
+    join(here, "App.tsx"),
+    "--bundle", "--minify", "--format=iife", "--jsx=automatic",
+    `--inject:${join(here, "env-shim.js")}`,
+    `--tsconfig=${join(root, "tsconfig.json")}`,
+    `--outfile=${js}`,
+  ],
+  { cwd: root, stdio: "inherit", shell: process.platform === "win32" }
+);
+
+const appCss = readFileSync(join(root, "src", "app", "globals.css"), "utf8")
+  .replace(/^@tailwind .*;$/gm, "")
+  // 시안실은 Google Fonts 말고는 글꼴을 못 불러온다 (막히면 조용히 빈다). 기본 글꼴로 둔다
+  .replace(/@font-faces*{[^}]*}/g, "");
+const css = appCss + "\n" + readFileSync(join(here, "preview.css"), "utf8");
+// </script> 가 묶음 안에 있으면 HTML 이 거기서 끊긴다
+const code = readFileSync(js, "utf8").replace(/<\/script/gi, "<\\/script");
+
+const html = `<title>판다 방 시안실</title>
+<style>${css}</style>
+<div id="root"></div>
+<script>${code}</script>
+`;
+writeFileSync(join(out, "index.html"), html);
+console.log(`ok · ${(html.length / 1024).toFixed(0)}KB → ${join(out, "index.html")}`);

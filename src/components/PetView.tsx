@@ -10,6 +10,7 @@ import {
   FLOORS,
   ITEMS,
   WALLS,
+  byPrice,
   isWorn,
   itemById,
   type Cat,
@@ -19,7 +20,7 @@ import {
 import type { Pet } from "@/lib/types";
 
 /** 벽지·타일 미리보기. 도트가 아니라 면이라 CSS 로 흉내 낸다. */
-function swatch(s: Surface) {
+export function swatch(s: Surface) {
   const style: React.CSSProperties = { background: s.base };
   if (s.kind === "dot") {
     style.backgroundImage = `radial-gradient(${s.accent} 1.6px, transparent 1.7px)`;
@@ -94,7 +95,7 @@ export default function PetView({
   const [editing, setEditing] = useState(false);
   const [cat, setCat] = useState<Cat>("옷");
   const [msg, setMsg] = useState("");
-  /* 살 때는 반드시 한 번 묻는다. 제일 비싼 게 900점이라 잘못 눌러 날리면 아프다 */
+  /* 살 때는 반드시 한 번 묻는다. 제일 비싼 게 1,000점이라 잘못 눌러 날리면 아프다 */
   const [ask, setAsk] = useState<Ask | null>(null);
   const [short, setShort] = useState<Short | null>(null);
 
@@ -245,7 +246,7 @@ export default function PetView({
 
           <div className="shop-goods">
             {cat === "벽지" &&
-              WALLS.map((w) => (
+              byPrice(WALLS).map((w) => (
                 <Good
                   key={w.id}
                   name={w.name}
@@ -260,7 +261,7 @@ export default function PetView({
               ))}
 
             {cat === "바닥" &&
-              FLOORS.map((f) => (
+              byPrice(FLOORS).map((f) => (
                 <Good
                   key={f.id}
                   name={f.name}
@@ -275,7 +276,7 @@ export default function PetView({
               ))}
 
             {cat !== "벽지" && cat !== "바닥" &&
-              ITEMS.filter((i) => i.cat === cat).map((it) => (
+              byPrice(ITEMS.filter((i) => i.cat === cat)).map((it) => (
                 <Good
                   key={it.id}
                   name={it.name}
@@ -284,6 +285,7 @@ export default function PetView({
                   active={isOut(it)}
                   activeLabel={isWorn(it) ? "장착 중" : "꺼내놓음"}
                   premium={it.premium}
+                  legend={it.legend}
                   onTap={() => tapItem(it)}
                 >
                   <span className="shop-dot">
@@ -366,13 +368,14 @@ function Lock() {
   );
 }
 
-function Good({
+export function Good({
   name,
   price,
   owned,
   active,
   activeLabel = "장착 중",
   premium = false,
+  legend = false,
   onTap,
   children,
 }: {
@@ -383,11 +386,13 @@ function Good({
   activeLabel?: string;
   /** 금테 · 반짝이 · 왼쪽 위 왕관 표. 안 산 칸도 회색으로 죽이지 않고 금빛을 남긴다 */
   premium?: boolean;
+  /** 프리미엄 위 단계 — 보라 바탕 · 보석 표 · 반짝이 별. 금테 칸 모양을 덮어쓴다 */
+  legend?: boolean;
   onTap: () => void;
   children: React.ReactNode;
 }) {
   const label = !owned
-    ? `${price}점`
+    ? `${price.toLocaleString()}점`
     : active
     ? activeLabel
     : price === 0
@@ -397,12 +402,21 @@ function Good({
   return (
     <button
       type="button"
-      className={`good ${active ? "good-on" : ""} ${owned ? "" : "good-buy"} ${premium ? "good-premium" : ""}`}
+      className={`good ${active ? "good-on" : ""} ${owned ? "" : "good-buy"} ${premium ? "good-premium" : ""} ${legend ? "good-legend" : ""}`}
       aria-pressed={active}
-      aria-label={`${premium ? "프리미엄 " : ""}${name} · ${owned ? label : `${price}점, 아직 없음`}`}
+      aria-label={`${legend ? "전설 " : premium ? "프리미엄 " : ""}${name} · ${owned ? label : `${price}점, 아직 없음`}`}
       onClick={onTap}
     >
-      {premium && (
+      {legend ? (
+        <span className="good-crown" aria-hidden="true">
+          {/* 보석 — 보라 다이아에 흰 빛 한 점 */}
+          <svg width="11" height="10" viewBox="0 0 11 10" shapeRendering="crispEdges">
+            <path d="M3 0h5l3 3-5.5 7L0 3z" fill="#F4D77A" />
+            <path d="M3 1h5l2 2-4.5 5.5L1 3z" fill="#A45CE0" />
+            <rect x="3" y="2" width="2" height="1" fill="#FFFFFF" />
+          </svg>
+        </span>
+      ) : premium && (
         <span className="good-crown" aria-hidden="true">
           <svg width="13" height="9" viewBox="0 0 13 9" shapeRendering="crispEdges">
             <path d="M0 2h2v2h2V1h2v-1h1v1h2v3h2V2h2v7H0z" fill="#E3B85C" />
@@ -423,7 +437,7 @@ function Good({
  * 입는 것은 자리마다 하나, 방에 두는 것은 목록에 넣고 빼는 것으로 끝난다.
  * 창문처럼 `only` 표를 단 것끼리는 하나만 걸린다 — 일곱 종이 다 같은 창문 자리라서다.
  */
-function withItem(pet: Pet, it: Item, on: boolean): Partial<Pet> {
+export function withItem(pet: Pet, it: Item, on: boolean): Partial<Pet> {
   if (isWorn(it)) return { worn: { ...pet.worn, [it.slot]: on ? it.id : null } };
   const rest = pet.spots.filter(
     (s) => s.id !== it.id && !(on && it.only && itemById(s.id)?.only === it.only)

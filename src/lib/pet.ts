@@ -64,6 +64,8 @@ export type Item = {
   only?: string;
   /** 500점 넘는 것. 상점 칸을 금테로 따로 보인다 */
   premium?: true;
+  /** 프리미엄보다 한 단계 위 (1,000점). 상점 칸이 보라색 · 보석 표. `premium` 도 같이 단다 */
+  legend?: true;
   /**
    * 움직이는 것 — 그림 여러 장을 `ANIM_MS` 마다 한 장씩 넘긴다. 첫 장은 `sprite` 와 같다.
    * 상점 칸에는 첫 장만 보인다
@@ -342,6 +344,281 @@ const wings = (half: string[]) => half.map((r) => r + [...r].reverse().join("").
 const WINGS_OPEN = wings(WING);
 const WINGS_FOLD = wings(WING.map((r) => "." + r.slice(0, 13)));
 
+/*
+  궁전 창문 38 x 38 — 발코니 창문과 같은 크기. (30 x 30 에서 키우며 다시 그렸다)
+  두 겹 금 아치 틀 위에 작은 왕관 장식, 주름 세 자락 가림막에 금 술 장식,
+  양옆 벨벳 커튼은 금술로 묶었다. 창밖은 노을 해를 등진 분홍 지붕 동화 성과 장미 정원.
+  성 꼭대기 깃발이 펄럭이고 새 두 마리가 난다 (네 장)
+*/
+function palaceFrame(f: number) {
+  const W = 38, H = 38, cx = 18.5, sp = 17;
+  const g: string[][] = Array.from({ length: H }, () => Array(W).fill("."));
+  const arch = (x: number, y: number, r: number, x0: number, x1: number, y1: number) =>
+    y > y1 ? false : y >= sp ? x >= x0 && x <= x1 : (x - cx) ** 2 + (y - sp) ** 2 <= r * r;
+  const inView = (x: number, y: number) => arch(x, y, 13.6, 5, 32, 32);
+  const set = (x: number, y: number, c: string) => { if (inView(x, y)) g[y][x] = c; };
+  const put = (x: number, y: number, c: string) => { if (g[y]?.[x] !== undefined) g[y][x] = c; };
+  const art = (rows: string[], x: number, y: number, only = true) =>
+    rows.forEach((r, dy) => [...r].forEach((c, dx) => { if (c !== ".") (only ? set : put)(x + dx, y + dy, c); }));
+
+  // 하늘 — 분홍에서 살구로, 성 뒤에 노을 해와 햇무리
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      if (!inView(x, y)) continue;
+      const d = Math.hypot(x - cx, y - 20);
+      g[y][x] = d <= 5 ? "S" : d <= 6.6 ? "E" : y < 9 ? "A" : y < 15 ? "B" : "D";
+    }
+  art([".CC..", "CCCCC"], 7, 9);
+  art(["..CC.", "CCCCC", ".CCC."], 26, 7);
+  // 새 두 마리 — 한 칸씩 오른쪽으로
+  const bx = 9 + f;
+  art(["K.K", ".K."], bx, 5 + (f % 2));
+  art(["K.K", ".K."], bx + 5, 7 - (f % 2));
+
+  // 언덕 · 장미 정원 · 성으로 가는 길
+  for (let y = 28; y <= 32; y++)
+    for (let x = 5; x <= 32; x++) {
+      const path = Math.abs(x - cx) <= 1 + (y - 28) * 0.8;
+      set(x, y, path ? "p" : (x * 5 + y * 3) % 7 === 0 ? "o" : y === 28 ? "g" : "G");
+    }
+
+  // 성 — 가운데 큰 탑 · 양옆 탑 · 성벽
+  const tower = (x0: number, x1: number, top: number, roofRows: number) => {
+    for (let y = top; y <= 28; y++) for (let x = x0; x <= x1; x++) set(x, y, x === x1 ? "v" : "w");
+    for (let k = 0; k < roofRows; k++)
+      for (let x = x0 - 1 + k; x <= x1 + 1 - k; x++) set(x, top - 1 - k, x > (x0 + x1) / 2 ? "u" : "T");
+    return top - roofRows; // 지붕 꼭대기 바로 위 줄
+  };
+  for (let x = 13; x <= 24; x++) for (let y = 22; y <= 28; y++) set(x, y, x >= 23 ? "v" : "w");
+  for (let x = 13; x <= 24; x += 2) set(x, 21, "w");                 // 성가퀴
+  const lt = tower(10, 12, 18, 3);
+  const rt = tower(25, 27, 18, 3);
+  const ct = tower(16, 21, 14, 4);
+  // 창 · 문
+  [[18, 16], [19, 16], [18, 17], [19, 17], [11, 21], [26, 21], [15, 24], [22, 24]].forEach(([x, y]) => set(x, y, "k"));
+  [[18, 25], [19, 25], [17, 26], [18, 26], [19, 26], [20, 26], [17, 27], [18, 27], [19, 27], [20, 27], [17, 28], [18, 28], [19, 28], [20, 28]]
+    .forEach(([x, y]) => set(x, y, "k"));
+  // 깃발 — 장마다 펄럭이는 모양이 바뀐다
+  const flag = (x: number, y: number) => {
+    set(x, y, "Y"); set(x, y - 1, "Y"); set(x, y - 2, "Y");
+    art(f % 2 ? ["FF.", "FFF"] : ["FFF", "FF."], x + 1, y - 2);
+  };
+  flag(18, ct - 1);
+  flag(11, lt - 1);
+  flag(26, rt - 1);
+
+  // 가느다란 금 창살 둘 — 성을 안 가리게 성 바깥에
+  for (let y = 0; y <= 32; y++) { set(8, y, "Y"); set(29, y, "Y"); }
+
+  // 틀 — 금 두 겹, 바깥은 짙은 금
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      if (inView(x, y)) continue;
+      if (arch(x, y, 16.4, 2, 35, 33)) g[y][x] = arch(x, y, 15.5, 3, 34, 33) ? (arch(x, y, 14.5, 4, 33, 33) ? "Y" : "j") : "y";
+    }
+  // 틀 가운데 줄에 보석이 줄지어 박히게 — j 는 한 칸 건너 하나만 남긴다
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (g[y][x] === "j" && (x + y) % 3) g[y][x] = "Y";
+  // 창턱 — 금 두 줄, 가운데 보석
+  for (let x = 1; x <= 36; x++) { put(x, 33, "Y"); put(x, 34, "y"); }
+  put(18, 33, "j"); put(19, 33, "j");
+
+  // 가림막 — 주름 세 자락, 아래 가장자리에 금 술
+  for (let x = 0; x < W; x++) {
+    const t = (x % 13) / 12;
+    const depth = 3 + Math.round(Math.sin(Math.PI * t) * 3);
+    for (let y = 0; y < depth; y++) put(x, y, y === 0 ? "d" : (x + y) % 4 === 0 ? "r" : "R");
+    put(x, depth, x % 2 ? "Y" : "y");
+  }
+  // 양옆 커튼 — 위가 넓고 금술로 묶은 곳에서 좁아졌다가 바닥까지 퍼진다
+  for (let y = 4; y < H; y++) {
+    const w = y < 20 ? Math.ceil(6 - (y - 4) * 0.25) : y < 23 ? 2 : Math.min(5, 2 + Math.round((y - 22) * 0.3));
+    for (let i = 0; i < w; i++) {
+      const c = i === w - 1 ? "d" : i % 2 ? "r" : "R";
+      put(i, y, c);
+      put(W - 1 - i, y, c);
+    }
+  }
+  // 금술 — 묶은 끈과 늘어진 술
+  art(["YYYY", ".YY.", ".yy.", "Y..Y"], 1, 20, false);
+  art(["YYYY", ".YY.", ".yy.", "Y..Y"], W - 5, 20, false);
+  // 꼭대기 왕관 장식 — 가림막 위에
+  art(["Y..YY..Y", "YYYYYYYY", "YjYYYYjY"], 15, 0, false);
+  return g.map((r) => r.join(""));
+}
+const PALACE = [0, 1, 2, 3].map(palaceFrame);
+const PALACE_PAL = {
+  Y: "#E3B85C", y: "#B8862B", j: "#FF6FA8",
+  R: "#D9537F", r: "#EE7FA7", d: "#A93B63",
+  A: "#FFB3CF", B: "#FFCBCB", D: "#FFE1C4", S: "#FFF1A8", E: "#FFE6B8", C: "#FFFFFF", K: "#8A5A78",
+  G: "#8FC48A", g: "#6FAE6A", o: "#FF7BAC", p: "#F3D9B8",
+  w: "#FBF4FA", v: "#DCCBE6", T: "#FF8FBC", u: "#E2648F", k: "#9B7BC0", F: "#FF4F8B",
+};
+
+/* ── 왕궁 장식 (9/17) — 궁전 벽지 · 왕실 카펫 · 캐노피 침대에 맞춘 것 ── */
+const GOLD = { Y: "#E3B85C", y: "#B8862B" };
+
+/** 흰 인형처럼 밝은 그림이 벽 · 바닥에 묻히지 않게 둘레를 한 겹 두른다 (가구와 같은 수법) */
+function outline(rows: string[], ch = "o") {
+  const w = rows[0].length + 2;
+  const g = [".".repeat(w), ...rows.map((r) => `.${r}.`), ".".repeat(w)].map((r) => [...r]);
+  const filled = (x: number, y: number) => g[y]?.[x] !== undefined && g[y][x] !== "." && g[y][x] !== ch;
+  for (let y = 0; y < g.length; y++)
+    for (let x = 0; x < w; x++)
+      if (g[y][x] === "." && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => filled(x + dx, y + dy)))
+        g[y][x] = ch;
+  return g.map((r) => r.join(""));
+}
+
+/* 왕실 깃발 12 x 22 — 금 막대에 걸린 진홍 천, 금 테두리 · 왕관 무늬, 아래는 제비꼬리와 금술 */
+const BANNER = (() => {
+  const mid = (inner: string) => `.RY${inner}YR.`;
+  return [
+    "yYYYYYYYYYYy",
+    ".RRRRRRRRRR.",
+    ".RYYYYYYYYR.",
+    mid("RRRRRR"),
+    mid("YRYYRY"),
+    mid("YYYYYY"),
+    mid("YWYYWY"),
+    ...Array.from({ length: 9 }, () => mid("RRRRRR")),
+    ".RYYYYYYYYR.",
+    ".RRRRRRRRRR.",
+    ".RRRR..RRRR.",
+    ".RRR....RRR.",
+    ".RR......RR.",
+    ".Y........Y.",
+  ];
+})();
+
+/* 왕좌 20 x 22 — 왕관 등받이 · 진홍 벨벳(단추 박음) · 금 팔걸이와 다리 */
+const THRONE = [
+  "......Y..YY..Y......",
+  "......YY.YY.YY......",
+  "......YYYYYYYY......",
+  ".....YyyyyyyyyY.....",
+  "....YYRRRRRRRRYY....",
+  "....YRRRRRRRRRRY....",
+  "....YRRRrRRrRRRY....",
+  "....YRRRRRRRRRRY....",
+  "....YRRrRRRRrRRY....",
+  "....YRRRRRRRRRRY....",
+  "....YRRRrRRrRRRY....",
+  "....YRRRRRRRRRRY....",
+  "YYY.YRRRRRRRRRRY.YYY",
+  "YyY.YRRRRRRRRRRY.YyY",
+  "YRY" + "Y".repeat(14) + "YRY",
+  "YRY" + "R".repeat(14) + "YRY",
+  "YRY" + "R".repeat(14) + "YRY",
+  "Y".repeat(20),
+  "Y" + "y".repeat(18) + "Y",
+  ".Y..Y..........Y..Y.",
+  ".Y..Y..........Y..Y.",
+  ".YY.YY........YY.YY.",
+];
+
+/* 유니콘 인형 11 x 11 (+ 둘레 13 x 13) — 판다(16) 보다 작게. 흰 몸, 분홍 · 보라 갈기, 금 뿔 · 금 발굽 */
+const UNICORN = outline([
+  ".......Y...",
+  "......YY...",
+  "....mWWW...",
+  "...mnWKWW..",
+  "...nmWWWWp.",
+  "..mnWWW....",
+  ".mWWWWWWWW.",
+  "nmWWWWWWWWW",
+  "m.WWWWWWWW.",
+  "..W.W..W.W.",
+  "..g.g..g.g.",
+]);
+
+/* 장미 꽃병 10 x 12 — 화장대 · 탁자 위에 얹는다. 분홍 장미 셋, 금 꽃병에 분홍 보석 */
+const VASE = (() => {
+  const g = Array.from({ length: 12 }, () => [..."..........".slice(0, 10)]);
+  const rose = (cx: number, cy: number) =>
+    [[0, -1, "R"], [-1, 0, "R"], [0, 0, "r"], [1, 0, "R"], [0, 1, "R"]].forEach(([dx, dy, c]) => {
+      g[cy + (dy as number)][cx + (dx as number)] = c as string;
+    });
+  rose(2, 2);
+  rose(7, 2);
+  rose(5, 1);
+  [[1, 4], [8, 4], [3, 4], [6, 4]].forEach(([x, y]) => (g[y][x] = "g"));
+  [[4, 3], [5, 4], [4, 5], [5, 5]].forEach(([x, y]) => (g[y][x] = "G"));
+  const vase = ["..YYYYYY..", "...YyyY...", "..YYYYYY..", ".YYYjjYYY.", ".YYYYYYYY.", "..yyyyyy.."];
+  vase.forEach((r, i) => [...r].forEach((c, x) => { if (c !== ".") g[6 + i][x] = c; }));
+  return g.map((r) => r.join(""));
+})();
+
+/*
+  발코니 창문 38 x 38 — 궁전 창문(30 x 30) 보다 크다.
+  흰 프렌치 창에 금 테두리, 아치 윗창엔 햇살 창살, 아래엔 금 발코니 난간.
+  창밖은 보랏빛 노을 속 도시 — 시계탑 · 청록 양파 돔 궁전 · 뾰족탑 · 분홍 집들, 강물.
+  열기구가 둥실 오르내리고 집 창문 불빛이 깜빡인다 (네 장)
+*/
+function balconyFrame(f: number) {
+  const W = 38, H = 38, cx = 18.5, sp = 18;
+  const g: string[][] = Array.from({ length: H }, () => Array(W).fill("."));
+  const arch = (x: number, y: number, r: number, x0: number, x1: number, y1: number) =>
+    y > y1 ? false : y >= sp ? x >= x0 && x <= x1 : (x - cx) ** 2 + (y - sp) ** 2 <= r * r;
+
+  // 창밖 — 하늘 세 겹, 강물
+  const view = (x: number, y: number) => (y >= 31 ? "w" : y < 11 ? "A" : y < 22 ? "B" : "D");
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) if (arch(x, y, 15.6, 3, 34, 33)) g[y][x] = view(x, y);
+  const inView = (x: number, y: number) => arch(x, y, 15.6, 3, 34, 33);
+  const set = (x: number, y: number, c: string) => { if (inView(x, y)) g[y][x] = c; };
+  const box = (x0: number, x1: number, y0: number, y1: number, c: string) => {
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, c);
+  };
+  const roof = (x0: number, x1: number, yBase: number, c: string) => {
+    // 삼각 지붕 — 한 줄 올라갈 때마다 양쪽에서 한 칸씩
+    for (let k = 0; x0 + k <= x1 - k; k++) for (let x = x0 + k; x <= x1 - k; x++) set(x, yBase - k, c);
+  };
+  const lit = (x: number, y: number, seed: number) => set(x, y, (seed + f) % 4 === 0 ? "l" : "L");
+
+  // 뒤 건물부터
+  box(3, 7, 24, 30, "c"); roof(3, 7, 23, "r"); lit(5, 26, 1); lit(5, 28, 2);                 // 왼쪽 집
+  box(8, 11, 13, 30, "C"); roof(8, 11, 12, "r"); set(9, 16, "W"); set(10, 16, "W");           // 시계탑
+  set(9, 17, "W"); set(10, 17, "W"); set(10, 16, "K"); set(10, 17, "K");
+  lit(9, 21, 0); lit(10, 25, 3);
+  box(12, 17, 26, 30, "q"); roof(12, 17, 25, "r"); lit(14, 28, 2); lit(16, 28, 1);           // 분홍 집
+  box(20, 33, 25, 30, "c");                                                                  // 궁전 몸통
+  // 청록 양파 돔 — 아래가 불룩하고 위로 뾰족. 금 꼭지
+  ["...tt...", "..tttt..", ".tttttt.", "tttttttt", "tttttttt", ".tttttt."].forEach((r, dy) =>
+    [...r].forEach((c, dx) => { if (c !== ".") set(23 + dx, 19 + dy, c); })
+  );
+  set(26, 17, "Y"); set(27, 17, "Y"); set(26, 16, "Y");
+  [21, 24, 29, 32].forEach((x, i) => lit(x, 26, i));                                        // 난간에 안 가리게 26줄
+  box(32, 34, 17, 30, "C"); roof(32, 34, 16, "r"); set(33, 14, "Y");                         // 뾰족탑
+  lit(33, 22, 1);
+
+  // 열기구 — 왼쪽 윗창에서 한 칸씩 오르내린다
+  const by = 4 + [0, 0, 1, 1][f];
+  [".RRR.", "RRWRR", "RRWRR", ".RWR.", ".h.h.", ".YYY."].forEach((r, dy) =>
+    [...r].forEach((c, dx) => { if (c !== ".") set(7 + dx, by + dy, c); })
+  );
+
+  // 틀 — 흰 창틀에 금 한 줄, 바깥은 테두리색
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      if (inView(x, y)) continue;
+      if (arch(x, y, 18.4, 0, 37, 35)) g[y][x] = arch(x, y, 17.4, 1, 36, 35) ? (arch(x, y, 16.5, 2, 35, 34) ? "Y" : "H") : "h";
+    }
+  // 가운데 창살 · 윗창 가로대 · 햇살 창살
+  for (let y = 2; y <= 33; y++) { if (inView(18, y)) g[y][18] = "H"; if (inView(19, y)) g[y][19] = "H"; }
+  for (let x = 3; x <= 34; x++) set(x, sp, "H");
+  for (let y = 2; y < sp; y++)
+    for (let x = 3; x <= 34; x++) {
+      const d = Math.hypot(x - cx, y - sp);
+      if (d > 3 && Math.abs(Math.sin(Math.atan2(y - sp, x - cx) * 3)) < 0.1) set(x, y, "H");
+    }
+  // 발코니 난간 — 금 윗난간 · 아랫난간 · 기둥
+  for (let x = 3; x <= 34; x++) { set(x, 27, "Y"); set(x, 33, "y"); if (x % 3 === 0) for (let y = 28; y <= 32; y++) set(x, y, "Y"); }
+  // 창턱
+  for (let x = 0; x <= 37; x++) { g[36][x] = "H"; g[37][x] = "h"; }
+  return g.map((r) => r.join(""));
+}
+const BALCONY = [0, 1, 2, 3].map(balconyFrame);
+
 const PREMIUM: Item[] = [
   {
     id: "crown",
@@ -414,6 +691,52 @@ const PREMIUM: Item[] = [
     ),
     premium: true,
     anim: [NIGHT_A, NIGHT_A, NIGHT_B, NIGHT_B],
+  },
+  /*
+    ── 왕궁 세트 ── 궁전 벽지 · 왕실 카펫 · 캐노피 침대와 맞춘 것 (9/17 시안실).
+    창문 둘은 프리미엄보다 한 단계 위 **전설** — 1,000점, 상점 칸이 보라색이다
+  */
+  {
+    id: "win_palace", name: "궁전 창문", cat: "벽 장식", slot: "wall", price: 1000,
+    premium: true, legend: true, at: [21, 3], only: "win",
+    sprite: { rows: PALACE[0], palette: PALACE_PAL }, anim: PALACE,
+  },
+  {
+    id: "win_balcony", name: "발코니 창문", cat: "벽 장식", slot: "wall", price: 1000,
+    premium: true, legend: true, at: [21, 3], only: "win",
+    sprite: {
+      rows: BALCONY[0],
+      palette: {
+        h: "#D5C7D0", H: "#FDFAFC", Y: "#E3B85C", y: "#B8862B", K: INK, W: "#FFFFFF",
+        A: "#BBA7E6", B: "#F2B6D3", D: "#FFD6B3", w: "#A9CBEB",
+        c: "#9C86C4", C: "#7E68A8", q: "#E58FB5", t: "#6FBFB5", r: "#D0587E",
+        L: "#FFE58A", l: "#8E7AB8", R: "#FF7BAC",
+      },
+    },
+    anim: BALCONY,
+  },
+  {
+    id: "banner", name: "왕실 깃발", cat: "벽 장식", slot: "wall", price: 550,
+    premium: true, at: [56, 4],
+    sprite: { rows: BANNER, palette: { ...GOLD, R: "#C8384F", W: "#FFFFFF" } },
+  },
+  {
+    id: "throne", name: "왕좌", cat: "가구", slot: "floor", price: 850,
+    premium: true, at: [48, 52],
+    sprite: { rows: THRONE, palette: { ...GOLD, R: "#C8384F", r: "#9E2A3E" } },
+  },
+  {
+    id: "unicorn", name: "유니콘 인형", cat: "인형", slot: "floor", price: 600,
+    premium: true, at: [14, 76],
+    sprite: {
+      rows: UNICORN,
+      palette: { o: "#D9B8CC", W: "#FFFFFF", h: "#EBDCE5", m: "#FF9EC4", n: "#CDB6F0", K: INK, p: "#FFB3CF", Y: "#E3B85C", g: "#E3B85C" },
+    },
+  },
+  {
+    id: "vase", name: "장미 꽃병", cat: "소품", slot: "top", price: 500,
+    premium: true, at: [58, 51],
+    sprite: { rows: VASE, palette: { ...GOLD, R: "#FF7BAC", r: "#E2648F", g: "#6FAE6A", G: "#5A9A6A", j: "#FF6FA8" } },
   },
 ];
 
@@ -856,6 +1179,12 @@ export const FLOORS: Surface[] = [
 ];
 
 /**
+ * 상점에 늘어놓는 순서 — **비싼 것부터.** 값이 같으면 코드에 적은 순서를 지킨다 (sort 는 안정 정렬).
+ * 기본 벽 · 바닥(0점) 은 저절로 맨 뒤로 간다. 원본 배열은 건드리지 않는다
+ */
+export const byPrice = <T extends { price: number }>(list: T[]) => [...list].sort((a, b) => b.price - a.price);
+
+/**
  * 상점 칸. 두 줄로 나눈다 — 윗줄은 **꺼내놓는 물건**, 아랫줄은 **방 자체를 바꾸는 것**.
  * 예전엔 옷 · 벽지 · 타일 · 기타 넷이었는데 기타에 열여섯 개가 몰려서 찾기 어려웠다.
  * 벽지 · 바닥은 소품(ITEMS) 이 아니라 WALLS · FLOORS 에서 보여준다
@@ -871,12 +1200,13 @@ export const CAT_ROWS: Cat[][] = [
  * 값을 한 군데에 몰지 않고 **하는 일마다 조금씩** 준다.
  * 예전에는 스티커와 체크에만 붙어 있어서, 체크(5초) 와 공부(3시간) 의 값이 같았다.
  *
- * 상점 전체가 11,840점(프리미엄 5,350 포함)이고 하루 100점 안팎이니 **넉 달**쯤이면 다 모은다.
+ * 상점 전체가 16,340점. **부지런한 날 180점**(9/17 사용자가 정한 값) — 스티커(보너스 포함 약 42) · 퀴즈 50 ·
+ * 타이머 네 번 60 · 과제(주 10개 기준 하루 약 28). 보통 날은 135점쯤이라 **넉 달**이면 다 모은다.
  * 속도를 바꾸려면 아래 값만 만지면 된다 — 셈하는 곳은 전부 이 상수를 본다.
  */
 
 /** 스티커 하나. 그 달에 열 개 모을 때마다 100점 더 */
-export const PER_STICKER = 15;
+export const PER_STICKER = 25;
 export const BONUS_EVERY = 10;
 export const BONUS = 100;
 /** 스티커를 이어 붙인 날이 이만큼 갈 때마다 */
@@ -889,12 +1219,12 @@ export const STREAK_BONUS = 50;
 export const PER_TASK = 20;
 export const TASK_CAP = 5;
 /** 토익 퀴즈를 다 맞혔을 때. 하루 한 번만 준다 */
-export const PER_QUIZ = 30;
+export const PER_QUIZ = 50;
 /**
  * 타이머를 **일시정지 없이** 이만큼 잴 때마다. 하루 네 번까지.
  * 조건 없이 시간당으로 주면 켜두기 게임이 된다 — 이 둘이 그걸 막는 전부다.
  */
-export const PER_FOCUS = 10;
+export const PER_FOCUS = 15;
 export const FOCUS_MIN = 25;
 export const FOCUS_CAP = 4;
 

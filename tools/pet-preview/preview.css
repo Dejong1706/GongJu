@@ -1,0 +1,109 @@
+/* 시안실 페이지에만 쓰는 것. 방 · 상점 칸 모양은 앱의 globals.css 를 그대로 가져온다 */
+
+/* 앱은 Tailwind preflight 가 버튼을 초기화해준다. 여기엔 없으니 같은 층(base)에 흉내 낸다 —
+   층 없이 쓰면 components 층의 .good 테두리까지 이겨버린다 */
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+  button { font: inherit; color: inherit; background: none; border: 0; padding: 0; margin: 0; cursor: pointer; }
+  h1, p { margin: 0; }
+}
+
+body {
+  display: block;
+  background: var(--cream);
+  color: var(--ink);
+}
+.pv {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.pv-head h1 { font-size: 20px; margin-bottom: 4px; }
+.pv-head p { font-size: 12px; line-height: 1.7; color: var(--ink-soft); }
+.pv-head b { color: #2f8a6a; }
+
+.pv-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+@media (max-width: 700px) {
+  .pv-body { grid-template-columns: minmax(0, 1fr); }
+}
+.pv-room { display: flex; flex-direction: column; gap: 10px; position: sticky; top: 12px; }
+@media (max-width: 700px) {
+  .pv-room { position: static; }
+}
+.pv-tools { display: flex; gap: 8px; }
+.pv-tools button {
+  font-size: 11px;
+  padding: 6px 10px;
+  background: #fff;
+  border: 2px solid var(--ink);
+  box-shadow: 2px 2px 0 var(--band-dark);
+}
+.pv-picked {
+  background: #fff;
+  border: 2px solid var(--ink);
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.6;
+  min-height: 74px;
+}
+.pv-picked p { color: var(--ink-soft); word-break: keep-all; }
+.pv-picked-top { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
+.pv-price { color: var(--pink-deep); font-weight: 700; }
+.pv-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0; }
+.pv-tags span { font-size: 10px; padding: 1px 6px; border: 1px solid var(--ink); background: var(--cream); }
+.pv-tags .on-draft { background: #d4f2e4; border-color: #2f8a6a; color: #1f6b50; }
+.pv-tags .on-premium { background: #fff1c9; border-color: #c9982f; color: #8a6420; }
+
+.pv-shop {
+  background: #fff;
+  border: 3px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--line);
+  padding: 12px;
+}
+.pv-switches { display: flex; flex-wrap: wrap; gap: 14px; font-size: 11px; margin-bottom: 10px; }
+.pv-switches label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+.pv-switches input { accent-color: var(--pink-deep); }
+
+.shop-cat button { position: relative; }
+/* 시안이 있는 칸 — 오른쪽 위 초록 점 */
+.pv-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  background: #3fae84;
+}
+/* 상점과 달리 높이를 안 막는다 — 한눈에 다 보이게 */
+.pv-goods {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  grid-auto-rows: 84px;
+  gap: 7px;
+}
+.pv-cell { position: relative; display: grid; }
+.pv-cell > .good { width: 100%; height: 100%; }
+/* 시안 — 초록 점선 한 겹을 바깥에 더 두르고 아래에 띠 */
+.pv-draft { outline: 2px dashed #3fae84; outline-offset: 2px; }
+.pv-draft-tag {
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  transform: translateX(-50%);
+  font-size: 9px;
+  line-height: 1;
+  padding: 2px 6px;
+  background: #3fae84;
+  color: #fff;
+  pointer-events: none;
+}
+.pv-empty { font-size: 12px; color: var(--ink-soft); padding: 12px 2px; }
+.pv-tags .on-legend { background: #7a48c0; border-color: #4e2a86; color: #fff4c8; }

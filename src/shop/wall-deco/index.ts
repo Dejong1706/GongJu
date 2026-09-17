@@ -12,10 +12,15 @@ import winNight from "./win_night";
 import winPalace from "./win_palace";
 import winBalcony from "./win_balcony";
 import banner from "./banner";
+import winMoon from "./win_moon";
+import cheongsa from "./cheongsa";
+import minhwa from "./minhwa";
 
 /* 창문은 전부 `only: "win"` — 창문 자리가 하나라 한 번에 하나만 걸린다 */
 export default inCat("벽 장식", [
   clock, frame,
   winMorn, winDay, winEve, winSnow, winSakura, winTree, winFlower, winNight, winPalace, winBalcony,
   banner,
+  // 조선 세트
+  winMoon, cheongsa, minhwa,
 ]);

@@ -29,4 +29,14 @@ export const FLOORS: Surface[] = [
     accent2: "#E8C170",
     kind: "royal",
   },
+  // 조선 세트 · 골드(640) — 한옥 우물마루. accent 가 널 이음, accent2 가 귀틀. 가구보다 밝은 나무색
+  {
+    id: "f_maru",
+    name: "대청마루",
+    price: 640,
+    base: "#E2C6A0",
+    accent: "#C4A07A",
+    accent2: "#A67C52",
+    kind: "maru",
+  },
 ];

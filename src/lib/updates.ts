@@ -23,7 +23,7 @@ export const UPDATES: Update[] = [
     date: "2026-09-17",
     items: [
       { kind: "new", text: "가구 · 인형 돌리기 — 옮기기를 누르고 ↺ ↻ 를 눌러요" },
-      { kind: "new", text: "신규 아이템 17종 추가" },
+      { kind: "new", text: "신규 아이템 30종 추가" },
       { kind: "new", text: "움직이는 아이템이 생겼어요" },
       { kind: "new", text: "가이드 — 왼쪽 위 버튼에서 포인트 얻는 법을 볼 수 있어요" },
       { kind: "change", text: "받는 포인트가 늘었어요" },

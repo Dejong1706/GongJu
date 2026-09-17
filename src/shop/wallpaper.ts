@@ -43,4 +43,14 @@ export const WALLS: Surface[] = [
     accent2: "#C8384F",
     kind: "palace",
   },
+  // 조선 세트 · 골드(680) — 크림 한지, 맨 위만 단청 띠 · 아래 나무 벽널. 가운데는 비워 조용하게
+  {
+    id: "w_dancheong",
+    name: "단청 한지 벽지",
+    price: 680,
+    base: "#F4EBDD",
+    accent: "#3F8F7F",
+    accent2: "#C8463C",
+    kind: "dancheong",
+  },
 ];

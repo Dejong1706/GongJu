@@ -218,6 +218,41 @@ function backdrop(wall: Surface, floor: Surface) {
     }
   }
 
+  /*
+   * 단청 한지 벽지 (조선 세트 시안) — 크림 한지 바탕, 맨 위만 단청 띠 (빨강 · 초록에 8칸마다 노란 꽃),
+   * 가운데는 한지 결 몇 점만, 아래 12줄은 나무 벽널. 벽지는 조용해야 해서 무늬를 위아래에만 뒀다
+   */
+  if (wall.kind === "dancheong") {
+    const green = wall.accent ?? wall.base;
+    const red = wall.accent2 ?? green;
+    const fiber = shade(wall.base, 0.95);
+    // 벽널은 바탕을 어둡게 하면 회색이 돼서 나무색을 따로 둔다
+    const wood = "#C9A77E";
+    const woodLine = "#9C7556";
+    for (let x = 0; x < ROOM.w; x++) {
+      const h = floorTopAt(x) - 1;
+      if (h <= 0) continue;
+      const k = ((x % 8) + 8) % 8;
+      out.push(<rect key={`dt${x}`} x={x} y={0} width={1} height={1} fill={red} />);
+      out.push(<rect key={`dg${x}`} x={x} y={1} width={1} height={4} fill={green} />);
+      out.push(<rect key={`db${x}`} x={x} y={5} width={1} height={1} fill={red} />);
+      if (k === 3 || k === 4) {
+        out.push(<rect key={`df${x}`} x={x} y={2} width={1} height={2} fill="#F2C14E" />);
+        out.push(<rect key={`dr${x}`} x={x} y={1} width={1} height={1} fill={red} />);
+        out.push(<rect key={`ds${x}`} x={x} y={4} width={1} height={1} fill={red} />);
+      }
+      if (k === 2 || k === 5) out.push(<rect key={`dw${x}`} x={x} y={2} width={1} height={2} fill="#FFFFFF" />);
+      const my = h - 12;
+      for (let y = 12; y < my - 2; y += 9)
+        if ((x * 7 + y * 3) % 11 === 0) out.push(<rect key={`dh${x}-${y}`} x={x} y={y} width={1} height={1} fill={fiber} />);
+      if (my > 8) {
+        out.push(<rect key={`dl${x}`} x={x} y={my} width={1} height={h - my} fill={wood} />);
+        out.push(<rect key={`dm${x}`} x={x} y={my} width={1} height={1} fill={woodLine} />);
+        if (x % 9 === 4) out.push(<rect key={`dv${x}`} x={x} y={my + 1} width={1} height={h - my - 1} fill={woodLine} />);
+      }
+    }
+  }
+
   const seam = shade(wall.base, 0.9);
   [ROOM.side - 1, ROOM.w - ROOM.side].forEach((x) => {
     const h = floorTopAt(x) - 1;
@@ -369,6 +404,33 @@ function backdrop(wall: Surface, floor: Surface) {
         out.push(<rect key={`tc${i}-${y}`} x={Math.round(l + ((r - l) * i) / COLS)} y={y} width={1} height={1} fill={grout} />);
       }
   }
+  /*
+   * 대청마루 (조선 세트 시안) — 우물마루. 긴 귀틀(accent2) 이 앞뒤로 달리고, 그 사이에 짧은 널을 가로로 끼운다.
+   * 널 이음(accent) 은 칸마다 반 줄씩 엇갈려서 한 줄로 이어지지 않게 한다 — 이어지면 그냥 격자 타일로 보인다
+   */
+  if (floor.kind === "maru") {
+    const seam = floor.accent ?? floor.base;
+    const beam = floor.accent2 ?? seam;
+    const COLS = 5;
+    const bands = [ROOM.floorTop, ...rows, ROOM.h];
+    for (let b = 0; b + 1 < bands.length; b++)
+      for (let c = 0; c < COLS; c++) {
+        const y = c % 2 === 0 ? bands[b] : Math.round((bands[b] + bands[b + 1]) / 2);
+        if (y >= ROOM.h) continue;
+        const l = floorLeftAt(y);
+        const w = floorRightAt(y) - l;
+        const x0 = Math.round(l + (w * c) / COLS);
+        const x1 = Math.round(l + (w * (c + 1)) / COLS);
+        if (x1 > x0) out.push(<rect key={`mr${b}-${c}`} x={x0} y={y} width={x1 - x0} height={1} fill={seam} />);
+      }
+    for (let i = 1; i < COLS; i++)
+      for (let y = ROOM.floorTop; y < ROOM.h; y++) {
+        const l = floorLeftAt(y);
+        const r = floorRightAt(y);
+        if (r - l < 2) continue;
+        out.push(<rect key={`mb${i}-${y}`} x={Math.round(l + ((r - l) * i) / COLS)} y={y} width={1} height={1} fill={beam} />);
+      }
+  }
   if (floor.kind === "check") {
     const bands = [ROOM.floorTop, ...rows, ROOM.h];
     for (let b = 0; b + 1 < bands.length; b++)
@@ -429,9 +491,12 @@ export function fit(it: Item, x: number, y: number, sprite: Sprite = it.sprite) 
   };
 }
 
-/** 그 자리에 놓인 방향의 그림. 방향 그림이 없는 것은 움직이는 장까지 그대로 */
+/**
+ * 그 자리에 놓인 방향의 그림. 기본 방향(돌린 적 없거나 한 바퀴 돌아온 것) 은 움직이는 장까지 그대로 —
+ * 방향 그림은 한 장뿐이라, 기본 방향까지 viewAt 으로 고르면 자개장을 한 바퀴 돌렸을 때 반짝임이 멈춘다
+ */
 export const lookOf = (it: Item, sp: Spot, tick = 0) =>
-  sp.face && canTurn(it) ? viewAt(it, sp.face) : spriteAt(it, tick);
+  sp.face && sp.face !== (it.face ?? "front") && canTurn(it) ? viewAt(it, sp.face) : spriteAt(it, tick);
 
 /**
  * 90도 돌리기. dir 1 = 위에서 봐서 시계방향. 그림이 없는 방향은 건너뛴다.
@@ -445,8 +510,13 @@ export function turnSpot(it: Item, sp: Spot, dir: 1 | -1): Spot {
   const at = fit(it, sp.x, sp.y, from);
   const w0 = from.rows[0].length, h0 = from.rows.length;
   const w1 = to.rows[0].length, h1 = to.rows.length;
-  const snap = (v: number) => Math.round(v / SNAP) * SNAP;
-  const f = fit(it, snap(at.x + (w0 - w1) / 2), snap(at.y + h0 - h1), to);
+  /*
+   * 두 칸 격자(SNAP) 에는 안 붙인다 — 붙이면 폭 차이가 홀수일 때마다 반올림이 쌓여 한 바퀴 돌리면 4~6칸 밀려 있었다.
+   * 반 칸이 남으면 커질 때는 내리고 작아질 때는 올려서, 갔다 오면 제자리가 되게 한다 (벽에 막힌 fit 은 어쩔 수 없다)
+   */
+  const dx = (w0 - w1) / 2;
+  const x = at.x + (w1 > w0 ? Math.floor(dx) : Math.ceil(dx));
+  const f = fit(it, x, at.y + h0 - h1, to);
   return { ...sp, x: f.x, y: f.y, face };
 }
 

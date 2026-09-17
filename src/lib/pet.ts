@@ -47,7 +47,7 @@ export const PANDA = { w: 16, h: 16, x: 30, y: 62 } as const;
  * - wall: 벽에 거는 것. 늘 판다 뒤
  */
 export type Slot = "head" | "body" | "wall" | "floor" | "top" | "flat";
-export type Cat = "옷" | "벽지" | "타일" | "기타";
+export type Cat = "옷" | "가구" | "인형" | "소품" | "벽 장식" | "벽지" | "바닥";
 
 export type Item = {
   id: string;
@@ -161,7 +161,7 @@ const win = (
   parts: Part[] = [], dots: [number, number][] = [], dotChar = "C",
   extra: Record<string, string> = {}
 ): Item => ({
-  id, name, cat: "기타", slot: "wall", price, at: WIN_AT, only: "win",
+  id, name, cat: "벽 장식", slot: "wall", price, at: WIN_AT, only: "win",
   sprite: {
     rows: windowRows(parts, dots, dotChar),
     palette: { K: INK, S: "#FFD34D", C: "#FFFFFF", L: "#5FA34E", T: "#8E6544", F: "#FF7BAC", ...sky, ...extra },
@@ -226,7 +226,7 @@ export const ITEMS: Item[] = [
   {
     id: "plant",
     name: "화분",
-    cat: "기타",
+    cat: "소품",
     slot: "floor",
     price: 140,
     at: [10, 62],
@@ -248,7 +248,7 @@ export const ITEMS: Item[] = [
   {
     id: "desk",
     name: "책상",
-    cat: "기타",
+    cat: "가구",
     slot: "floor",
     price: 300,
     at: [52, 60],
@@ -269,7 +269,7 @@ export const ITEMS: Item[] = [
   {
     id: "rug",
     name: "분홍 러그",
-    cat: "기타",
+    cat: "소품",
     slot: "flat",
     price: 100,
     at: [26, 74],
@@ -296,7 +296,7 @@ export const ITEMS: Item[] = [
   {
     id: "bed",
     name: "침대",
-    cat: "기타",
+    cat: "가구",
     slot: "floor",
     price: 320,
     at: [9, 56],
@@ -326,7 +326,7 @@ export const ITEMS: Item[] = [
   {
     id: "desk2",
     name: "공부 책상",
-    cat: "기타",
+    cat: "가구",
     slot: "floor",
     price: 280,
     at: [46, 58],
@@ -349,7 +349,7 @@ export const ITEMS: Item[] = [
   {
     id: "table",
     name: "둥근 탁자",
-    cat: "기타",
+    cat: "가구",
     slot: "floor",
     price: 180,
     at: [34, 66],
@@ -370,7 +370,7 @@ export const ITEMS: Item[] = [
   {
     id: "shelf",
     name: "책장",
-    cat: "기타",
+    cat: "가구",
     slot: "floor",
     price: 300,
     at: [60, 55],
@@ -398,7 +398,7 @@ export const ITEMS: Item[] = [
   {
     id: "lamp",
     name: "스탠드",
-    cat: "기타",
+    cat: "가구",
     slot: "floor",
     price: 120,
     at: [33, 57],
@@ -424,7 +424,7 @@ export const ITEMS: Item[] = [
   {
     id: "bear",
     name: "곰 인형",
-    cat: "기타",
+    cat: "인형",
     slot: "floor",
     price: 90,
     at: [36, 78],
@@ -446,7 +446,7 @@ export const ITEMS: Item[] = [
   {
     id: "bunny",
     name: "토끼 인형",
-    cat: "기타",
+    cat: "인형",
     slot: "floor",
     price: 90,
     at: [24, 76],
@@ -474,7 +474,7 @@ export const ITEMS: Item[] = [
   {
     id: "pot",
     name: "작은 화분",
-    cat: "기타",
+    cat: "소품",
     slot: "top",
     price: 60,
     at: [54, 51],
@@ -483,7 +483,7 @@ export const ITEMS: Item[] = [
   {
     id: "cactus",
     name: "선인장",
-    cat: "기타",
+    cat: "소품",
     slot: "top",
     price: 60,
     at: [36, 60],
@@ -495,7 +495,7 @@ export const ITEMS: Item[] = [
   {
     id: "books",
     name: "책 더미",
-    cat: "기타",
+    cat: "소품",
     slot: "top",
     price: 50,
     at: [47, 53],
@@ -504,7 +504,7 @@ export const ITEMS: Item[] = [
   {
     id: "clock",
     name: "벽시계",
-    cat: "기타",
+    cat: "벽 장식",
     slot: "wall",
     price: 100,
     at: [56, 14],
@@ -525,7 +525,7 @@ export const ITEMS: Item[] = [
   {
     id: "ball",
     name: "공",
-    cat: "기타",
+    cat: "인형",
     slot: "floor",
     price: 40,
     at: [46, 84],
@@ -534,7 +534,7 @@ export const ITEMS: Item[] = [
   {
     id: "frame",
     name: "액자",
-    cat: "기타",
+    cat: "벽 장식",
     slot: "wall",
     price: 120,
     at: [16, 16],
@@ -617,7 +617,15 @@ export const FLOORS: Surface[] = [
   { id: "f7", name: "대리석", price: 240, base: "#F3F1F5", accent: "#D6D0DC", kind: "marble" },
 ];
 
-export const CATS: Cat[] = ["옷", "벽지", "타일", "기타"];
+/**
+ * 상점 칸. 두 줄로 나눈다 — 윗줄은 **꺼내놓는 물건**, 아랫줄은 **방 자체를 바꾸는 것**.
+ * 예전엔 옷 · 벽지 · 타일 · 기타 넷이었는데 기타에 열여섯 개가 몰려서 찾기 어려웠다.
+ * 벽지 · 바닥은 소품(ITEMS) 이 아니라 WALLS · FLOORS 에서 보여준다
+ */
+export const CAT_ROWS: Cat[][] = [
+  ["옷", "가구", "인형", "소품"],
+  ["벽 장식", "벽지", "바닥"],
+];
 
 /*
  * ── 포인트 ─────────────────────────

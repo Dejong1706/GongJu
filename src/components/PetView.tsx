@@ -6,7 +6,7 @@ import PixelSprite from "./PixelSprite";
 import PetRoom from "./PetRoom";
 import { COIN } from "@/lib/sprites";
 import {
-  CATS,
+  CAT_ROWS,
   FLOORS,
   ITEMS,
   WALLS,
@@ -210,20 +210,24 @@ export default function PetView({
 
       {open && (
         <Popup title="상점" onClose={() => setOpen(false)} headLeft={<Purse n={left} />}>
-          <div className="shop-cat">
-            {CATS.map((c) => (
-              <button
-                key={c}
-                type="button"
-                className={cat === c ? "on" : ""}
-                aria-pressed={cat === c}
-                onClick={() => {
-                  setCat(c);
-                  setMsg("");
-                }}
-              >
-                {c}
-              </button>
+          <div className="shop-cats">
+            {CAT_ROWS.map((row) => (
+              <div key={row[0]} className="shop-cat" style={{ gridTemplateColumns: `repeat(${row.length}, 1fr)` }}>
+                {row.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    className={cat === c ? "on" : ""}
+                    aria-pressed={cat === c}
+                    onClick={() => {
+                      setCat(c);
+                      setMsg("");
+                    }}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
             ))}
           </div>
 
@@ -242,7 +246,7 @@ export default function PetView({
                 </Good>
               ))}
 
-            {cat === "타일" &&
+            {cat === "바닥" &&
               FLOORS.map((f) => (
                 <Good
                   key={f.id}
@@ -256,7 +260,7 @@ export default function PetView({
                 </Good>
               ))}
 
-            {(cat === "옷" || cat === "기타") &&
+            {cat !== "벽지" && cat !== "바닥" &&
               ITEMS.filter((i) => i.cat === cat).map((it) => (
                 <Good
                   key={it.id}

@@ -27,6 +27,7 @@ export const UPDATES: Update[] = [
       { kind: "fix", text: "체크를 빠르게 두 번 누르면 포인트가 두 번 들어오던 문제" },
       { kind: "change", text: "산 뒤에 스티커를 떼거나 체크를 풀면 포인트가 마이너스로 보여요" },
       { kind: "change", text: "침대와 책상이 더 길어졌어요" },
+      { kind: "change", text: "상점 칸이 7개로 늘었어요 — 옷 · 가구 · 인형 · 소품 · 벽 장식 · 벽지 · 바닥" },
       { kind: "fix", text: "옮겨둔 가구가 다른 가구를 옮길 때 원래 자리로 돌아가던 문제" },
     ],
   },

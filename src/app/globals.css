@@ -951,11 +951,16 @@
     flex: none;
   }
 
+  /* 두 줄짜리 칸. 줄마다 칸 수가 달라서(4 · 3) 줄을 따로 그리드로 두고 테두리를 한 겹으로 겹친다 */
+  .shop-cats {
+    margin-bottom: 10px;
+  }
   .shop-cat {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
     border: 2px solid var(--ink);
-    margin-bottom: 10px;
+  }
+  .shop-cat + .shop-cat {
+    border-top: 0;
   }
   .shop-cat button {
     min-height: 36px;

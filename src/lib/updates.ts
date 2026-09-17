@@ -27,6 +27,7 @@ export const UPDATES: Update[] = [
       { kind: "new", text: "움직이는 아이템이 생겼어요" },
       { kind: "new", text: "가이드 — 왼쪽 위 버튼에서 포인트 얻는 법을 볼 수 있어요" },
       { kind: "change", text: "받는 포인트가 늘었어요" },
+      { kind: "change", text: "스티커 한 장에 100점, 한 달에 10장 모으면 500점 더" },
       { kind: "change", text: "상점 등급이 생겼어요 — 골드 · 프리미엄" },
       { kind: "change", text: "상점 칸이 7개로 나뉘고, 비싼 것부터 보여요" },
       { kind: "change", text: "강의·과제 체크 포인트는 하루 5번까지 받아요" },

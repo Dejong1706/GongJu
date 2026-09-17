@@ -58,15 +58,15 @@ export function spotsFromPlaced(placed: Record<string, string | null | undefined
  * 값을 한 군데에 몰지 않고 **하는 일마다 조금씩** 준다.
  * 예전에는 스티커와 체크에만 붙어 있어서, 체크(5초) 와 공부(3시간) 의 값이 같았다.
  *
- * 상점 전체가 16,340점. **부지런한 날 180점**(9/17 사용자가 정한 값) — 스티커(보너스 포함 약 42) · 퀴즈 50 ·
- * 타이머 네 번 60 · 과제(주 10개 기준 하루 약 28). 보통 날은 135점쯤이라 **넉 달**이면 다 모은다.
+ * 상점 전체가 16,340점. **부지런한 날 약 300점**(9/17 사용자가 스티커 100 · 10개 보너스 500 으로 올림) — 스티커(보너스 포함 약 157) · 퀴즈 50 ·
+ * 타이머 네 번 60 · 과제(주 10개 기준 하루 약 28). 스티커가 하루 벌이의 절반이다.
  * 속도를 바꾸려면 아래 값만 만지면 된다 — 셈하는 곳은 전부 이 상수를 본다.
  */
 
-/** 스티커 하나. 그 달에 열 개 모을 때마다 100점 더 */
-export const PER_STICKER = 25;
+/** 스티커 하나. 그 달에 열 개 모을 때마다 500점 더 */
+export const PER_STICKER = 100;
 export const BONUS_EVERY = 10;
-export const BONUS = 100;
+export const BONUS = 500;
 /** 스티커를 이어 붙인 날이 이만큼 갈 때마다 */
 export const STREAK_EVERY = 7;
 export const STREAK_BONUS = 50;

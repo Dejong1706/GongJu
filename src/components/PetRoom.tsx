@@ -3,7 +3,9 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BABY, HEART, type Sprite } from "@/lib/sprites";
 import {
+  ANIM_MS,
   BASEBOARD,
+  spriteAt,
   ITEMS,
   PANDA,
   ROOM,
@@ -136,6 +138,46 @@ function backdrop(wall: Surface, floor: Surface) {
       }
     }
   }
+  /*
+   * 궁전 벽지 (프리미엄) — 분홍 마름모를 줄마다 반 칸씩 엇갈려 찍고 가운데 금점.
+   * 위에 금 · 분홍 테두리, 아래는 몰딩 벽처럼 한 톤 눌러 깔고 금테 칸을 나눈다.
+   * 칸도 몰딩 줄도 **그 열의 바닥에서 잰 높이**라 옆벽에서 저절로 기운다
+   */
+  if (wall.kind === "palace") {
+    const gold = wall.accent ?? wall.base;
+    const motif = wall.accent2 ?? gold;
+    const lower = shade(wall.base, 0.95);
+    for (let x = 0; x < ROOM.w; x++) {
+      const h = floorTopAt(x) - 1;
+      if (h <= 0) continue;
+      const my = h - 16;
+      out.push(<rect key={`pt${x}`} x={x} y={2} width={1} height={1} fill={gold} />);
+      out.push(<rect key={`pu${x}`} x={x} y={3} width={1} height={1} fill={motif} />);
+      for (let fy = 9, row = 0; fy < my - 3; fy += 9, row++) {
+        const off = row % 2 ? 5 : 0;
+        const dx = (((x - off) % 10) + 10) % 10;
+        const d = dx > 5 ? dx - 10 : dx;
+        const reach = 2 - Math.abs(d);
+        if (reach < 0) continue;
+        for (let dy = -reach; dy <= reach; dy++)
+          out.push(
+            <rect key={`pd${x}-${fy}-${dy}`} x={x} y={fy + dy} width={1} height={1} fill={d === 0 && dy === 0 ? gold : motif} />
+          );
+      }
+      if (my > 6) {
+        out.push(<rect key={`pl${x}`} x={x} y={my + 1} width={1} height={h - my - 1} fill={lower} />);
+        out.push(<rect key={`pm${x}`} x={x} y={my} width={1} height={1} fill={gold} />);
+        const k = ((x % 10) + 10) % 10;
+        if (k >= 2) {
+          out.push(<rect key={`pb${x}`} x={x} y={my + 3} width={1} height={1} fill={gold} />);
+          out.push(<rect key={`pc${x}`} x={x} y={h - 3} width={1} height={1} fill={gold} />);
+        }
+        if (k === 2 || k === 9)
+          out.push(<rect key={`pv${x}`} x={x} y={my + 3} width={1} height={h - my - 5} fill={gold} />);
+      }
+    }
+  }
+
   const seam = shade(wall.base, 0.9);
   [ROOM.side - 1, ROOM.w - ROOM.side].forEach((x) => {
     const h = floorTopAt(x) - 1;
@@ -158,6 +200,39 @@ function backdrop(wall: Surface, floor: Surface) {
   };
 
   const rows = depthRows();
+  /*
+   * 왕실 카펫 (프리미엄) — 바닥 폭의 22 ~ 78% 에 빨간 카펫을 앞까지 깐다.
+   * 폭을 줄마다 비율로 다시 재서 뒤로 갈수록 좁아진다. 금 테두리 안쪽에 진한 줄 하나,
+   * 가운데에는 금색 마름모가 세로로 이어진다
+   */
+  if (floor.kind === "royal") {
+    const red = floor.accent ?? floor.base;
+    const gold = floor.accent2 ?? floor.base;
+    const deep = shade(red, 0.82);
+    rows.forEach((y) => span(`rr${y}`, y));
+    const head = ROOM.floorTop + 3;
+    for (let y = head; y < ROOM.h; y++) {
+      const l = floorLeftAt(y);
+      const r = floorRightAt(y);
+      const a = Math.round(l + (r - l) * 0.22);
+      const b = Math.round(l + (r - l) * 0.78);
+      out.push(<rect key={`rc${y}`} x={a} y={y} width={b - a} height={1} fill={y === head ? gold : red} />);
+      if (y === head) continue;
+      out.push(<rect key={`rl${y}`} x={a} y={y} width={1} height={1} fill={gold} />);
+      out.push(<rect key={`re${y}`} x={b - 1} y={y} width={1} height={1} fill={gold} />);
+      if (y > head + 2) {
+        out.push(<rect key={`ri${y}`} x={a + 2} y={y} width={1} height={1} fill={deep} />);
+        out.push(<rect key={`rj${y}`} x={b - 3} y={y} width={1} height={1} fill={deep} />);
+      }
+      const c = Math.round((a + b) / 2);
+      const t = (y - ROOM.floorTop) % 8;
+      const reach = t <= 4 ? Math.min(t, 4 - t) : -1;
+      if (reach >= 0) {
+        out.push(<rect key={`rd${y}`} x={c - reach} y={y} width={1} height={1} fill={gold} />);
+        if (reach > 0) out.push(<rect key={`rf${y}`} x={c + reach} y={y} width={1} height={1} fill={gold} />);
+      }
+    }
+  }
   if (floor.kind === "plank" || floor.kind === "grid") rows.forEach((y) => span(`fr${y}`, y));
   if (floor.kind === "grid") {
     // 세로줄은 뒤로 갈수록 모인다 — 줄마다 x 를 다시 잰다
@@ -372,6 +447,21 @@ export default function PetRoom({
   }, [editing, pickTarget]);
 
   // 하트는 눌렀을 때만. 연타해도 다시 튀어오르게 열쇠를 갈아 끼운다
+  /*
+   * 움직이는 소품(어항 · 밤하늘 창문 · 요정 날개) 의 장 넘김.
+   * 판다 걸음과 따로 둔다 — 옮기기 중에는 판다가 멈춰서 걸음에 묶으면 어항도 같이 멈춘다.
+   * 움직이는 게 방에 없으면 타이머를 아예 안 돌린다
+   */
+  const [tick, setTick] = useState(0);
+  const moving = [...(pet.spots ?? []).map((s) => s.id), pet.worn.head, pet.worn.body, pet.worn.back]
+    .some((id) => !!id && !!itemById(id)?.anim);
+  useEffect(() => {
+    if (!moving) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const id = setInterval(() => setTick((t) => (t + 1) % 840), ANIM_MS);
+    return () => clearInterval(id);
+  }, [moving]);
+
   const [beat, setBeat] = useState(0);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const pat = useCallback(() => {
@@ -443,6 +533,8 @@ export default function PetRoom({
   const worn = [pet.worn.head, pet.worn.body]
     .map((id) => (id ? itemById(id) : undefined))
     .filter((v): v is Item => !!v);
+  // 등에 거는 것(요정 날개) 은 판다 몸보다 먼저 그려야 뒤로 간다
+  const back = pet.worn.back ? itemById(pet.worn.back) : undefined;
 
   const pandaG = (
     <g
@@ -453,9 +545,10 @@ export default function PetRoom({
           : `translate(${pos.x},${pos.y + pos.bob})`
       }
     >
+      {back && <Piece key={back.id} sprite={spriteAt(back, tick)} x={back.at[0]} y={back.at[1]} />}
       {dots(BABY)}
       {worn.map((it) => (
-        <Piece key={it.id} sprite={it.sprite} x={it.at[0]} y={it.at[1]} />
+        <Piece key={it.id} sprite={spriteAt(it, tick)} x={it.at[0]} y={it.at[1]} />
       ))}
       {/* 도트 사이 빈틈까지 눌리도록 투명한 판을 덮는다 */}
       <rect
@@ -495,14 +588,14 @@ export default function PetRoom({
         {out
           .filter((o) => o.it.slot === "flat")
           .map((o) => (
-            <Piece key={o.it.id} sprite={o.it.sprite} x={o.x} y={o.y} />
+            <Piece key={o.it.id} sprite={spriteAt(o.it, tick)} x={o.x} y={o.y} />
           ))}
 
         {/* 벽에 거는 것은 늘 판다 뒤 */}
         {out
           .filter((o) => o.it.slot === "wall")
           .map((o) => (
-            <Piece key={o.it.id} sprite={o.it.sprite} x={o.x} y={o.y} />
+            <Piece key={o.it.id} sprite={spriteAt(o.it, tick)} x={o.x} y={o.y} />
           ))}
 
         {/*
@@ -512,7 +605,7 @@ export default function PetRoom({
         {onFloor
           .filter((o) => feetOf(o) <= pandaFeet)
           .map((o) => (
-            <Piece key={o.it.id} sprite={o.it.sprite} x={o.x} y={o.y} />
+            <Piece key={o.it.id} sprite={spriteAt(o.it, tick)} x={o.x} y={o.y} />
           ))}
         {/*
           가구 위에 얹는 것은 **같은 차례 안에서 바닥 가구보다 뒤에** 그린다.
@@ -521,18 +614,18 @@ export default function PetRoom({
         {onTop
           .filter((o) => feetOf(o) <= pandaFeet)
           .map((o) => (
-            <Piece key={o.it.id} sprite={o.it.sprite} x={o.x} y={o.y} />
+            <Piece key={o.it.id} sprite={spriteAt(o.it, tick)} x={o.x} y={o.y} />
           ))}
         {pandaG}
         {onFloor
           .filter((o) => feetOf(o) > pandaFeet)
           .map((o) => (
-            <Piece key={o.it.id} sprite={o.it.sprite} x={o.x} y={o.y} />
+            <Piece key={o.it.id} sprite={spriteAt(o.it, tick)} x={o.x} y={o.y} />
           ))}
         {onTop
           .filter((o) => feetOf(o) > pandaFeet)
           .map((o) => (
-            <Piece key={o.it.id} sprite={o.it.sprite} x={o.x} y={o.y} />
+            <Piece key={o.it.id} sprite={spriteAt(o.it, tick)} x={o.x} y={o.y} />
           ))}
 
         {/* 집는 자리는 맨 위에 따로 얹는다. 소품끼리 겹쳐 있어도 집을 수 있어야 한다 */}

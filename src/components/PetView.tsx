@@ -53,6 +53,18 @@ function swatch(s: Surface) {
     style.backgroundImage =
       `linear-gradient(115deg,transparent 0 44%,${s.accent} 44% 46%,` +
       `transparent 46% 70%,${s.accent} 70% 71%,transparent 71%)`;
+  } else if (s.kind === "palace") {
+    // 마름모 무늬 + 금점, 아래 금테 몰딩
+    style.backgroundImage =
+      `linear-gradient(180deg,transparent 0 62%,${s.accent} 62% 66%,transparent 66%),` +
+      `radial-gradient(${s.accent} 1px,transparent 1.3px),` +
+      `conic-gradient(from 45deg,${s.accent2} 25%,transparent 0 50%,${s.accent2} 0 75%,transparent 0)`;
+    style.backgroundSize = "100% 100%, 10px 10px, 10px 10px";
+  } else if (s.kind === "royal") {
+    // 크림 바닥 가운데 금테 빨간 카펫
+    style.backgroundImage =
+      `linear-gradient(90deg,transparent 0 22%,${s.accent2} 22% 28%,${s.accent} 28% 72%,` +
+      `${s.accent2} 72% 78%,transparent 78%)`;
   }
   return <span className="shop-swatch" style={style} />;
 }
@@ -82,7 +94,7 @@ export default function PetView({
   const [editing, setEditing] = useState(false);
   const [cat, setCat] = useState<Cat>("옷");
   const [msg, setMsg] = useState("");
-  /* 살 때는 반드시 한 번 묻는다. 제일 비싼 게 320점이라 잘못 눌러 날리면 아프다 */
+  /* 살 때는 반드시 한 번 묻는다. 제일 비싼 게 900점이라 잘못 눌러 날리면 아프다 */
   const [ask, setAsk] = useState<Ask | null>(null);
   const [short, setShort] = useState<Short | null>(null);
 
@@ -240,6 +252,7 @@ export default function PetView({
                   price={w.price}
                   owned={w.price === 0 || owns.has(w.id)}
                   active={pet.wall === w.id}
+                  premium={w.premium}
                   onTap={() => tapSurface(w, "wall")}
                 >
                   {swatch(w)}
@@ -254,6 +267,7 @@ export default function PetView({
                   price={f.price}
                   owned={f.price === 0 || owns.has(f.id)}
                   active={pet.floor === f.id}
+                  premium={f.premium}
                   onTap={() => tapSurface(f, "floor")}
                 >
                   {swatch(f)}
@@ -269,6 +283,7 @@ export default function PetView({
                   owned={owns.has(it.id)}
                   active={isOut(it)}
                   activeLabel={isWorn(it) ? "장착 중" : "꺼내놓음"}
+                  premium={it.premium}
                   onTap={() => tapItem(it)}
                 >
                   <span className="shop-dot">
@@ -357,6 +372,7 @@ function Good({
   owned,
   active,
   activeLabel = "장착 중",
+  premium = false,
   onTap,
   children,
 }: {
@@ -365,6 +381,8 @@ function Good({
   owned: boolean;
   active: boolean;
   activeLabel?: string;
+  /** 금테 · 반짝이 · 왼쪽 위 왕관 표. 안 산 칸도 회색으로 죽이지 않고 금빛을 남긴다 */
+  premium?: boolean;
   onTap: () => void;
   children: React.ReactNode;
 }) {
@@ -379,11 +397,19 @@ function Good({
   return (
     <button
       type="button"
-      className={`good ${active ? "good-on" : ""} ${owned ? "" : "good-buy"}`}
+      className={`good ${active ? "good-on" : ""} ${owned ? "" : "good-buy"} ${premium ? "good-premium" : ""}`}
       aria-pressed={active}
-      aria-label={`${name} · ${owned ? label : `${price}점, 아직 없음`}`}
+      aria-label={`${premium ? "프리미엄 " : ""}${name} · ${owned ? label : `${price}점, 아직 없음`}`}
       onClick={onTap}
     >
+      {premium && (
+        <span className="good-crown" aria-hidden="true">
+          <svg width="13" height="9" viewBox="0 0 13 9" shapeRendering="crispEdges">
+            <path d="M0 2h2v2h2V1h2v-1h1v1h2v3h2V2h2v7H0z" fill="#E3B85C" />
+            <rect x="6" y="5" width="1" height="2" fill="#FF6FA8" />
+          </svg>
+        </span>
+      )}
       {!owned && <Lock />}
       <span className="good-thumb">{children}</span>
       <span className="good-name">{name}</span>

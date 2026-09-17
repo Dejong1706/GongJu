@@ -46,7 +46,7 @@ export const PANDA = { w: 16, h: 16, x: 30, y: 62 } as const;
  * - top: 가구 위에 얹는 것(책상 위 화분). 바닥 가구보다 나중에 그려야 안 숨는다
  * - wall: 벽에 거는 것. 늘 판다 뒤
  */
-export type Slot = "head" | "body" | "wall" | "floor" | "top" | "flat";
+export type Slot = "head" | "body" | "back" | "wall" | "floor" | "top" | "flat";
 export type Cat = "옷" | "가구" | "인형" | "소품" | "벽 장식" | "벽지" | "바닥";
 
 export type Item = {
@@ -62,12 +62,37 @@ export type Item = {
   at: readonly [number, number];
   /** 같은 표를 단 것끼리는 하나만 놓인다 (창문 일곱 종) */
   only?: string;
+  /** 500점 넘는 것. 상점 칸을 금테로 따로 보인다 */
+  premium?: true;
+  /**
+   * 움직이는 것 — 그림 여러 장을 `ANIM_MS` 마다 한 장씩 넘긴다. 첫 장은 `sprite` 와 같다.
+   * 상점 칸에는 첫 장만 보인다
+   */
+  anim?: string[][];
   sprite: Sprite;
 };
 
-/** 자리로 판단한다. id 목록으로 들고 있으면 이름을 바꿀 때 빠뜨린다 (한 번 그랬다) */
-export const isWorn = (it: Item): it is Item & { slot: "head" | "body" } =>
-  it.slot === "head" || it.slot === "body";
+/** 움직이는 소품이 한 장을 넘기는 간격 */
+export const ANIM_MS = 400;
+
+/** 그 순간 보여줄 그림. 장마다 같은 객체를 돌려줘야 방에서 다시 그리지 않는다 */
+const frameCache = new Map<string, Sprite[]>();
+export function spriteAt(it: Item, tick: number): Sprite {
+  if (!it.anim) return it.sprite;
+  let frames = frameCache.get(it.id);
+  if (!frames) {
+    frames = it.anim.map((rows) => ({ rows, palette: it.sprite.palette }));
+    frameCache.set(it.id, frames);
+  }
+  return frames[tick % frames.length];
+}
+
+/**
+ * 자리로 판단한다. id 목록으로 들고 있으면 이름을 바꿀 때 빠뜨린다 (한 번 그랬다).
+ * back(요정 날개) 은 판다 **뒤에** 그리는 입는 것이라 body 와 따로 걸친다
+ */
+export const isWorn = (it: Item): it is Item & { slot: "head" | "body" | "back" } =>
+  it.slot === "head" || it.slot === "body" || it.slot === "back";
 
 const P: Record<string, string> = {
   K: INK,
@@ -85,7 +110,7 @@ const P: Record<string, string> = {
    */
   H: "#FDFAFC",
   h: "#D5C7D0",   // 가구 · 가구 테두리
-  R: "#E2648F",   // 공
+  R: "#E2648F",   // 책 더미
   Q: "#F6A8C6",
   q: "#E08AAC",   // 러그
   Z: "#C89B6A",
@@ -179,6 +204,217 @@ const WINDOWS: Item[] = [
   win("win_sakura", "벚꽃 창문", 260, SPRING, tree(4, 4), [], "C", { L: "#FFB7D0", T: "#A9744F" }),
   win("win_tree", "여름 창문", 200, DAY, tree(5, 3)),
   win("win_flower", "꽃밭 창문", 220, SPRING, [[CLOUD, 13, 2]], BLOOM, "F"),
+];
+
+/*
+  침대 30 x 12. 캐노피 침대가 이 그림 위에 기둥 · 지붕 · 커튼을 올려 쓰므로 따로 뺐다.
+  프레임도 베개도 흰색이라 붙어 보인다. 베개 둘레를 테두리로 끊어 떼어놨다.
+  22폭이던 걸 30폭으로 늘렸다 — 판다(16) 옆에 두면 아기 침대처럼 짧다는 말을 들었다.
+*/
+const BED = [
+  "hhh...........................",
+  "hHh...........................",
+  "hHhhhhhhhhhhhhhhhhhhhhhhhhhhhh",
+  "hHhWWWWWWWQQQQQQQQQQQQQQQQQQQh",
+  "hHhWWWWWWWQQQQQQQQQQQQQQQQQQQh",
+  "hHhWWWWWWWQqqqqqqqqqqqqqqqqqQh",
+  "hHhWWWWWWWQQQQQQQQQQQQQQQQQQQh",
+  "hHhhhhhhhhQQQQQQQQQQQQQQQQQQQh",
+  "hHhQQQQQQQQQQQQQQQQQQQQQQQQQQh",
+  "hhhhhhhhhhhhhhhhhhhhhhhhhhhhhh",
+  "hHh........................hHh",
+  "hhh........................hhh",
+];
+
+/*
+  ── 프리미엄 (500점 넘는 것) ──
+  9/17 시안 두 번을 거쳐 고른 것들. 공주 방 한 벌(왕관 · 날개 · 캐노피 침대 · 화장대 ·
+  궁전 벽지 · 왕실 카펫) 과 움직이는 것 둘(밤하늘 창문 · 어항).
+  드레스는 판다 몸이 네 줄뿐이라 느낌이 안 살아서 뺐다 — 입는 건 몸 밖으로 뻗어야 산다.
+*/
+const FURN = {
+  h: "#D5C7D0", H: "#FDFAFC", W: "#FFFFFF", Q: "#F6A8C6", q: "#E08AAC",
+  c: "#FFD1E3", C: "#F6A8C6", d: "#E2648F", Y: "#E3B85C", K: INK,
+  m: "#DDF1F8", M: "#FFFFFF", p: "#FF9EC4", P: "#E2648F", j: "#FFD1E3", J: "#E3B85C",
+};
+
+/* 캐노피 침대 30 x 26 — 침대 위에 지붕 다섯 줄, 리본으로 묶은 커튼 아홉 줄 */
+const CANOPY_BED = (() => {
+  const top = [
+    "hhhhhhhhhhhhhhYYhhhhhhhhhhhhhh",
+    "hHHHHHHHHHHHHHYYHHHHHHHHHHHHHh",
+    "hcccccccccccccccccccccccccccch",
+    "hCcCcCcCcCcCcCcCcCcCcCcCcCcCch",
+    "hHh" + ".c".repeat(12) + "hHh",
+  ];
+  // 커튼 폭 — 위에서 좁아지다 리본(가운데 줄) 에서 묶이고 다시 퍼진다
+  const curtain = [4, 3, 3, 2, 1, 2, 2, 3, 3].map((w, k) => {
+    const row = [..."hHh........................hHh"];
+    for (let i = 0; i < w; i++) row[3 + i] = row[26 - i] = k === 4 ? "d" : "c";
+    return row.join("");
+  });
+  // 침대 머리판 두 줄 오른쪽에 뒷기둥을 잇는다
+  return [...top, ...curtain, ...BED.map((r, i) => (i < 2 ? r.slice(0, 27) + "hHh" : r))];
+})();
+
+/* 어항 18 x 14 — 물고기 둘이 엇갈려 헤엄치고 방울이 올라간다. 여덟 장 */
+const FISH = ["O.OOO", "OOOKO", "O.OOO"];
+const MINI = ["PP.P", "PPPP"];
+const flipRows = (rows: string[]) => rows.map((r) => [...r].reverse().join(""));
+function tankFrame(f: number) {
+  const g = [
+    "hhhhhhhhhhhhhhhhhh",
+    "hBBBBBBBBBBBBBBBBh",
+    "hbbbbbbbbbbbbbbbbh",
+    "hbbbbbbbbbbbbbbbbh",
+    "hbbbbbbbbbbbbbbbbh",
+    "hbbbbbbbbbbbbbbbbh",
+    "hbbbbbbbbbbbbbbbbh",
+    "hbGbbbbbbbbbbbbbbh",
+    "hGGbbbbbbbbbbbbGbh",
+    "hsGssSsssssSssGGsh",
+    "hssSsssssSsssssssh",
+    "hhhhhhhhhhhhhhhhhh",
+    "..hHh........hHh..",
+    "..hhh........hhh..",
+  ].map((r) => [...r]);
+  const put = (art: string[], x: number, y: number) =>
+    art.forEach((r, dy) => [...r].forEach((c, dx) => { if (c !== ".") g[y + dy][x + dx] = c; }));
+  // 앞 네 장은 오른쪽으로, 뒤 네 장은 돌아서 왼쪽으로. 작은 물고기는 반대로
+  put(f < 4 ? FISH : flipRows(FISH), [2, 5, 8, 11, 11, 8, 5, 2][f], 2);
+  put(f < 4 ? MINI : flipRows(MINI), [12, 9, 6, 3, 3, 6, 9, 12][f], 6);
+  const by = 8 - f;
+  g[by][14] = "W";
+  if (by + 3 <= 8) g[by + 3][13] = "W";
+  return g.map((r) => r.join(""));
+}
+const TANK = Array.from({ length: 8 }, (_, f) => tankFrame(f));
+
+/* 밤하늘 창문 — 틀은 다른 창문과 같다. 별 두 벌이 번갈아 반짝 (두 장씩 머물러 느리게) */
+const MOON = [".SSS", "SS..", "SS..", "SS..", ".SSS"];
+const STARS_A: [number, number][] = [[2, 1], [9, 2], [5, 5], [17, 8], [3, 9], [7, 8], [15, 1]];
+const STARS_B: [number, number][] = [[6, 1], [2, 4], [10, 5], [19, 6], [5, 8], [18, 10], [13, 2]];
+const NIGHT_PARTS: Part[] = [[MOON, 14, 2], [["F"], 6, 15]];
+const NIGHT_A = windowRows(NIGHT_PARTS, STARS_A, "C");
+const NIGHT_B = windowRows(NIGHT_PARTS, STARS_B, "C");
+
+/* 공주 화장대 20 x 22 */
+const VANITY = [
+  ".......YYYYYY.......",
+  ".....YYmmmmmmYY.....",
+  "....YmmMMmmmmmmY....",
+  "...YmmMMmmmmmmmmY...",
+  "...YmMMmmmmmmmmmY...",
+  "...YmMmmmmmmmmmmY...",
+  "...YmmmmmmmmmmmmY...",
+  "...YmmmmmmmmmmmmY...",
+  "....YmmmmmmmmmmY....",
+  ".....YYmmmmmmYY.....",
+  ".......YYYYYY.......",
+  "..pp.....YY....jjj..",
+  "..PP.....YY....jJj..",
+  "hhhhhhhhhhhhhhhhhhhh",
+  "HHHHHHHHHHHHHHHHHHHH",
+  "hhhhhhhhhhhhhhhhhhhh",
+  "hHHHHHHh....hHHHHHHh",
+  "hHHYHHHh....hHHHYHHh",
+  "hhhhhhhh....hhhhhhhh",
+  "hHh..............hHh",
+  "hHh..............hHh",
+  "hhh..............hhh",
+];
+
+/* 요정 날개 28 x 11 — 왼쪽 절반을 그리고 뒤집어 붙인다. 바깥 한 칸을 당긴 장과 번갈아 팔랑 */
+const WING = [
+  ".OOO..........",
+  "OaaaOO........",
+  "OaWaaaOO......",
+  "OaaaaaaaOO....",
+  ".OaaaaaaaaO...",
+  "..OOaaaaaaO...",
+  "...OaaaaaOO...",
+  "..ObbaaaO.....",
+  "..ObbbaO......",
+  "...ObbO.......",
+  "....OO........",
+];
+const wings = (half: string[]) => half.map((r) => r + [...r].reverse().join("").replace(/W/g, "a"));
+const WINGS_OPEN = wings(WING);
+const WINGS_FOLD = wings(WING.map((r) => "." + r.slice(0, 13)));
+
+const PREMIUM: Item[] = [
+  {
+    id: "crown",
+    name: "왕관",
+    cat: "옷",
+    slot: "head",
+    price: 600,
+    premium: true,
+    at: [3, -2],
+    // 귀 사이 정수리에 얹는다. 가운데 분홍 보석, 양옆 하늘 보석
+    sprite: {
+      rows: ["Y...YY...Y", "YY.YYYY.YY", "YYYYYYYYYY", "YJYYPPYYJY", "yyyyyyyyyy"],
+      palette: { Y: "#FFD34D", y: "#E5A93A", P: "#FF6FA8", J: "#7FC8F0" },
+    },
+  },
+  {
+    id: "wings",
+    name: "요정 날개",
+    cat: "옷",
+    slot: "back",
+    price: 650,
+    premium: true,
+    at: [-6, 5],
+    sprite: { rows: WINGS_OPEN, palette: { O: "#8FC4F0", a: "#DDF3FF", W: "#FFFFFF", b: "#FFD6E8" } },
+    anim: [WINGS_OPEN, WINGS_FOLD],
+  },
+  {
+    id: "canopy",
+    name: "캐노피 침대",
+    cat: "가구",
+    slot: "floor",
+    price: 900,
+    premium: true,
+    at: [8, 46],
+    sprite: { rows: CANOPY_BED, palette: FURN },
+  },
+  {
+    id: "vanity",
+    name: "공주 화장대",
+    cat: "가구",
+    slot: "floor",
+    price: 800,
+    premium: true,
+    at: [52, 50],
+    sprite: { rows: VANITY, palette: FURN },
+  },
+  {
+    id: "tank",
+    name: "어항",
+    cat: "소품",
+    slot: "floor",
+    price: 650,
+    premium: true,
+    at: [52, 56],
+    sprite: {
+      rows: TANK[0],
+      palette: {
+        h: "#D5C7D0", H: "#FDFAFC", B: "#D6F1FF", b: "#9ED8F0", G: "#6FBF7F", s: "#EAD6B8",
+        S: "#C9AE8C", O: "#FF9A5C", P: "#FF8FBC", K: INK, W: "#FFFFFF",
+      },
+    },
+    anim: TANK,
+  },
+  {
+    ...win(
+      "win_night", "밤하늘 창문", 550,
+      { A: "#27305C", B: "#36427A", G: "#2E5446" },
+      NIGHT_PARTS, STARS_A, "C",
+      { S: "#FFE58A", F: "#F4FF8A" }
+    ),
+    premium: true,
+    anim: [NIGHT_A, NIGHT_A, NIGHT_B, NIGHT_B],
+  },
 ];
 
 /**
@@ -305,23 +541,7 @@ export const ITEMS: Item[] = [
      * 22폭이던 걸 30폭으로 늘렸다 — 판다(16) 옆에 두면 아기 침대처럼 짧다는 말을 들었다.
      * 베개는 그대로 두고 이불만 길어졌다
      */
-    sprite: s(
-      [
-        "hhh...........................",
-        "hHh...........................",
-        "hHhhhhhhhhhhhhhhhhhhhhhhhhhhhh",
-        "hHhWWWWWWWQQQQQQQQQQQQQQQQQQQh",
-        "hHhWWWWWWWQQQQQQQQQQQQQQQQQQQh",
-        "hHhWWWWWWWQqqqqqqqqqqqqqqqqqQh",
-        "hHhWWWWWWWQQQQQQQQQQQQQQQQQQQh",
-        "hHhhhhhhhhQQQQQQQQQQQQQQQQQQQh",
-        "hHhQQQQQQQQQQQQQQQQQQQQQQQQQQh",
-        "hhhhhhhhhhhhhhhhhhhhhhhhhhhhhh",
-        "hHh........................hHh",
-        "hhh........................hhh",
-      ],
-      "HhWQq"
-    ),
+    sprite: s(BED, "HhWQq"),
   },
   {
     id: "desk2",
@@ -523,15 +743,6 @@ export const ITEMS: Item[] = [
     ),
   },
   {
-    id: "ball",
-    name: "공",
-    cat: "인형",
-    slot: "floor",
-    price: 40,
-    at: [46, 84],
-    sprite: s([".RRRR.", "RRWWRR", "RWWWWR", "RWWWWR", "RRWWRR", ".RRRR."], "RW"),
-  },
-  {
     id: "frame",
     name: "액자",
     cat: "벽 장식",
@@ -556,6 +767,7 @@ export const ITEMS: Item[] = [
     },
   },
   ...WINDOWS,
+  ...PREMIUM,
 ];
 
 /**
@@ -583,7 +795,11 @@ export type Surface = {
   accent?: string;
   /** 꽃 벽지의 꽃술처럼 색이 하나 더 필요할 때 */
   accent2?: string;
-  kind?: "dot" | "stripe" | "panel" | "flower" | "plank" | "check" | "grid" | "parquet" | "marble";
+  kind?:
+    | "dot" | "stripe" | "panel" | "flower" | "palace"
+    | "plank" | "check" | "grid" | "parquet" | "marble" | "royal";
+  /** 500점 넘는 것. 상점 칸을 금테로 따로 보인다 */
+  premium?: true;
 };
 
 export const WALLS: Surface[] = [
@@ -604,6 +820,17 @@ export const WALLS: Surface[] = [
     accent2: "#FFD98A",
     kind: "flower",
   },
+  // 프리미엄 — 분홍 마름모 무늬에 금점, 위 금 테두리, 아래 금테 몰딩 칸
+  {
+    id: "w_palace",
+    name: "궁전 벽지",
+    price: 600,
+    base: "#FCE6EE",
+    accent: "#E3B85C",
+    accent2: "#F4C9D9",
+    kind: "palace",
+    premium: true,
+  },
 ];
 
 export const FLOORS: Surface[] = [
@@ -615,6 +842,17 @@ export const FLOORS: Surface[] = [
   { id: "f5", name: "잔디", price: 140, base: "#A9D3A0", accent: "#8CBB83", kind: "check" },
   { id: "f6", name: "쪽매 마루", price: 220, base: "#E9D9C6", accent: "#C9AE92", kind: "parquet" },
   { id: "f7", name: "대리석", price: 240, base: "#F3F1F5", accent: "#D6D0DC", kind: "marble" },
+  // 프리미엄 — 크림 마루 가운데로 금테 빨간 카펫이 앞까지. accent 가 카펫, accent2 가 금
+  {
+    id: "f_royal",
+    name: "왕실 카펫",
+    price: 600,
+    base: "#F3EAE0",
+    accent: "#C8384F",
+    accent2: "#E8C170",
+    kind: "royal",
+    premium: true,
+  },
 ];
 
 /**
@@ -633,7 +871,7 @@ export const CAT_ROWS: Cat[][] = [
  * 값을 한 군데에 몰지 않고 **하는 일마다 조금씩** 준다.
  * 예전에는 스티커와 체크에만 붙어 있어서, 체크(5초) 와 공부(3시간) 의 값이 같았다.
  *
- * 상점 전체가 6,530점이고 부지런하면 하루 70점쯤 되니 **넉 달**이면 다 모은다.
+ * 상점 전체가 11,840점(프리미엄 5,350 포함)이고 하루 100점 안팎이니 **넉 달**쯤이면 다 모은다.
  * 속도를 바꾸려면 아래 값만 만지면 된다 — 셈하는 곳은 전부 이 상수를 본다.
  */
 

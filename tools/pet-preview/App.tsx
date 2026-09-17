@@ -30,25 +30,11 @@ WALLS.push(...DRAFT_WALLS);
 FLOORS.push(...DRAFT_FLOORS);
 const DRAFTS = new Set([...DRAFT_ITEMS, ...DRAFT_WALLS, ...DRAFT_FLOORS].map((d) => d.id));
 
-const START: Pet = {
-  earned: 0,
-  spent: 0,
-  owned: [],
-  worn: { head: "crown", back: "wings" },
-  // 왕궁 방 — 처음 열었을 때 보이는 방. 시안이 생기면 여기에 올려둔다
-  spots: [
-    { id: "win_palace", x: 21, y: 3 },
-    { id: "banner", x: 56, y: 4 },
-    { id: "royal_bed", x: 6, y: 38 },
-    { id: "throne", x: 48, y: 52 },
-    { id: "unicorn", x: 14, y: 76 },
-  ],
-  wall: "w_palace",
-  floor: "f_royal",
-};
+// 처음 열면 빈 방 — 민무늬 벽 · 맨바닥 · 아무것도 안 놓고 안 입은 상태에서 하나씩 놓아본다
+const START: Pet = { earned: 0, spent: 0, owned: [], worn: {}, spots: [], wall: "w0", floor: "f0" };
 
-// 시안이 바뀌면 저장해둔 방을 버리고 새 시안 방으로 연다. 지난 시안이 방에 남아 새 것이 안 보이는 걸 막는다
-const KEY = `pet-preview:4:${[...DRAFTS].join(",")}`;
+// 시안이 바뀌면 저장해둔 방을 버리고 빈 방으로 연다. 지난 시안이 방에 남아 새 것이 안 보이는 걸 막는다
+const KEY = `pet-preview:5:${[...DRAFTS].join(",")}`;
 function load(): { pet: Pet; cat: Cat } {
   try {
     const raw = JSON.parse(localStorage.getItem(KEY) ?? "null");
@@ -138,11 +124,8 @@ function App() {
             </button>
           </div>
           <div className="pv-tools">
-            <button type="button" onClick={() => setPet({ ...START, worn: {}, spots: [], wall: "w0", floor: "f0" })}>
-              방 비우기
-            </button>
             <button type="button" onClick={() => setPet(START)}>
-              처음 방으로
+              방 비우기
             </button>
           </div>
           <div className="pv-picked" aria-live="polite">

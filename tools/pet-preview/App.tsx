@@ -16,6 +16,7 @@ import {
   ITEMS,
   WALLS,
   byPrice,
+  gradeOf,
   isWorn,
   type Cat,
   type Item,
@@ -38,7 +39,7 @@ const START: Pet = {
   spots: [
     { id: "win_palace", x: 21, y: 3 },
     { id: "banner", x: 56, y: 4 },
-    { id: "canopy", x: 6, y: 46 },
+    { id: "royal_bed", x: 6, y: 38 },
     { id: "throne", x: 48, y: 52 },
     { id: "unicorn", x: 14, y: 76 },
   ],
@@ -51,9 +52,9 @@ const KEY = `pet-preview:4:${[...DRAFTS].join(",")}`;
 function load(): { pet: Pet; cat: Cat } {
   try {
     const raw = JSON.parse(localStorage.getItem(KEY) ?? "null");
-    if (raw?.pet?.spots) return { pet: { ...START, ...raw.pet }, cat: raw.cat ?? "벽 장식" };
+    if (raw?.pet?.spots) return { pet: { ...START, ...raw.pet }, cat: raw.cat ?? "벽지" };
   } catch {}
-  return { pet: START, cat: "벽 장식" };
+  return { pet: START, cat: "벽지" };
 }
 
 type Picked = { name: string; price: number; cat: Cat; tags: string[]; note?: string; size?: string };
@@ -73,10 +74,10 @@ function App() {
     } catch {}
   }, [pet, cat]);
 
-  const tagsOf = (x: { id: string; price: number; premium?: true }, it?: Item) =>
+  const tagsOf = (x: { id: string; price: number }, it?: Item) =>
     [
       DRAFTS.has(x.id) ? "시안" : "상점에 있음",
-      (x as Item).legend ? "전설" : x.premium ? "프리미엄" : "",
+      { normal: "", gold: "골드", premium: "프리미엄" }[gradeOf(x.price)],
       it?.anim ? "움직여요" : "",
       it?.slot === "back" ? "등 자리" : "",
       it?.slot === "head" ? "머리" : it?.slot === "body" ? "몸" : "",
@@ -155,7 +156,7 @@ function App() {
                   <span>{picked.cat}</span>
                   {picked.size && <span>{picked.size}</span>}
                   {picked.tags.map((t) => (
-                    <span key={t} className={t === "시안" ? "on-draft" : t === "전설" ? "on-legend" : t === "프리미엄" ? "on-premium" : ""}>
+                    <span key={t} className={t === "시안" ? "on-draft" : t === "프리미엄" ? "on-premium" : t === "골드" ? "on-gold" : ""}>
                       {t}
                     </span>
                   ))}
@@ -198,7 +199,7 @@ function App() {
               byPrice(WALLS.filter((w) => keep(w.id))).map((w) =>
                 cell(
                   w.id,
-                  <Good name={w.name} price={w.price} owned={!locked || w.price === 0} active={pet.wall === w.id} premium={w.premium} onTap={() => tapSurface(w, "wall")}>
+                  <Good name={w.name} price={w.price} owned={!locked || w.price === 0} active={pet.wall === w.id} grade={gradeOf(w.price)} onTap={() => tapSurface(w, "wall")}>
                     {swatch(w)}
                   </Good>
                 )
@@ -207,7 +208,7 @@ function App() {
               byPrice(FLOORS.filter((f) => keep(f.id))).map((f) =>
                 cell(
                   f.id,
-                  <Good name={f.name} price={f.price} owned={!locked || f.price === 0} active={pet.floor === f.id} premium={f.premium} onTap={() => tapSurface(f, "floor")}>
+                  <Good name={f.name} price={f.price} owned={!locked || f.price === 0} active={pet.floor === f.id} grade={gradeOf(f.price)} onTap={() => tapSurface(f, "floor")}>
                     {swatch(f)}
                   </Good>
                 )
@@ -223,8 +224,7 @@ function App() {
                     owned={!locked}
                     active={isOut(it)}
                     activeLabel={isWorn(it) ? "장착 중" : "꺼내놓음"}
-                    premium={it.premium}
-                    legend={it.legend}
+                    grade={gradeOf(it.price)}
                     onTap={() => tapItem(it)}
                   >
                     <span className="shop-dot">

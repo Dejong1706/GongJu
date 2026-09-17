@@ -1029,39 +1029,39 @@
   }
 
   /*
-   * 프리미엄 (500점 넘는 것) — 금테 두 겹, 크림빛 금 바탕, 왼쪽 위 왕관, 가끔 빛이 한 번 스친다.
+   * 골드 (500 ~ 999점) — 금테 두 겹, 크림빛 금 바탕, 왼쪽 위 왕관, 가끔 빛이 한 번 스친다.
    * **안 산 칸도 회색으로 죽이지 않는다.** 금테와 바탕은 그대로 두고 그림만 반쯤 흐리게 —
    * 일반 칸처럼 회색이 되면 비싼 게 눈에 안 띄어서 모을 마음이 안 생긴다
    */
-  .good-premium {
+  .good-gold {
     border: 2px solid #c9982f;
     box-shadow: inset 0 0 0 1px #f6dc8f;
     background: linear-gradient(160deg, #fff9e6 0%, #fff0f6 100%);
   }
-  .good-premium .good-name {
+  .good-gold .good-name {
     color: #8a6420;
     font-weight: 700;
   }
-  .good-premium .good-price {
+  .good-gold .good-price {
     color: #b07d1e;
     font-weight: 700;
   }
-  .good-premium.good-buy {
+  .good-gold.good-buy {
     border-style: dashed;
     border-color: #c9982f;
     background: linear-gradient(160deg, #fbf1d6 0%, #f7e6ee 100%);
   }
-  .good-premium.good-buy .good-thumb {
+  .good-gold.good-buy .good-thumb {
     filter: grayscale(0.5);
     opacity: 0.6;
   }
-  .good-premium.good-buy .good-name {
+  .good-gold.good-buy .good-name {
     color: #9c7a3c;
   }
-  .good-premium.good-on {
+  .good-gold.good-on {
     background: linear-gradient(160deg, #ffe9a8 0%, #ffd9e8 100%);
   }
-  .good-premium.good-on .good-price {
+  .good-gold.good-on .good-price {
     background: #b07d1e;
     color: #fff;
   }
@@ -1072,6 +1072,7 @@
     line-height: 0;
   }
   /* 빛 한 줄이 비스듬히 지나간다. 계단으로 끊어 도트 느낌을 남긴다 */
+  .good-gold::after,
   .good-premium::after {
     content: "";
     position: absolute;
@@ -1093,57 +1094,58 @@
     }
   }
   @media (prefers-reduced-motion: reduce) {
+    .good-gold::after,
     .good-premium::after {
       display: none;
     }
   }
 
   /*
-   * 전설 (프리미엄 위 단계, 1,000점) — 보라 바탕 · 금테 · 보석 표 · 반짝이는 별.
-   * .good-premium 과 같이 붙으므로 **그 뒤에** 둬야 덮어쓴다.
-   * 안 산 칸도 보라빛을 남긴다 (프리미엄과 같은 이유)
+   * 프리미엄 (1,000점 ~) — 보라 바탕 · 금테 · 보석 표 · 반짝이는 별.
+   * 스치는 빛은 골드와 같은 규칙을 쓰고 색만 금빛으로 바꾼다 (그래서 이 블록이 골드 뒤에 있어야 한다).
+   * 안 산 칸도 보라빛을 남긴다 (골드와 같은 이유)
    */
-  .good-legend {
+  .good-premium {
     border: 2px solid #e3b85c;
     box-shadow: inset 0 0 0 1px #c9a2f2, 0 0 0 1px #6b3fa0;
     background: radial-gradient(circle at 50% 38%, #b58ae8 0%, #7a48c0 55%, #4e2a86 100%);
   }
-  .good-legend .good-name {
+  .good-premium .good-name {
     color: #fff4c8;
   }
-  .good-legend .good-price {
+  .good-premium .good-price {
     color: #f4d77a;
   }
-  .good-legend.good-buy {
+  .good-premium.good-buy {
     border-style: dashed;
     border-color: #e3b85c;
     background: radial-gradient(circle at 50% 38%, #9c78c9 0%, #6a4a9c 60%, #4a3072 100%);
   }
-  .good-legend.good-buy .good-thumb {
+  .good-premium.good-buy .good-thumb {
     filter: grayscale(0.35);
     opacity: 0.7;
   }
-  .good-legend.good-buy .good-name {
+  .good-premium.good-buy .good-name {
     color: #e6d6f7;
   }
-  .good-legend.good-on {
+  .good-premium.good-on {
     background: radial-gradient(circle at 50% 38%, #d7b3ff 0%, #9056d6 55%, #5e2fa3 100%);
   }
-  .good-legend.good-on .good-price {
+  .good-premium.good-on .good-price {
     background: #f4d77a;
     color: #4e2a86;
   }
-  .good-legend .good-lock path {
+  .good-premium .good-lock path {
     stroke: #fff4c8;
   }
-  .good-legend .good-lock rect {
+  .good-premium .good-lock rect {
     fill: #fff4c8;
   }
   /* 빛은 금빛으로, 그리고 네 귀퉁이 근처에 별이 번갈아 반짝인다 */
-  .good-legend::after {
+  .good-premium::after {
     background: linear-gradient(100deg, transparent, rgba(255, 236, 170, 0.6), transparent);
   }
-  .good-legend::before {
+  .good-premium::before {
     content: "";
     position: absolute;
     inset: 0;
@@ -1163,7 +1165,7 @@
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .good-legend::before {
+    .good-premium::before {
       animation: none;
     }
   }

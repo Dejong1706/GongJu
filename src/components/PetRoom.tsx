@@ -64,6 +64,17 @@ function shade(hex: string, k: number) {
   );
 }
 
+/** 흰색 쪽으로 섞는다 — 꽃잎처럼 한 톤 밝은 색이 필요할 때. k 가 1 이면 흰색 */
+function tint(hex: string, k: number) {
+  const n = parseInt(hex.slice(1), 16);
+  return (
+    "#" +
+    [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+      .map((v) => Math.round(v + (255 - v) * k).toString(16).padStart(2, "0"))
+      .join("")
+  );
+}
+
 /** 바닥 무늬를 끊는 가로줄. 앞으로 올수록 사이가 벌어져야 멀어 보인다 */
 function depthRows() {
   const out: number[] = [];
@@ -139,34 +150,67 @@ function backdrop(wall: Surface, floor: Surface) {
     }
   }
   /*
-   * 궁전 벽지 (프리미엄) — 분홍 마름모를 줄마다 반 칸씩 엇갈려 찍고 가운데 금점.
-   * 위에 금 · 분홍 테두리, 아래는 몰딩 벽처럼 한 톤 눌러 깔고 금테 칸을 나눈다.
-   * 칸도 몰딩 줄도 **그 열의 바닥에서 잰 높이**라 옆벽에서 저절로 기운다
+   * 금실 줄무늬 벽지 (골드) — 연분홍 바탕에 한 톤 진한 넓은 띠, 띠 가장자리마다 가는 금실,
+   * 띠 가운데 진주 한 알씩. 아래 14줄은 한 톤 눌러 깔고 금줄 몰딩.
+   * 장미 격자(대각 격자 + 칸마다 장미) 를 먼저 그렸는데 정신 사납다고 해서 **세로줄 하나로** 조용하게 갔다
+   */
+  if (wall.kind === "goldstripe") {
+    const gold = wall.accent ?? wall.base;
+    const band = wall.accent2 ?? wall.base;
+    const lower = shade(wall.base, 0.96);
+    const P = 12; // 띠 한 벌 폭 — 넓은 띠 6 + 바탕 6
+    for (let x = 0; x < ROOM.w; x++) {
+      const h = floorTopAt(x) - 1;
+      if (h <= 0) continue;
+      const my = h - 14;
+      const top = Math.max(0, my);
+      const k = ((x % P) + P) % P;
+      if (k >= 1 && k <= 5) out.push(<rect key={`gb${x}`} x={x} y={0} width={1} height={top} fill={band} />);
+      if (k === 0 || k === 6) out.push(<rect key={`gg${x}`} x={x} y={0} width={1} height={top} fill={gold} />);
+      if (k === 3)
+        for (let y = 6; y < top - 2; y += 10)
+          out.push(<rect key={`gp${x}-${y}`} x={x} y={y} width={1} height={1} fill="#FFFFFF" />);
+      if (my > 2) {
+        out.push(<rect key={`gl${x}`} x={x} y={my + 1} width={1} height={h - my - 1} fill={lower} />);
+        out.push(<rect key={`gm${x}`} x={x} y={my} width={1} height={1} fill={gold} />);
+      }
+    }
+  }
+
+  /*
+   * 궁전 벽지 (프리미엄) — **왕실 카펫과 한 벌.** 카펫의 크림 · 진홍 · 금을 벽으로 올렸다.
+   * 위는 크림 바탕에 금 테두리 마름모(카펫 가운데 마름모와 같은 모양) 를 반 칸씩 엇갈려 찍고 가운데 진홍 점,
+   * 맨 위는 진홍 띠에 금줄, 아래 16줄은 진홍 벽널에 금테 칸 — 카펫 금 테두리와 같은 금.
+   * 칸도 몰딩 줄도 **그 열의 바닥에서 잰 높이**라 옆벽에서 저절로 기운다.
+   * (처음엔 분홍 바탕 · 분홍 마름모였는데 카펫과 따로 논다고 해서 9/17 에 바꿨다)
    */
   if (wall.kind === "palace") {
     const gold = wall.accent ?? wall.base;
-    const motif = wall.accent2 ?? gold;
-    const lower = shade(wall.base, 0.95);
+    const red = wall.accent2 ?? gold;
+    const deep = shade(red, 0.82);
     for (let x = 0; x < ROOM.w; x++) {
       const h = floorTopAt(x) - 1;
       if (h <= 0) continue;
       const my = h - 16;
-      out.push(<rect key={`pt${x}`} x={x} y={2} width={1} height={1} fill={gold} />);
-      out.push(<rect key={`pu${x}`} x={x} y={3} width={1} height={1} fill={motif} />);
-      for (let fy = 9, row = 0; fy < my - 3; fy += 9, row++) {
-        const off = row % 2 ? 5 : 0;
-        const dx = (((x - off) % 10) + 10) % 10;
-        const d = dx > 5 ? dx - 10 : dx;
+      // 맨 위 — 진홍 띠 · 금줄
+      out.push(<rect key={`pt${x}`} x={x} y={0} width={1} height={3} fill={red} />);
+      out.push(<rect key={`pu${x}`} x={x} y={3} width={1} height={1} fill={gold} />);
+      // 금 테두리 마름모 — 속은 비우고 가운데만 진홍 한 점
+      for (let fy = 11, row = 0; fy < my - 3; fy += 10, row++) {
+        const off = row % 2 ? 6 : 0;
+        const dx = (((x - off) % 12) + 12) % 12;
+        const d = dx > 6 ? dx - 12 : dx;
         const reach = 2 - Math.abs(d);
         if (reach < 0) continue;
-        for (let dy = -reach; dy <= reach; dy++)
-          out.push(
-            <rect key={`pd${x}-${fy}-${dy}`} x={x} y={fy + dy} width={1} height={1} fill={d === 0 && dy === 0 ? gold : motif} />
-          );
+        out.push(<rect key={`pd${x}-${fy}-a`} x={x} y={fy - reach} width={1} height={1} fill={gold} />);
+        if (reach > 0) out.push(<rect key={`pd${x}-${fy}-b`} x={x} y={fy + reach} width={1} height={1} fill={gold} />);
+        if (d === 0) out.push(<rect key={`pd${x}-${fy}-c`} x={x} y={fy} width={1} height={1} fill={red} />);
       }
+      // 아래 — 금 몰딩 · 진한 진홍 한 줄 · 진홍 벽널에 금테 칸
       if (my > 6) {
-        out.push(<rect key={`pl${x}`} x={x} y={my + 1} width={1} height={h - my - 1} fill={lower} />);
+        out.push(<rect key={`pl${x}`} x={x} y={my + 1} width={1} height={h - my - 1} fill={red} />);
         out.push(<rect key={`pm${x}`} x={x} y={my} width={1} height={1} fill={gold} />);
+        out.push(<rect key={`pn${x}`} x={x} y={my + 1} width={1} height={1} fill={deep} />);
         const k = ((x % 10) + 10) % 10;
         if (k >= 2) {
           out.push(<rect key={`pb${x}`} x={x} y={my + 3} width={1} height={1} fill={gold} />);
@@ -286,37 +330,48 @@ function backdrop(wall: Surface, floor: Surface) {
       }
     }
   }
-  if (floor.kind === "marble") {
-    /* 대리석 — 칸을 크게 잡고 결을 몇 줄만 흘린다. 촘촘하면 싸 보인다 */
-    rows.forEach((y, i) => {
-      if (i % 2 === 0) span(`mr${y}`, y);
-    });
-    for (let i = 1; i < 3; i++)
+  /*
+   * 꽃 타일 (골드) — 금 줄눈으로 칸을 나누고, 한 칸 건너 연분홍을 깔고, 칸 가운데 분홍 꽃 한 송이.
+   * 세로 줄눈은 타일(grid) 처럼 줄마다 x 를 다시 재서 뒤로 모이고, 꽃도 그 칸 가운데를 따라간다
+   */
+  if (floor.kind === "flowertile") {
+    const grout = floor.accent ?? floor.base;
+    const rose = floor.accent2 ?? grout;
+    const pale = tint(rose, 0.82);
+    const petal = tint(rose, 0.45);
+    const COLS = 6;
+    const bands = [ROOM.floorTop, ...rows, ROOM.h];
+    for (let b = 0; b + 1 < bands.length; b++) {
+      for (let y = bands[b] + 1; y < bands[b + 1]; y++) {
+        const l = floorLeftAt(y);
+        const w = floorRightAt(y) - l;
+        for (let c = 0; c < COLS; c++) {
+          if ((b + c) % 2) continue;
+          const x0 = Math.round(l + (w * c) / COLS) + 1;
+          const x1 = Math.round(l + (w * (c + 1)) / COLS);
+          if (x1 > x0) out.push(<rect key={`tp${y}-${c}`} x={x0} y={y} width={x1 - x0} height={1} fill={pale} />);
+        }
+      }
+      const mid = Math.round((bands[b] + bands[b + 1]) / 2);
+      const l = floorLeftAt(mid);
+      const w = floorRightAt(mid) - l;
+      for (let c = 0; c < COLS; c++) {
+        const x = Math.round(l + (w * (c + 0.5)) / COLS);
+        out.push(<rect key={`tf${b}-${c}`} x={x} y={mid} width={1} height={1} fill={rose} />);
+        if (bands[b + 1] - bands[b] >= 4)
+          [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(([dx, dy], k) =>
+            out.push(<rect key={`tg${b}-${c}-${k}`} x={x + dx} y={mid + dy} width={1} height={1} fill={petal} />)
+          );
+      }
+    }
+    rows.forEach((y) => span(`tr${y}`, y));
+    for (let i = 1; i < COLS; i++)
       for (let y = ROOM.floorTop; y < ROOM.h; y++) {
         const l = floorLeftAt(y);
         const r = floorRightAt(y);
         if (r - l < 2) continue;
-        out.push(
-          <rect key={`mv${i}-${y}`} x={Math.round(l + ((r - l) * i) / 3)} y={y} width={1} height={1} fill={floor.accent} />
-        );
+        out.push(<rect key={`tc${i}-${y}`} x={Math.round(l + ((r - l) * i) / COLS)} y={y} width={1} height={1} fill={grout} />);
       }
-    const vein = shade(floor.accent ?? floor.base, 0.96);
-    [
-      [0.28, 0.12],
-      [0.62, 0.45],
-      [0.4, 0.74],
-    ].forEach(([u, t], vi) => {
-      const y0 = Math.round(ROOM.floorTop + (ROOM.h - ROOM.floorTop) * t);
-      for (let k = 0; k < 10; k++) {
-        const y = y0 + k;
-        if (y >= ROOM.h) break;
-        const l = floorLeftAt(y);
-        const r = floorRightAt(y);
-        out.push(
-          <rect key={`mk${vi}-${k}`} x={Math.round(l + (r - l) * (u + k * 0.006))} y={y} width={1} height={1} fill={vein} />
-        );
-      }
-    });
   }
   if (floor.kind === "check") {
     const bands = [ROOM.floorTop, ...rows, ROOM.h];

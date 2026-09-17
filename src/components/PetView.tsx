@@ -11,15 +11,17 @@ import {
   ITEMS,
   WALLS,
   byPrice,
+  gradeOf,
   isWorn,
   itemById,
   type Cat,
+  type Grade,
   type Item,
   type Surface,
 } from "@/lib/pet";
 import type { Pet } from "@/lib/types";
 
-/** 벽지·타일 미리보기. 도트가 아니라 면이라 CSS 로 흉내 낸다. */
+/** 벽지·바닥 미리보기. 도트가 아니라 면이라 CSS 로 흉내 낸다. */
 export function swatch(s: Surface) {
   const style: React.CSSProperties = { background: s.base };
   if (s.kind === "dot") {
@@ -50,17 +52,27 @@ export function swatch(s: Surface) {
       `repeating-linear-gradient(90deg,${s.accent} 0 1px,transparent 1px 7px),` +
       `repeating-linear-gradient(180deg,${s.accent} 0 1px,transparent 1px 7px)`;
     style.backgroundSize = "14px 14px";
-  } else if (s.kind === "marble") {
+  } else if (s.kind === "goldstripe") {
+    // 넓은 띠 + 가장자리 금실, 아래 금줄 몰딩
     style.backgroundImage =
-      `linear-gradient(115deg,transparent 0 44%,${s.accent} 44% 46%,` +
-      `transparent 46% 70%,${s.accent} 70% 71%,transparent 71%)`;
+      `linear-gradient(180deg,transparent 0 66%,${s.accent} 66% 69%,transparent 69%),` +
+      `repeating-linear-gradient(90deg,${s.accent} 0 1px,${s.accent2} 1px 6px,${s.accent} 6px 7px,transparent 7px 12px)`;
+  } else if (s.kind === "flowertile") {
+    // 금 줄눈 타일 + 칸 가운데 분홍 꽃
+    style.backgroundImage =
+      `linear-gradient(${s.accent} 0 1px,transparent 1px),` +
+      `linear-gradient(90deg,${s.accent} 0 1px,transparent 1px),` +
+      `radial-gradient(${s.accent2} 1.6px,transparent 2px)`;
+    style.backgroundSize = "10px 10px";
+    style.backgroundPosition = "0 0, 0 0, 5px 5px";
   } else if (s.kind === "palace") {
-    // 마름모 무늬 + 금점, 아래 금테 몰딩
+    // 위 진홍 띠 · 크림 바탕 금 마름모 · 아래 금줄 진홍 벽널 — 왕실 카펫과 한 벌
     style.backgroundImage =
-      `linear-gradient(180deg,transparent 0 62%,${s.accent} 62% 66%,transparent 66%),` +
-      `radial-gradient(${s.accent} 1px,transparent 1.3px),` +
-      `conic-gradient(from 45deg,${s.accent2} 25%,transparent 0 50%,${s.accent2} 0 75%,transparent 0)`;
-    style.backgroundSize = "100% 100%, 10px 10px, 10px 10px";
+      `linear-gradient(180deg,${s.accent2} 0 10%,${s.accent} 10% 14%,transparent 14% 62%,` +
+      `${s.accent} 62% 66%,${s.accent2} 66% 100%),` +
+      `radial-gradient(${s.accent} 1.2px,transparent 1.6px)`;
+    style.backgroundSize = "100% 100%, 10px 10px";
+    style.backgroundPosition = "0 0, 0 2px";
   } else if (s.kind === "royal") {
     // 크림 바닥 가운데 금테 빨간 카펫
     style.backgroundImage =
@@ -253,7 +265,7 @@ export default function PetView({
                   price={w.price}
                   owned={w.price === 0 || owns.has(w.id)}
                   active={pet.wall === w.id}
-                  premium={w.premium}
+                  grade={gradeOf(w.price)}
                   onTap={() => tapSurface(w, "wall")}
                 >
                   {swatch(w)}
@@ -268,7 +280,7 @@ export default function PetView({
                   price={f.price}
                   owned={f.price === 0 || owns.has(f.id)}
                   active={pet.floor === f.id}
-                  premium={f.premium}
+                  grade={gradeOf(f.price)}
                   onTap={() => tapSurface(f, "floor")}
                 >
                   {swatch(f)}
@@ -284,8 +296,7 @@ export default function PetView({
                   owned={owns.has(it.id)}
                   active={isOut(it)}
                   activeLabel={isWorn(it) ? "장착 중" : "꺼내놓음"}
-                  premium={it.premium}
-                  legend={it.legend}
+                  grade={gradeOf(it.price)}
                   onTap={() => tapItem(it)}
                 >
                   <span className="shop-dot">
@@ -374,8 +385,7 @@ export function Good({
   owned,
   active,
   activeLabel = "장착 중",
-  premium = false,
-  legend = false,
+  grade = "normal",
   onTap,
   children,
 }: {
@@ -384,10 +394,11 @@ export function Good({
   owned: boolean;
   active: boolean;
   activeLabel?: string;
-  /** 금테 · 반짝이 · 왼쪽 위 왕관 표. 안 산 칸도 회색으로 죽이지 않고 금빛을 남긴다 */
-  premium?: boolean;
-  /** 프리미엄 위 단계 — 보라 바탕 · 보석 표 · 반짝이 별. 금테 칸 모양을 덮어쓴다 */
-  legend?: boolean;
+  /**
+   * 골드 — 금테 · 왕관 표 · 스치는 빛. 프리미엄 — 보라 바탕 · 보석 표 · 반짝이는 별.
+   * 둘 다 안 산 칸도 회색으로 죽이지 않는다
+   */
+  grade?: Grade;
   onTap: () => void;
   children: React.ReactNode;
 }) {
@@ -402,12 +413,12 @@ export function Good({
   return (
     <button
       type="button"
-      className={`good ${active ? "good-on" : ""} ${owned ? "" : "good-buy"} ${premium ? "good-premium" : ""} ${legend ? "good-legend" : ""}`}
+      className={`good ${active ? "good-on" : ""} ${owned ? "" : "good-buy"} ${grade !== "normal" ? `good-${grade}` : ""}`}
       aria-pressed={active}
-      aria-label={`${legend ? "전설 " : premium ? "프리미엄 " : ""}${name} · ${owned ? label : `${price}점, 아직 없음`}`}
+      aria-label={`${grade === "premium" ? "프리미엄 " : grade === "gold" ? "골드 " : ""}${name} · ${owned ? label : `${price}점, 아직 없음`}`}
       onClick={onTap}
     >
-      {legend ? (
+      {grade === "premium" ? (
         <span className="good-crown" aria-hidden="true">
           {/* 보석 — 보라 다이아에 흰 빛 한 점 */}
           <svg width="11" height="10" viewBox="0 0 11 10" shapeRendering="crispEdges">
@@ -416,7 +427,7 @@ export function Good({
             <rect x="3" y="2" width="2" height="1" fill="#FFFFFF" />
           </svg>
         </span>
-      ) : premium && (
+      ) : grade === "gold" && (
         <span className="good-crown" aria-hidden="true">
           <svg width="13" height="9" viewBox="0 0 13 9" shapeRendering="crispEdges">
             <path d="M0 2h2v2h2V1h2v-1h1v1h2v3h2V2h2v7H0z" fill="#E3B85C" />

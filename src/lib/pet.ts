@@ -62,10 +62,6 @@ export type Item = {
   at: readonly [number, number];
   /** 같은 표를 단 것끼리는 하나만 놓인다 (창문 일곱 종) */
   only?: string;
-  /** 500점 넘는 것. 상점 칸을 금테로 따로 보인다 */
-  premium?: true;
-  /** 프리미엄보다 한 단계 위 (1,000점). 상점 칸이 보라색 · 보석 표. `premium` 도 같이 단다 */
-  legend?: true;
   /**
    * 움직이는 것 — 그림 여러 장을 `ANIM_MS` 마다 한 장씩 넘긴다. 첫 장은 `sprite` 와 같다.
    * 상점 칸에는 첫 장만 보인다
@@ -73,6 +69,20 @@ export type Item = {
   anim?: string[][];
   sprite: Sprite;
 };
+
+/**
+ * 상점 등급 — **값으로 정한다** (9/17 사용자가 정한 구간).
+ *
+ * - 일반 ~499 · 골드 500~999 (금테 · 왕관 표) · 프리미엄 1,000~ (보라 바탕 · 보석 표)
+ *
+ * 전에는 아이템마다 premium · legend 표를 달았는데, 값을 바꾸면 표도 같이 고쳐야 해서
+ * 어긋나기 쉬웠다. 이제 값만 바꾸면 칸 모양이 따라온다
+ */
+export type Grade = "normal" | "gold" | "premium";
+export const GOLD_FROM = 500;
+export const PREMIUM_FROM = 1000;
+export const gradeOf = (price: number): Grade =>
+  price >= PREMIUM_FROM ? "premium" : price >= GOLD_FROM ? "gold" : "normal";
 
 /** 움직이는 소품이 한 장을 넘기는 간격 */
 export const ANIM_MS = 400;
@@ -619,6 +629,63 @@ function balconyFrame(f: number) {
 }
 const BALCONY = [0, 1, 2, 3].map(balconyFrame);
 
+/*
+  왕실 침대 35 x 34 — 궁전 벽지 · 왕실 카펫과 한 벌 (크림 · 진홍 · 금).
+  캐노피 침대처럼 네 기둥 위에 지붕을 얹었다. 지붕 가운데 보석 왕관, 진홍 휘장에 금 술.
+  양옆에는 **비치는 망사 커튼** — 한 칸 건너 한 칸만 칠해서 뒤 벽지가 비쳐 보이게 했고, 금술로 묶었다.
+  이불은 **흰색**에 금 테두리 (처음엔 진홍 이불이었는데 궁전 벽지 진홍에 묻혀서 바꿨다),
+  가운데 진홍 마름모 하나 · 아래 진홍 단. 금 기둥 · 금 다리.
+*/
+function royalBed() {
+  const W = 35, H = 34;
+  const g: string[][] = Array.from({ length: H }, () => Array(W).fill("."));
+  const put = (x: number, y: number, c: string) => { if (g[y]?.[x] !== undefined) g[y][x] = c; };
+  const art = (rows: string[], x: number, y: number) =>
+    rows.forEach((r, dy) => [...r].forEach((c, dx) => { if (c !== ".") put(x + dx, y + dy, c); }));
+
+  // 기둥 넷 (앞에서 보면 둘) — 금, 꼭대기 금 구슬
+  for (let y = 2; y < H; y++) { put(1, y, "Y"); put(2, y, "y"); put(32, y, "Y"); put(33, y, "y"); }
+  art(["YY"], 1, 1); art(["YY"], 32, 1);
+
+  // 지붕 — 금 막대 · 진홍 휘장 · 물결 끝 · 금 술
+  for (let x = 1; x <= 33; x++) {
+    put(x, 2, "Y");
+    put(x, 3, "R");
+    put(x, 4, x % 3 === 0 ? "r" : "R");
+    if (x % 3 !== 2) put(x, 5, "R");
+    if (x % 3 === 0) put(x, 6, "Y");
+  }
+  // 지붕 가운데 보석 왕관
+  art(["Y.YjY.Y", "YYYYYYY"], 14, 0);
+
+  // 베개 · 진홍 쿠션
+  art(["wwwwwww", "wWWWWWw", "wWWWWWw", "wwwwwww"], 3, 18);
+  art([".wwwww.", "wWWWWWw", "wwwwwww"], 5, 16);
+  art(["yyy", "yRy", "yYy", "yyy"], 10, 19);
+
+  // 흰 이불 — 금 테두리, 접힌 결, 가운데 진홍 마름모, 아래 진홍 단
+  for (let y = 22; y <= 27; y++) for (let x = 3; x <= 31; x++) put(x, y, (x + y) % 6 === 0 ? "w" : "W");
+  for (let x = 3; x <= 31; x++) { put(x, 22, "Y"); put(x, 26, "R"); put(x, 27, "Y"); }
+  art(["..R..", ".R.R.", "R.Y.R", ".R.R."], 15, 22);
+  put(17, 22, "Y");
+  // 매트리스 · 틀
+  for (let x = 3; x <= 31; x++) { put(x, 28, "Y"); put(x, 29, "y"); }
+  put(16, 30, "Y"); put(17, 30, "y"); put(16, 31, "Y"); put(17, 31, "y");
+
+  // 망사 커튼 — 한 칸 건너 칠해 비치게. 바깥 줄은 진하게, 묶은 곳은 금술
+  const widths = [7, 7, 6, 6, 5, 4, 3, 2, 2, 2, 3, 4, 5, 6, 6]; // 이불 금테(22줄) 위에서 끝난다
+  widths.forEach((w, k) => {
+    const y = 7 + k;
+    for (let i = 0; i < w; i++) {
+      const c = i === 0 ? "N" : (i + y) % 2 === 0 ? "n" : "";
+      if (c) { put(3 + i, y, c); put(31 - i, y, c); }
+    }
+  });
+  art(["YY", "yY"], 3, 14);
+  art(["YY", "Yy"], 30, 14);
+  return g.map((r) => r.join(""));
+}
+
 const PREMIUM: Item[] = [
   {
     id: "crown",
@@ -626,7 +693,6 @@ const PREMIUM: Item[] = [
     cat: "옷",
     slot: "head",
     price: 600,
-    premium: true,
     at: [3, -2],
     // 귀 사이 정수리에 얹는다. 가운데 분홍 보석, 양옆 하늘 보석
     sprite: {
@@ -640,7 +706,6 @@ const PREMIUM: Item[] = [
     cat: "옷",
     slot: "back",
     price: 650,
-    premium: true,
     at: [-6, 5],
     sprite: { rows: WINGS_OPEN, palette: { O: "#8FC4F0", a: "#DDF3FF", W: "#FFFFFF", b: "#FFD6E8" } },
     anim: [WINGS_OPEN, WINGS_FOLD],
@@ -650,8 +715,7 @@ const PREMIUM: Item[] = [
     name: "캐노피 침대",
     cat: "가구",
     slot: "floor",
-    price: 900,
-    premium: true,
+    price: 750,
     at: [8, 46],
     sprite: { rows: CANOPY_BED, palette: FURN },
   },
@@ -661,7 +725,6 @@ const PREMIUM: Item[] = [
     cat: "가구",
     slot: "floor",
     price: 800,
-    premium: true,
     at: [52, 50],
     sprite: { rows: VANITY, palette: FURN },
   },
@@ -671,7 +734,6 @@ const PREMIUM: Item[] = [
     cat: "소품",
     slot: "floor",
     price: 650,
-    premium: true,
     at: [52, 56],
     sprite: {
       rows: TANK[0],
@@ -689,7 +751,6 @@ const PREMIUM: Item[] = [
       NIGHT_PARTS, STARS_A, "C",
       { S: "#FFE58A", F: "#F4FF8A" }
     ),
-    premium: true,
     anim: [NIGHT_A, NIGHT_A, NIGHT_B, NIGHT_B],
   },
   /*
@@ -698,12 +759,12 @@ const PREMIUM: Item[] = [
   */
   {
     id: "win_palace", name: "궁전 창문", cat: "벽 장식", slot: "wall", price: 1000,
-    premium: true, legend: true, at: [21, 3], only: "win",
+    at: [21, 3], only: "win",
     sprite: { rows: PALACE[0], palette: PALACE_PAL }, anim: PALACE,
   },
   {
     id: "win_balcony", name: "발코니 창문", cat: "벽 장식", slot: "wall", price: 1000,
-    premium: true, legend: true, at: [21, 3], only: "win",
+    at: [21, 3], only: "win",
     sprite: {
       rows: BALCONY[0],
       palette: {
@@ -717,25 +778,35 @@ const PREMIUM: Item[] = [
   },
   {
     id: "banner", name: "왕실 깃발", cat: "벽 장식", slot: "wall", price: 550,
-    premium: true, at: [56, 4],
+    at: [56, 4],
     sprite: { rows: BANNER, palette: { ...GOLD, R: "#C8384F", W: "#FFFFFF" } },
   },
   {
     id: "throne", name: "왕좌", cat: "가구", slot: "floor", price: 850,
-    premium: true, at: [48, 52],
+    at: [48, 52],
     sprite: { rows: THRONE, palette: { ...GOLD, R: "#C8384F", r: "#9E2A3E" } },
   },
   {
     id: "unicorn", name: "유니콘 인형", cat: "인형", slot: "floor", price: 600,
-    premium: true, at: [14, 76],
+    at: [14, 76],
     sprite: {
       rows: UNICORN,
       palette: { o: "#D9B8CC", W: "#FFFFFF", h: "#EBDCE5", m: "#FF9EC4", n: "#CDB6F0", K: INK, p: "#FFB3CF", Y: "#E3B85C", g: "#E3B85C" },
     },
   },
   {
+    id: "royal_bed", name: "왕실 침대", cat: "가구", slot: "floor", price: 1000, at: [6, 38],
+    sprite: {
+      rows: royalBed(),
+      palette: {
+        Y: "#E3B85C", y: "#B8862B", R: "#C8384F", r: "#9E2A3E", j: "#FF6FA8",
+        W: "#FFFFFF", w: "#E6D9E2", N: "#D2A9C6", n: "#EBD3E6",
+      },
+    },
+  },
+  {
     id: "vase", name: "장미 꽃병", cat: "소품", slot: "top", price: 500,
-    premium: true, at: [58, 51],
+    at: [58, 51],
     sprite: { rows: VASE, palette: { ...GOLD, R: "#FF7BAC", r: "#E2648F", g: "#6FAE6A", G: "#5A9A6A", j: "#FF6FA8" } },
   },
 ];
@@ -1119,10 +1190,8 @@ export type Surface = {
   /** 꽃 벽지의 꽃술처럼 색이 하나 더 필요할 때 */
   accent2?: string;
   kind?:
-    | "dot" | "stripe" | "panel" | "flower" | "palace"
-    | "plank" | "check" | "grid" | "parquet" | "marble" | "royal";
-  /** 500점 넘는 것. 상점 칸을 금테로 따로 보인다 */
-  premium?: true;
+    | "dot" | "stripe" | "panel" | "flower" | "palace" | "goldstripe"
+    | "plank" | "check" | "grid" | "parquet" | "royal" | "flowertile";
 };
 
 export const WALLS: Surface[] = [
@@ -1143,16 +1212,25 @@ export const WALLS: Surface[] = [
     accent2: "#FFD98A",
     kind: "flower",
   },
-  // 프리미엄 — 분홍 마름모 무늬에 금점, 위 금 테두리, 아래 금테 몰딩 칸
+  // 골드(700) — 연분홍 넓은 띠 · 가장자리 금실 · 진주 알, 아래 금줄 몰딩 (9/17 시안실)
+  {
+    id: "w_goldstripe",
+    name: "금실 줄무늬 벽지",
+    price: 700,
+    base: "#FFF4F8",
+    accent: "#E3B85C",
+    accent2: "#FBE3EC",
+    kind: "goldstripe",
+  },
+  // 프리미엄(1,000) — 왕실 카펫과 한 벌. 크림 바탕 금 마름모, 위 진홍 띠, 아래 진홍 벽널에 금테 칸
   {
     id: "w_palace",
     name: "궁전 벽지",
-    price: 600,
-    base: "#FCE6EE",
+    price: 1000,
+    base: "#F8EEE6",
     accent: "#E3B85C",
-    accent2: "#F4C9D9",
+    accent2: "#C8384F",
     kind: "palace",
-    premium: true,
   },
 ];
 
@@ -1164,17 +1242,25 @@ export const FLOORS: Surface[] = [
   { id: "f4", name: "분홍 카펫", price: 80, base: "#F6CFDF" },
   { id: "f5", name: "잔디", price: 140, base: "#A9D3A0", accent: "#8CBB83", kind: "check" },
   { id: "f6", name: "쪽매 마루", price: 220, base: "#E9D9C6", accent: "#C9AE92", kind: "parquet" },
-  { id: "f7", name: "대리석", price: 240, base: "#F3F1F5", accent: "#D6D0DC", kind: "marble" },
-  // 프리미엄 — 크림 마루 가운데로 금테 빨간 카펫이 앞까지. accent 가 카펫, accent2 가 금
+  // 골드(650) — 금 줄눈 크림 타일, 한 칸 건너 연분홍, 칸마다 분홍 꽃 (9/17 시안실)
+  {
+    id: "f_flowertile",
+    name: "꽃 타일",
+    price: 650,
+    base: "#FFF6EC",
+    accent: "#E6C37A",
+    accent2: "#EE6F9E",
+    kind: "flowertile",
+  },
+  // 프리미엄(1,000) — 크림 마루 가운데로 금테 빨간 카펫이 앞까지. accent 가 카펫, accent2 가 금
   {
     id: "f_royal",
     name: "왕실 카펫",
-    price: 600,
+    price: 1000,
     base: "#F3EAE0",
     accent: "#C8384F",
     accent2: "#E8C170",
     kind: "royal",
-    premium: true,
   },
 ];
 

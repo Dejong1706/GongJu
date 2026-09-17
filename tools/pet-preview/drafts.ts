@@ -3,7 +3,6 @@
  *
  * 시안실 페이지에서만 보인다. 채택되면 여기서 지우고 `src/lib/pet.ts` 로 옮긴다.
  * 떨어진 것도 지운다 (이유는 history.md 에 남긴다).
- * 지금은 비어 있다 — 9/17 왕궁 세트를 전부 상점에 넣었다.
  */
 import type { Item, Surface } from "@/lib/pet";
 

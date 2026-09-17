@@ -932,6 +932,39 @@
     padding: 6px 8px;
     text-align: center;
   }
+  /*
+   * 가구 돌리기 ↺ ↻ — 옮기기 중 가구 옆에 뜬다. 동그라미 버튼 없이 모양만 (TurnArrows.tsx).
+   * 벽 · 바닥 어느 색 위에서도 보이게 글자 둘레에 흰 테두리. 누르는 자리는 30px — 글자만 눌리면 손가락으로 못 맞춘다
+   */
+  .pet-turn-layer {
+    position: absolute;
+    inset: 3px; /* 방 그림 테두리 안쪽 */
+    pointer-events: none;
+    line-height: 1;
+  }
+  .pet-turn-side {
+    position: absolute;
+    display: flex;
+    justify-content: space-between;
+    transform: translateY(-50%);
+  }
+  .pet-turn {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--ink);
+    text-shadow: -1.5px 0 #fff, 1.5px 0 #fff, 0 -1.5px #fff, 0 1.5px #fff, -1px -1px #fff, 1px 1px #fff, -1px 1px #fff, 1px -1px #fff;
+    pointer-events: auto;
+    cursor: pointer;
+  }
+  .pet-turn:active {
+    transform: scale(0.85);
+  }
 
   /* 포인트 알약. 상점을 열었을 때만 보인다 */
   .purse {

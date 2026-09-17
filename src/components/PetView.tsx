@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Popup from "./Popup";
 import PixelSprite from "./PixelSprite";
-import PetRoom from "./PetRoom";
+import PetRoom, { turnSpot } from "./PetRoom";
+import TurnArrows, { turnLabel, turnTarget } from "./TurnArrows";
 import { COIN } from "@/lib/sprites";
 import {
   CAT_ROWS,
@@ -105,6 +106,11 @@ export default function PetView({
   const [open, setOpen] = useState(false);
   // 가구를 옮기는 동안에는 상점을 닫아두고 판다도 세워둔다
   const [editing, setEditing] = useState(false);
+  /** 옮기기 중 마지막으로 누른 가구. 돌릴 수 있으면 그 옆에 화살표가 뜬다 */
+  const [picked, setPicked] = useState<string | null>(null);
+  useEffect(() => {
+    if (!editing) setPicked(null);
+  }, [editing]);
   const [cat, setCat] = useState<Cat>("옷");
   const [msg, setMsg] = useState("");
   /* 살 때는 반드시 한 번 묻는다. 제일 비싼 게 1,000점이라 잘못 눌러 날리면 아프다 */
@@ -157,12 +163,29 @@ export default function PetView({
     save({ ...pet, ...withItem(pet, it, !isOut(it)) }, "바꾸지 못했어요");
   };
 
-  /** 끌어다 놓은 자리를 저장한다. 끌고 있는 동안이 아니라 손을 뗐을 때 한 번만 쓴다 */
-  const moveItem = (id: string, x: number, y: number) =>
+  /**
+   * 끌어다 놓은 자리를 저장한다. 끌고 있는 동안이 아니라 손을 뗐을 때 한 번만 쓴다.
+   * 제자리에서 눌렀다 떼도 불리므로 **누른 가구를 고르는** 데도 쓴다
+   */
+  const moveItem = (id: string, x: number, y: number) => {
+    setPicked(id);
     save(
-      { ...pet, spots: pet.spots.map((s) => (s.id === id ? { id, x, y } : s)) },
+      // ...s 로 방향(face) 을 들고 간다. { id, x, y } 로 새로 만들면 옮길 때마다 돌린 방향이 풀린다
+      { ...pet, spots: pet.spots.map((s) => (s.id === id ? { ...s, x, y } : s)) },
       "자리를 옮기지 못했어요"
     );
+  };
+
+  /** 90도 돌리기. 방향 · 자리를 한 번에 저장한다 (돌리면 크기가 바뀌어 자리도 같이 움직인다) */
+  const turnItem = (id: string, dir: 1 | -1) => {
+    const it = itemById(id);
+    if (!it) return;
+    save(
+      { ...pet, spots: pet.spots.map((s) => (s.id === id ? turnSpot(it, s, dir) : s)) },
+      "돌리지 못했어요"
+    );
+  };
+  const turning = editing ? turnTarget(pet.spots, picked) : undefined;
 
   const tapSurface = (s: Surface, kind: "wall" | "floor") => {
     setMsg("");
@@ -191,7 +214,12 @@ export default function PetView({
       <div className="pet-stage">
         <PetRoom pet={pet} editing={editing} onMove={moveItem} />
 
-        {editing && <p className="pet-tip">가구를 끌어서 옮겨보세요</p>}
+        {editing && (
+          <p className="pet-tip">
+            {turning ? `끌어서 옮기고 ↺ ↻ 로 돌려요 · ${turnLabel(turning)}` : "가구를 끌어서 옮겨보세요"}
+          </p>
+        )}
+        {turning && <TurnArrows spot={turning} onTurn={(dir) => turnItem(turning.id, dir)} />}
 
         <button
           className={`pet-fix ${editing ? "pet-fix-on" : ""}`}

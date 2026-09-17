@@ -107,31 +107,3 @@ body {
 }
 .pv-empty { font-size: 12px; color: var(--ink-soft); padding: 12px 2px; }
 .pv-tags .on-premium { background: #7a48c0; border-color: #4e2a86; color: #fff4c8; }
-
-/* ── 방향 돌리기 시안 ── */
-.pv-tools button.on { background: var(--pink); color: #fff; }
-/* 동그라미 없이 돌리기 모양만. 벽 · 바닥 어느 색 위에서도 보이게 흰 테두리를 글자 둘레에 두른다.
-   누르는 자리는 30px 그대로 둔다 — 글자만 눌리면 손가락으로 못 맞춘다 */
-.pv-turn {
-  width: 30px;
-  height: 30px;
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 1;
-  color: var(--ink);
-  text-shadow: -1.5px 0 #fff, 1.5px 0 #fff, 0 -1.5px #fff, 0 1.5px #fff, -1px -1px #fff, 1px 1px #fff, -1px 1px #fff, 1px -1px #fff;
-  pointer-events: auto;
-}
-.pv-turn:active { transform: scale(0.85); }
-/* 안내 띠 안에서는 어두운 바탕이라 흰 글자로 */
-.pv-tip-turn .pv-turn { color: #fff; text-shadow: none; width: 26px; height: 22px; font-size: 18px; }
-/* 방 그림 테두리(3px) 안쪽에 맞춘 층. 끌기는 막지 않게 버튼만 눌린다 */
-.pv-turn-layer { position: absolute; inset: 3px; pointer-events: none; }
-.pv-turn-side {
-  position: absolute;
-  display: flex;
-  justify-content: space-between;
-  transform: translateY(-50%);
-}
-.pv-tip-turn { display: flex; align-items: center; justify-content: center; gap: 8px; }
-.pv-tip-turn span { margin-right: 4px; font-size: 11px; }

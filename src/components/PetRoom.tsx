@@ -3,8 +3,19 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BABY, HEART, type Sprite } from "@/lib/sprites";
 import { BASEBOARD, PANDA, ROOM, SNAP, floorLeftAt, floorRightAt, floorTopAt } from "@/lib/pet";
-import { ANIM_MS, floorById, itemById, spriteAt, wallById, type Item, type Surface } from "@/shop";
-import type { Pet } from "@/lib/types";
+import {
+  ANIM_MS,
+  canTurn,
+  floorById,
+  itemById,
+  spriteAt,
+  turn,
+  viewAt,
+  wallById,
+  type Item,
+  type Surface,
+} from "@/shop";
+import type { Pet, Spot } from "@/lib/types";
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
@@ -390,10 +401,13 @@ function backdrop(wall: Surface, floor: Surface) {
   return out;
 }
 
-/** 소품이 방 밖으로 못 나가게. 바닥 것은 발끝이 놓인 줄에 따라 좌우 끝이 달라진다 */
-export function fit(it: Item, x: number, y: number) {
-  const w = it.sprite.rows[0].length;
-  const h = it.sprite.rows.length;
+/**
+ * 소품이 방 밖으로 못 나가게. 바닥 것은 발끝이 놓인 줄에 따라 좌우 끝이 달라진다.
+ * 돌린 가구는 그림 크기가 달라서 **그 방향 그림(sprite)** 으로 잰다
+ */
+export function fit(it: Item, x: number, y: number, sprite: Sprite = it.sprite) {
+  const w = sprite.rows[0].length;
+  const h = sprite.rows.length;
   if (it.slot === "wall") {
     return {
       x: clamp(x, ROOM.side, ROOM.w - ROOM.side - w),
@@ -413,6 +427,27 @@ export function fit(it: Item, x: number, y: number) {
     x: clamp(x, Math.ceil(floorLeftAt(feet)), Math.floor(floorRightAt(feet)) - w),
     y: ny,
   };
+}
+
+/** 그 자리에 놓인 방향의 그림. 방향 그림이 없는 것은 움직이는 장까지 그대로 */
+export const lookOf = (it: Item, sp: Spot, tick = 0) =>
+  sp.face && canTurn(it) ? viewAt(it, sp.face) : spriteAt(it, tick);
+
+/**
+ * 90도 돌리기. dir 1 = 위에서 봐서 시계방향. 그림이 없는 방향은 건너뛴다.
+ * 그림 크기가 바뀌므로 **발끝 가운데를 그대로 두고** 새 그림을 세운 뒤 fit() 으로 방 안에 가둔다 —
+ * 왼쪽 위를 고정하면 긴 침대가 옆으로 튄다
+ */
+export function turnSpot(it: Item, sp: Spot, dir: 1 | -1): Spot {
+  const face = turn(it, sp.face, dir);
+  const from = lookOf(it, sp);
+  const to = viewAt(it, face);
+  const at = fit(it, sp.x, sp.y, from);
+  const w0 = from.rows[0].length, h0 = from.rows.length;
+  const w1 = to.rows[0].length, h1 = to.rows.length;
+  const snap = (v: number) => Math.round(v / SNAP) * SNAP;
+  const f = fit(it, snap(at.x + (w0 - w1) / 2), snap(at.y + h0 - h1), to);
+  return { ...sp, x: f.x, y: f.y, face };
 }
 
 /** 판다가 지금 선 자리. face 가 -1 이면 왼쪽을 본다 */
@@ -524,12 +559,12 @@ export default function PetRoom({
    * 다음에 다른 가구를 잡는 순간 drag 가 그쪽으로 넘어가면서 앞의 가구가 원래 자리로 튀었다.
    * grab 을 먼저 비우므로 up 과 cancel 이 둘 다 와도 한 번만 저장한다.
    */
-  const drop = (it: Item) => {
+  const drop = (it: Item, sprite: Sprite) => {
     const g = grab.current;
     if (!g || g.id !== it.id) return;
     grab.current = null;
     // 두 칸 격자에 붙인다. 손가락으로 한 칸은 못 맞춘다
-    const f = fit(it, Math.round(g.x / SNAP) * SNAP, Math.round(g.y / SNAP) * SNAP);
+    const f = fit(it, Math.round(g.x / SNAP) * SNAP, Math.round(g.y / SNAP) * SNAP, sprite);
     setDrag(null);
     onMove?.(it.id, f.x, f.y);
   };
@@ -552,19 +587,21 @@ export default function PetRoom({
 
   const out = (pet.spots ?? [])
     .map((sp) => ({ sp, it: itemById(sp.id) }))
-    .filter((v): v is { sp: { id: string; x: number; y: number }; it: Item } => !!v.it)
+    .filter((v): v is { sp: Spot; it: Item } => !!v.it)
     .map(({ sp, it }) => {
-      if (drag?.id === sp.id) return { it, x: drag.x, y: drag.y };
+      // 놓인 방향의 그림. 크기 · 발끝 · 집는 자리가 전부 이 그림을 따른다
+      const sprite = lookOf(it, sp, tick);
+      if (drag?.id === sp.id) return { it, sprite, x: drag.x, y: drag.y };
       /*
        * 저장된 자리도 그릴 때 한 번 더 가둔다. 그림이 넓어지면(침대 22 → 30)
        * 벽 가까이 놓아둔 것이 방 밖으로 삐져나온다. 저장된 값은 건드리지 않는다
        */
-      const f = fit(it, sp.x, sp.y);
-      return { it, x: f.x, y: f.y };
+      const f = fit(it, sp.x, sp.y, sprite);
+      return { it, sprite, x: f.x, y: f.y };
     });
 
   const pandaFeet = pos.y + PANDA.h;
-  const feetOf = (o: { y: number; it: Item }) => o.y + o.it.sprite.rows.length;
+  const feetOf = (o: { y: number; sprite: Sprite }) => o.y + o.sprite.rows.length;
   const byFeet = (slot: string) =>
     out.filter((o) => o.it.slot === slot).sort((a, b) => feetOf(a) - feetOf(b));
   const onFloor = byFeet("floor");
@@ -628,14 +665,14 @@ export default function PetRoom({
         {out
           .filter((o) => o.it.slot === "flat")
           .map((o) => (
-            <Piece key={o.it.id} sprite={spriteAt(o.it, tick)} x={o.x} y={o.y} />
+            <Piece key={o.it.id} sprite={o.sprite} x={o.x} y={o.y} />
           ))}
 
         {/* 벽에 거는 것은 늘 판다 뒤 */}
         {out
           .filter((o) => o.it.slot === "wall")
           .map((o) => (
-            <Piece key={o.it.id} sprite={spriteAt(o.it, tick)} x={o.x} y={o.y} />
+            <Piece key={o.it.id} sprite={o.sprite} x={o.x} y={o.y} />
           ))}
 
         {/*
@@ -645,7 +682,7 @@ export default function PetRoom({
         {onFloor
           .filter((o) => feetOf(o) <= pandaFeet)
           .map((o) => (
-            <Piece key={o.it.id} sprite={spriteAt(o.it, tick)} x={o.x} y={o.y} />
+            <Piece key={o.it.id} sprite={o.sprite} x={o.x} y={o.y} />
           ))}
         {/*
           가구 위에 얹는 것은 **같은 차례 안에서 바닥 가구보다 뒤에** 그린다.
@@ -654,25 +691,25 @@ export default function PetRoom({
         {onTop
           .filter((o) => feetOf(o) <= pandaFeet)
           .map((o) => (
-            <Piece key={o.it.id} sprite={spriteAt(o.it, tick)} x={o.x} y={o.y} />
+            <Piece key={o.it.id} sprite={o.sprite} x={o.x} y={o.y} />
           ))}
         {pandaG}
         {onFloor
           .filter((o) => feetOf(o) > pandaFeet)
           .map((o) => (
-            <Piece key={o.it.id} sprite={spriteAt(o.it, tick)} x={o.x} y={o.y} />
+            <Piece key={o.it.id} sprite={o.sprite} x={o.x} y={o.y} />
           ))}
         {onTop
           .filter((o) => feetOf(o) > pandaFeet)
           .map((o) => (
-            <Piece key={o.it.id} sprite={spriteAt(o.it, tick)} x={o.x} y={o.y} />
+            <Piece key={o.it.id} sprite={o.sprite} x={o.x} y={o.y} />
           ))}
 
         {/* 집는 자리는 맨 위에 따로 얹는다. 소품끼리 겹쳐 있어도 집을 수 있어야 한다 */}
         {editing &&
           out.map((o) => {
-            const w = o.it.sprite.rows[0].length;
-            const h = o.it.sprite.rows.length;
+            const w = o.sprite.rows[0].length;
+            const h = o.sprite.rows.length;
             return (
               <g key={`h${o.it.id}`}>
                 <rect
@@ -705,13 +742,13 @@ export default function PetRoom({
                     const g = grab.current;
                     if (!g || g.id !== o.it.id) return;
                     const p = toDots(e);
-                    const f = fit(o.it, p.x - g.dx, p.y - g.dy);
+                    const f = fit(o.it, p.x - g.dx, p.y - g.dy, o.sprite);
                     g.x = f.x;
                     g.y = f.y;
                     setDrag({ id: o.it.id, ...f });
                   }}
-                  onPointerUp={() => drop(o.it)}
-                  onPointerCancel={() => drop(o.it)}
+                  onPointerUp={() => drop(o.it, o.sprite)}
+                  onPointerCancel={() => drop(o.it, o.sprite)}
                 />
               </g>
             );

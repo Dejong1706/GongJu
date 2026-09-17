@@ -1,3 +1,5 @@
+import type { Facing } from "@/shop";
+
 export type TabKey = "cal" | "lec" | "tt" | "toeic" | "panda";
 
 export type Course = {
@@ -48,6 +50,13 @@ export type NewEvent = Omit<SchoolEvent, "id">;
 export type NewTask = Omit<Task, "id">;
 
 /** 판다 방의 상태. users/{uid}/pet/state 문서 하나에 통째로 들어간다. */
+/**
+ * 방에 꺼내놓은 소품 하나.
+ * face 는 바라보는 쪽 — **없으면 그 아이템의 기본 방향**(지금 그림). 방향이 생기기 전에 놓은 가구에는 없다.
+ * Firestore 는 undefined 를 못 쓰므로 face 는 **돌렸을 때만 붙이고** 옮길 때는 `...spot` 으로 들고 간다
+ */
+export type Spot = { id: string; x: number; y: number; face?: Facing };
+
 export type Pet = {
   /** 지금까지 번 포인트. 스티커를 붙이고 뗄 때 그만큼 더하고 뺀다 */
   earned: number;
@@ -61,7 +70,7 @@ export type Pet = {
    * 방에 꺼내놓은 소품과 그 자리. 목록에 있으면 방에 있는 것이고, 빼면 치운 것이다.
    * 맵이 아니라 배열인 건 Firestore 때문이다 — merge 로 쓰면 맵은 키가 안 지워진다.
    */
-  spots: { id: string; x: number; y: number }[];
+  spots: Spot[];
   wall: string;
   floor: string;
   /*

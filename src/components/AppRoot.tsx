@@ -7,6 +7,7 @@ import TimeView from "@/components/TimeView";
 import ToeicView from "@/components/ToeicView";
 import PandaView from "@/components/PandaView";
 import TabBar from "@/components/TabBar";
+import GuidePopup from "@/components/GuidePopup";
 import LoginScreen from "@/components/LoginScreen";
 import PixelSprite from "@/components/PixelSprite";
 import { BUNNY } from "@/lib/sprites";
@@ -67,6 +68,7 @@ function Failed() {
 function App({ uid }: { uid: string }) {
   const today = useToday();
   const [tab, setTab] = useState<TabKey>("cal");
+  const [guide, setGuide] = useState(false);
   const { logout } = useAuth();
 
   // 스티커는 지난 달도 넘겨볼 수 있다
@@ -122,9 +124,14 @@ function App({ uid }: { uid: string }) {
 
       <header className="appbar">
         <div className="sprinkle" />
-        <h1 className="font-pixel text-[17px] leading-[1.4] text-white relative [text-shadow:2px_2px_0_var(--pink-deep)]">
-          정연공듀
-        </h1>
+        <div className="flex flex-col">
+          <button type="button" className="guide-btn" onClick={() => setGuide(true)}>
+            가이드
+          </button>
+          <h1 className="font-pixel text-[17px] leading-[1.4] text-white relative [text-shadow:2px_2px_0_var(--pink-deep)]">
+            정연공듀
+          </h1>
+        </div>
         <div className="relative text-right leading-[1.5]">
           <div className="text-[11px]">
             {today.getMonth() + 1}월 {today.getDate()}일 {DOW[today.getDay()]}
@@ -216,6 +223,9 @@ function App({ uid }: { uid: string }) {
 
       <div className="edge edge-up" />
       <TabBar tab={tab} onChange={setTab} />
+
+      {/* 헤더 안에 두면 .dim 이 헤더(position: relative) 크기에 갇힌다. 앱 전체를 덮게 여기 둔다 */}
+      {guide && <GuidePopup onClose={() => setGuide(false)} />}
     </div>
   );
 }

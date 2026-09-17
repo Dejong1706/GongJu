@@ -386,6 +386,31 @@ export default function PetRoom({
   const grab = useRef<{ id: string; dx: number; dy: number; x: number; y: number } | null>(null);
   const [drag, setDrag] = useState<{ id: string; x: number; y: number } | null>(null);
 
+  /*
+   * 손을 뗐을 때 — **그리고 터치가 취소됐을 때도** 여기서 저장한다.
+   *
+   * 아이폰 사파리는 끄는 도중 위아래로 움직이면 스크롤로 보고 pointercancel 을 보낸다.
+   * 그러면 pointerup 이 안 와서, 예전에는 저장을 건너뛴 채 임시 자리(drag) 만 화면에 남았다.
+   * 다음에 다른 가구를 잡는 순간 drag 가 그쪽으로 넘어가면서 앞의 가구가 원래 자리로 튀었다.
+   * grab 을 먼저 비우므로 up 과 cancel 이 둘 다 와도 한 번만 저장한다.
+   */
+  const drop = (it: Item) => {
+    const g = grab.current;
+    if (!g || g.id !== it.id) return;
+    grab.current = null;
+    // 두 칸 격자에 붙인다. 손가락으로 한 칸은 못 맞춘다
+    const f = fit(it, Math.round(g.x / SNAP) * SNAP, Math.round(g.y / SNAP) * SNAP);
+    setDrag(null);
+    onMove?.(it.id, f.x, f.y);
+  };
+
+  // 옮기기를 끝내면 임시 자리를 비운다. 화면과 저장된 자리가 어긋난 채로 남지 않게
+  useEffect(() => {
+    if (editing) return;
+    grab.current = null;
+    setDrag(null);
+  }, [editing]);
+
   const toDots = (e: React.PointerEvent) => {
     const r = svgRef.current?.getBoundingClientRect();
     if (!r) return { x: 0, y: 0 };
@@ -398,11 +423,15 @@ export default function PetRoom({
   const out = (pet.spots ?? [])
     .map((sp) => ({ sp, it: itemById(sp.id) }))
     .filter((v): v is { sp: { id: string; x: number; y: number }; it: Item } => !!v.it)
-    .map(({ sp, it }) => ({
-      it,
-      x: drag?.id === sp.id ? drag.x : sp.x,
-      y: drag?.id === sp.id ? drag.y : sp.y,
-    }));
+    .map(({ sp, it }) => {
+      if (drag?.id === sp.id) return { it, x: drag.x, y: drag.y };
+      /*
+       * 저장된 자리도 그릴 때 한 번 더 가둔다. 그림이 넓어지면(침대 22 → 30)
+       * 벽 가까이 놓아둔 것이 방 밖으로 삐져나온다. 저장된 값은 건드리지 않는다
+       */
+      const f = fit(it, sp.x, sp.y);
+      return { it, x: f.x, y: f.y };
+    });
 
   const pandaFeet = pos.y + PANDA.h;
   const feetOf = (o: { y: number; it: Item }) => o.y + o.it.sprite.rows.length;
@@ -454,7 +483,7 @@ export default function PetRoom({
     <div className="pet-room">
       <svg
         ref={svgRef}
-        className="room"
+        className={`room ${editing ? "room-editing" : ""}`}
         viewBox={`0 0 ${ROOM.w} ${ROOM.h}`}
         shapeRendering="crispEdges"
         role="img"
@@ -548,19 +577,8 @@ export default function PetRoom({
                     g.y = f.y;
                     setDrag({ id: o.it.id, ...f });
                   }}
-                  onPointerUp={() => {
-                    const g = grab.current;
-                    if (!g) return;
-                    grab.current = null;
-                    // 손을 떼면 두 칸 격자에 붙인다. 손가락으로 한 칸은 못 맞춘다
-                    const f = fit(
-                      o.it,
-                      Math.round(g.x / SNAP) * SNAP,
-                      Math.round(g.y / SNAP) * SNAP
-                    );
-                    setDrag(null);
-                    onMove?.(o.it.id, f.x, f.y);
-                  }}
+                  onPointerUp={() => drop(o.it)}
+                  onPointerCancel={() => drop(o.it)}
                 />
               </g>
             );

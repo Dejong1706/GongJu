@@ -849,6 +849,12 @@
   }
   .pet-grab {
     cursor: grab;
+  }
+  /*
+   * 끄는 동안 스크롤로 가로채지 않게. 사파리는 SVG 안쪽 도형(rect) 의 touch-action 을
+   * 무시하므로 **가장 바깥 svg** 에 건다. 옮기기 중에만 — 평소에는 방 위에서도 스크롤돼야 한다
+   */
+  .room-editing {
     touch-action: none;
   }
   .pet-heart {

@@ -26,6 +26,8 @@ export const UPDATES: Update[] = [
       { kind: "change", text: "강의·과제 체크 포인트는 하루 5번까지 받아요" },
       { kind: "fix", text: "체크를 빠르게 두 번 누르면 포인트가 두 번 들어오던 문제" },
       { kind: "change", text: "산 뒤에 스티커를 떼거나 체크를 풀면 포인트가 마이너스로 보여요" },
+      { kind: "change", text: "침대와 책상이 더 길어졌어요" },
+      { kind: "fix", text: "옮겨둔 가구가 다른 가구를 옮길 때 원래 자리로 돌아가던 문제" },
     ],
   },
   {

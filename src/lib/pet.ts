@@ -251,17 +251,17 @@ export const ITEMS: Item[] = [
     cat: "기타",
     slot: "floor",
     price: 300,
-    at: [56, 60],
+    at: [52, 60],
     sprite: s(
       [
-        "hhhhhhhhhhhh",
-        "HHHHHHHHHHHH",
-        "hhhhhhhhhhhh",
-        "hH........Hh",
-        "hH........Hh",
-        "hH........Hh",
-        "hH........Hh",
-        "hh........hh",
+        "hhhhhhhhhhhhhhhhhhhh",
+        "HHHHHHHHHHHHHHHHHHHH",
+        "hhhhhhhhhhhhhhhhhhhh",
+        "hH................Hh",
+        "hH................Hh",
+        "hH................Hh",
+        "hH................Hh",
+        "hh................hh",
       ],
       "Hh"
     ),
@@ -300,21 +300,25 @@ export const ITEMS: Item[] = [
     slot: "floor",
     price: 320,
     at: [9, 56],
-    // 프레임도 베개도 흰색이라 붙어 보인다. 베개 둘레를 테두리로 끊어 떼어놨다
+    /*
+     * 프레임도 베개도 흰색이라 붙어 보인다. 베개 둘레를 테두리로 끊어 떼어놨다.
+     * 22폭이던 걸 30폭으로 늘렸다 — 판다(16) 옆에 두면 아기 침대처럼 짧다는 말을 들었다.
+     * 베개는 그대로 두고 이불만 길어졌다
+     */
     sprite: s(
       [
-        "hhh...................",
-        "hHh...................",
-        "hHhhhhhhhhhhhhhhhhhhhh",
-        "hHhWWWWWWWQQQQQQQQQQQh",
-        "hHhWWWWWWWQQQQQQQQQQQh",
-        "hHhWWWWWWWQqqqqqqqqqQh",
-        "hHhWWWWWWWQQQQQQQQQQQh",
-        "hHhhhhhhhhQQQQQQQQQQQh",
-        "hHhQQQQQQQQQQQQQQQQQQh",
-        "hhhhhhhhhhhhhhhhhhhhhh",
-        "hHh................hHh",
-        "hhh................hhh",
+        "hhh...........................",
+        "hHh...........................",
+        "hHhhhhhhhhhhhhhhhhhhhhhhhhhhhh",
+        "hHhWWWWWWWQQQQQQQQQQQQQQQQQQQh",
+        "hHhWWWWWWWQQQQQQQQQQQQQQQQQQQh",
+        "hHhWWWWWWWQqqqqqqqqqqqqqqqqqQh",
+        "hHhWWWWWWWQQQQQQQQQQQQQQQQQQQh",
+        "hHhhhhhhhhQQQQQQQQQQQQQQQQQQQh",
+        "hHhQQQQQQQQQQQQQQQQQQQQQQQQQQh",
+        "hhhhhhhhhhhhhhhhhhhhhhhhhhhhhh",
+        "hHh........................hHh",
+        "hhh........................hhh",
       ],
       "HhWQq"
     ),
@@ -328,16 +332,16 @@ export const ITEMS: Item[] = [
     at: [46, 58],
     sprite: s(
       [
-        "hhhhhhhhhhhhhh",
-        "HHHHHHHHHHHHHH",
-        "hhhhhhhhhhhhhh",
-        "hH.....hHHHHHh",
-        "hH.....hhhhhhh",
-        "hH.....hHHHHHh",
-        "hH.....hhhhhhh",
-        "hH.....hHHHHHh",
-        "hH.....hH...Hh",
-        "hh.....hh...hh",
+        "hhhhhhhhhhhhhhhhhhhhhh",
+        "HHHHHHHHHHHHHHHHHHHHHH",
+        "hhhhhhhhhhhhhhhhhhhhhh",
+        "hH.............hHHHHHh",
+        "hH.............hhhhhhh",
+        "hH.............hHHHHHh",
+        "hH.............hhhhhhh",
+        "hH.............hHHHHHh",
+        "hH.............hH...Hh",
+        "hh.............hh...hh",
       ],
       "Hh"
     ),

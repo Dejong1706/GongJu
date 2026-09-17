@@ -2,23 +2,8 @@
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BABY, HEART, type Sprite } from "@/lib/sprites";
-import {
-  ANIM_MS,
-  BASEBOARD,
-  spriteAt,
-  ITEMS,
-  PANDA,
-  ROOM,
-  SNAP,
-  floorById,
-  floorLeftAt,
-  floorRightAt,
-  floorTopAt,
-  itemById,
-  wallById,
-  type Item,
-  type Surface,
-} from "@/lib/pet";
+import { BASEBOARD, PANDA, ROOM, SNAP, floorLeftAt, floorRightAt, floorTopAt } from "@/lib/pet";
+import { ANIM_MS, floorById, itemById, spriteAt, wallById, type Item, type Surface } from "@/shop";
 import type { Pet } from "@/lib/types";
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
@@ -735,6 +720,3 @@ export default function PetRoom({
     </div>
   );
 }
-
-/** 아직 살 수 있는 게 없어도 방은 보여야 하므로 소품 목록은 여기서 내보낸다 */
-export { ITEMS };

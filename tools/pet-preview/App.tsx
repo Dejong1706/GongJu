@@ -21,7 +21,7 @@ import {
   type Cat,
   type Item,
   type Surface,
-} from "@/lib/pet";
+} from "@/shop";
 import type { Pet } from "@/lib/types";
 import { DRAFT_FLOORS, DRAFT_ITEMS, DRAFT_NOTES, DRAFT_WALLS } from "./drafts";
 

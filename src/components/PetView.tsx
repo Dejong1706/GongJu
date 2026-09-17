@@ -18,7 +18,7 @@ import {
   type Grade,
   type Item,
   type Surface,
-} from "@/lib/pet";
+} from "@/shop";
 import type { Pet } from "@/lib/types";
 
 /** 벽지·바닥 미리보기. 도트가 아니라 면이라 CSS 로 흉내 낸다. */

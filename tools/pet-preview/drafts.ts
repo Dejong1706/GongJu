@@ -1,10 +1,11 @@
 /**
  * 시안 — 아직 상점에 안 넣은 것들.
  *
- * 시안실 페이지에서만 보인다. 채택되면 여기서 지우고 `src/lib/pet.ts` 로 옮긴다.
+ * 시안실 페이지에서만 보인다. 채택되면 여기서 지우고 `src/shop/<칸>/<id>.ts` 로 옮긴 뒤
+ * 그 폴더 index.ts 에 한 줄 넣는다 (벽지 · 바닥은 wallpaper.ts · floor.ts).
  * 떨어진 것도 지운다 (이유는 history.md 에 남긴다).
  */
-import type { Item, Surface } from "@/lib/pet";
+import type { Item, Surface } from "@/shop";
 
 export const DRAFT_ITEMS: Item[] = [];
 export const DRAFT_WALLS: Surface[] = [];

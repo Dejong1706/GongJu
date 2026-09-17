@@ -307,12 +307,19 @@ export const EMPTY_PET: Pet = {
 export function useRewards(uid: string, pet: Pet | null, today: string) {
   const ref = useMemo(() => doc(db, "users", uid, "pet", "state"), [uid]);
 
-  /** 퀴즈를 다 맞혔을 때. 오늘 이미 줬으면 아무 일도 안 한다. 줬으면 true */
-  const quiz = useCallback(async () => {
-    if (!pet || pet.quizDay === today) return false;
-    await setDoc(ref, { earned: increment(PER_QUIZ), quizDay: today }, { merge: true });
-    return true;
-  }, [pet, today, ref]);
+  /**
+   * 퀴즈 한 판을 끝냈을 때. 맞힌 개수 x PER_QUIZ.
+   * 오늘 이미 한 판 쳤으면 아무 일도 안 하고 null. 0개 맞혀도 오늘 기회는 쓴다.
+   */
+  const quiz = useCallback(
+    async (right: number) => {
+      if (!pet || pet.quizDay === today) return null;
+      const gain = right * PER_QUIZ;
+      await setDoc(ref, { earned: increment(gain), quizDay: today }, { merge: true });
+      return gain;
+    },
+    [pet, today, ref],
+  );
 
   /** 일시정지 없이 25분을 채울 때마다. 하루 네 번까지 */
   const focus = useCallback(

@@ -1,6 +1,5 @@
 "use client";
 
-import { PER_QUIZ } from "@/lib/pet";
 import { useRef, useState } from "react";
 import Popup from "./Popup";
 import PixelSprite from "./PixelSprite";
@@ -28,7 +27,7 @@ export default function ToeicView({
   onUpdate,
   onRemove,
   today,
-  onPerfect,
+  onFinish,
 }: {
   words: Word[];
   onAdd: (en: string, ko: string) => Promise<unknown>;
@@ -36,7 +35,7 @@ export default function ToeicView({
   onRemove: (id: string) => Promise<unknown>;
   today: Date;
   /** 다섯 문제를 다 맞혔을 때. 점수가 실제로 붙었으면 true 를 돌려준다 */
-  onPerfect?: () => Promise<boolean> | void;
+  onFinish?: (right: number) => Promise<number | null> | void;
 }) {
   const [screen, setScreen] = useState<Screen>("home");
   const [wordOpen, setWordOpen] = useState(false);
@@ -48,8 +47,8 @@ export default function ToeicView({
   const [editMsg, setEditMsg] = useState("");
   const [find, setFind] = useState("");
 
-  // 이 판에 점수가 붙었는지. 오늘 이미 받았으면 만점이어도 안 붙는다
-  const [gained, setGained] = useState(false);
+  // 이 판에 붙은 점수. 오늘 이미 한 판 쳤으면 null
+  const [gained, setGained] = useState<number | null>(null);
   const [quiz, setQuiz] = useState<Word[]>([]);
   const [qi, setQi] = useState(0);
   const [opts, setOpts] = useState<string[]>([]);
@@ -157,7 +156,7 @@ export default function ToeicView({
 
   const startQuiz = () => {
     if (!canQuiz) return;
-    setGained(false);
+    setGained(null);
     const picked = shuffle([...words]).slice(0, QN);
     setQuiz(picked);
     setQi(0);
@@ -186,9 +185,11 @@ export default function ToeicView({
     } else {
       setScreen("result");
       hop();
-      // 다섯 문제를 다 뽑아 다 맞혔을 때만. 단어가 모자라 세 문제만 푼 판은 안 친다
-      if (total === QN && marks.filter(Boolean).length === total) {
-        Promise.resolve(onPerfect?.()).then((ok) => setGained(!!ok));
+      // 다섯 문제를 다 뽑은 판만 친다. 단어가 모자라 세 문제만 푼 판은 오늘 기회를 안 쓴다
+      if (total === QN) {
+        Promise.resolve(onFinish?.(marks.filter(Boolean).length)).then((g) =>
+          setGained(typeof g === "number" ? g : null),
+        );
       }
     }
   };
@@ -363,7 +364,7 @@ export default function ToeicView({
               ? "거의 다 맞았어요"
               : "다시 한 번 볼까요"}
           </span>
-          {gained && <span className="got">+{PER_QUIZ}점</span>}
+          {gained !== null && <span className="got">+{gained}점</span>}
         </div>
 
         <div className="card">

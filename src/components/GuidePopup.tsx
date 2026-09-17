@@ -44,10 +44,10 @@ const WAYS = [
   },
   {
     icon: "📖",
-    name: "토익 퀴즈 만점",
+    name: "토익 퀴즈",
     where: "토익 탭",
     point: PER_QUIZ,
-    notes: ["다섯 문제를 전부 맞히면", "하루 한 번"],
+    notes: ["한 문제 맞힐 때마다", `하루 첫 판만 · 최대 ${PER_QUIZ * 5}`],
   },
   {
     icon: "⏱️",

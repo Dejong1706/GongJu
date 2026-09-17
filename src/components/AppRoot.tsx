@@ -194,7 +194,7 @@ function App({ uid }: { uid: string }) {
               onUpdate={updateWord}
               onRemove={removeWord}
               today={today}
-              onPerfect={rewardQuiz}
+              onFinish={rewardQuiz}
             />
           ))}
 

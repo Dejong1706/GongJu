@@ -76,8 +76,11 @@ export const STREAK_BONUS = 50;
  */
 export const PER_TASK = 20;
 export const TASK_CAP = 5;
-/** 토익 퀴즈를 다 맞혔을 때. 하루 한 번만 준다 */
-export const PER_QUIZ = 50;
+/**
+ * 토익 퀴즈 한 문제 맞힐 때마다. **그날 처음 끝까지 푼 한 판만** 친다 (0~50점).
+ * 다시 풀어 만점을 노리는 걸 막으려고 틀려도 기회가 끝난다.
+ */
+export const PER_QUIZ = 10;
 /**
  * 타이머를 **일시정지 없이** 이만큼 잴 때마다. 하루 네 번까지.
  * 조건 없이 시간당으로 주면 켜두기 게임이 된다 — 이 둘이 그걸 막는 전부다.

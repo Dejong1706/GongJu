@@ -23,12 +23,17 @@ export default function LectureView({
 }: {
   tasks: Task[];
   onSave: (id: string | null, data: NewTask) => Promise<void>;
-  onToggle: (id: string, done: boolean) => Promise<void>;
-  onRemove: (id: string, done: boolean) => Promise<void>;
+  onToggle: (id: string, done: boolean, today: string) => Promise<number>;
+  onRemove: (id: string, today: string) => Promise<void>;
   today: Date;
 }) {
   const [edit, setEdit] = useState<EditState | null>(null);
   const [msg, setMsg] = useState("");
+  /*
+   * 저장이 끝나기 전의 체크 칸. 트랜잭션은 서버를 다녀와야 화면에 반영되니
+   * 그동안 누른 모양을 먼저 보여주고, 또 누르는 것은 받지 않는다
+   */
+  const [busy, setBusy] = useState<Record<string, boolean>>({});
 
   const openEdit = (next: EditState) => {
     setEdit(next);
@@ -73,10 +78,9 @@ export default function LectureView({
 
   const remove = async () => {
     if (!edit?.id) return;
-    // 다 했다고 표시돼 있었으면 받은 점수도 같이 돌려줘야 한다
-    const done = tasks.find((t) => t.id === edit.id)?.done ?? false;
+    // 다 했다고 표시돼 있었으면 받은 점수도 같이 돌려준다 — 체크 여부는 저장하는 쪽이 다시 읽는다
     try {
-      await onRemove(edit.id, done);
+      await onRemove(edit.id, ymd(today));
       setEdit(null);
     } catch {
       setMsg("삭제하지 못했어요");
@@ -113,18 +117,31 @@ export default function LectureView({
 
         const renderItem = (t: Task) => {
           const c = courseOf(t.courseId);
+          const done = busy[t.id] ?? t.done;
           return (
-            <div key={t.id} className={`item ${t.done ? "item-done" : ""}`}>
+            <div key={t.id} className={`item ${done ? "item-done" : ""}`}>
               <button
                 type="button"
                 aria-label={`${t.title} 다 했는지 표시`}
-                aria-pressed={t.done}
-                className={`check ${t.done ? "check-on" : ""}`}
+                aria-pressed={done}
+                className={`check ${done ? "check-on" : ""}`}
                 onClick={() => {
-                  onToggle(t.id, !t.done).then(
-                    () => setMsg(""),
-                    () => setMsg("표시를 바꾸지 못했어요")
-                  );
+                  if (t.id in busy) return;
+                  const next = !t.done;
+                  setBusy((b) => ({ ...b, [t.id]: next }));
+                  onToggle(t.id, next, ymd(today))
+                    .then(
+                      (pay) =>
+                        setMsg(
+                          next && pay === 0
+                            ? "오늘 체크 포인트는 다 받았어요"
+                            : ""
+                        ),
+                      () => setMsg("표시를 바꾸지 못했어요")
+                    )
+                    .finally(() =>
+                      setBusy(({ [t.id]: _, ...rest }) => rest)
+                    );
                 }}
               />
               <button

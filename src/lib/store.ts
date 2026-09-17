@@ -10,6 +10,7 @@ import {
   onSnapshot,
   orderBy,
   query,
+  runTransaction,
   setDoc,
   updateDoc,
   writeBatch,
@@ -22,6 +23,7 @@ import {
   PER_TASK,
   spotsFromPlaced,
   stickerPoints,
+  TASK_CAP,
 } from "./pet";
 import type { NewEvent, NewTask, Pet, SchoolEvent, Task, Word } from "./types";
 
@@ -86,50 +88,110 @@ export function useEvents(uid: string) {
 }
 
 /* ── 강의 · 과제 ───────────────────── */
+
+/**
+ * 체크를 풀거나 체크된 과제를 지울 때 판다 문서에 쓸 값. 돌려받을 게 없으면 null.
+ *
+ * - 준 만큼만 뺀다. paid 가 없는 건 이 규칙 전에 체크한 것이라 PER_TASK 를 줬다고 본다
+ * - **오늘 체크한 것을 오늘 풀면 한도도 한 칸 돌려준다.** 잘못 누른 것 때문에 한도가 줄면 안 된다.
+ *   어제 체크한 것을 오늘 풀면 점수만 빼고 오늘 한도는 그대로 둔다
+ */
+function refund(task: Task, pet: Partial<Pet> | undefined, today: string) {
+  const paid = task.paid ?? PER_TASK;
+  if (paid <= 0) return null;
+  const sameDay = task.paidDay === today && pet?.taskDay === today;
+  return {
+    earned: increment(-paid),
+    ...(sameDay ? { taskCount: Math.max(0, (pet?.taskCount ?? 0) - 1) } : {}),
+  };
+}
 export function useTasks(uid: string) {
   const { rows: tasks, error } = useLiveCollection<Task>(uid, "tasks", "date");
 
   const save = useCallback(
     async (id: string | null, data: NewTask) => {
-      if (id) await updateDoc(doc(db, "users", uid, "tasks", id), data);
-      else await addDoc(col(uid, "tasks"), data);
+      if (id) {
+        /*
+         * 고칠 때는 done 을 안 쓴다. 화면이 들고 있던 옛날 done 으로 덮으면
+         * 점수를 돌려받지 않고 체크가 풀려서, 다시 체크해 또 받을 수 있다.
+         * done 은 toggle 만 바꾼다.
+         */
+        const { done: _done, ...rest } = data;
+        void _done;
+        await updateDoc(doc(db, "users", uid, "tasks", id), rest);
+      } else await addDoc(col(uid, "tasks"), { ...data, done: false });
     },
     [uid]
   );
 
-  /* 스티커와 같은 규칙 — 체크하면 주고, 풀면 그만큼 되돌려받는다 */
+  const petRef = useMemo(() => doc(db, "users", uid, "pet", "state"), [uid]);
+
+  /*
+   * 체크하면 주고, 풀면 **그 과제에 실제로 준 만큼** 되돌려받는다.
+   *
+   * 트랜잭션으로 과제 문서를 다시 읽어서 **이미 그 상태면 아무것도 안 한다.**
+   * 예전에는 화면이 들고 있던 done 을 믿고 increment 만 보내서,
+   * 화면이 갱신되기 전에 두 번 누르면 20점이 두 번 붙었다.
+   *
+   * 하루에 점수가 붙는 체크는 TASK_CAP 번까지다. 안 그러면 빈 과제를 만들고 체크하기를
+   * 끝없이 되풀이할 수 있다. 얼마를 줬는지(paid) 를 과제에 적어두는 건,
+   * 한도를 넘겨 0점으로 체크된 것을 풀 때 20점을 빼앗지 않으려는 것이다.
+   *
+   * 돌려주는 값은 이번에 준 점수. 체크했는데 0 이면 오늘 한도를 다 쓴 것이다.
+   */
   const toggle = useCallback(
-    (id: string, done: boolean) => {
-      const batch = writeBatch(db);
-      batch.update(doc(db, "users", uid, "tasks", id), { done });
-      batch.set(
-        doc(db, "users", uid, "pet", "state"),
-        { earned: increment(done ? PER_TASK : -PER_TASK) },
-        { merge: true }
-      );
-      return batch.commit();
-    },
-    [uid]
+    (id: string, done: boolean, today: string) =>
+      runTransaction(db, async (tx) => {
+        const ref = doc(db, "users", uid, "tasks", id);
+        const snap = await tx.get(ref);
+        if (!snap.exists()) return 0;
+        const task = snap.data() as Task;
+        if (!!task.done === done) return 0; // 이미 그렇게 돼 있다 — 연타
+        const pet = (await tx.get(petRef)).data() as Partial<Pet> | undefined;
+
+        if (!done) {
+          tx.update(ref, { done: false, paid: 0 });
+          const back = refund(task, pet, today);
+          if (back) tx.set(petRef, back, { merge: true });
+          return 0;
+        }
+
+        const count = pet?.taskDay === today ? pet.taskCount ?? 0 : 0;
+        const pay = count < TASK_CAP ? PER_TASK : 0;
+        tx.update(ref, { done: true, paid: pay, paidDay: today });
+        if (pay) {
+          tx.set(
+            petRef,
+            { earned: increment(pay), taskDay: today, taskCount: count + 1 },
+            { merge: true }
+          );
+        }
+        return pay;
+      }),
+    [uid, petRef]
   );
 
   /*
    * 다 했다고 표시된 것을 지우면 점수도 같이 회수한다.
    * 안 그러면 만들고 → 체크하고 → 지우기를 되풀이해 점수를 불릴 수 있다.
+   * 체크 여부도 화면 값이 아니라 트랜잭션 안에서 다시 읽는다.
    */
   const remove = useCallback(
-    (id: string, done: boolean) => {
-      const ref = doc(db, "users", uid, "tasks", id);
-      if (!done) return deleteDoc(ref);
-      const batch = writeBatch(db);
-      batch.delete(ref);
-      batch.set(
-        doc(db, "users", uid, "pet", "state"),
-        { earned: increment(-PER_TASK) },
-        { merge: true }
-      );
-      return batch.commit();
-    },
-    [uid]
+    (id: string, today: string) =>
+      runTransaction(db, async (tx) => {
+        const ref = doc(db, "users", uid, "tasks", id);
+        const snap = await tx.get(ref);
+        if (!snap.exists()) return;
+        const task = snap.data() as Task;
+        // 트랜잭션은 읽기를 쓰기보다 먼저 끝내야 한다
+        const pet = task.done
+          ? ((await tx.get(petRef)).data() as Partial<Pet> | undefined)
+          : undefined;
+        tx.delete(ref);
+        const back = task.done ? refund(task, pet, today) : null;
+        if (back) tx.set(petRef, back, { merge: true });
+      }),
+    [uid, petRef]
   );
 
   return { tasks, error, save, toggle, remove };

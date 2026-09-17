@@ -82,12 +82,16 @@ export default function PetView({
   const [editing, setEditing] = useState(false);
   const [cat, setCat] = useState<Cat>("옷");
   const [msg, setMsg] = useState("");
-  /* 살 때는 반드시 한 번 묻는다. 제일 비싼 게 300점이라 잘못 눌러 날리면 아프다 */
+  /* 살 때는 반드시 한 번 묻는다. 제일 비싼 게 320점이라 잘못 눌러 날리면 아프다 */
   const [ask, setAsk] = useState<Ask | null>(null);
   const [short, setShort] = useState<Short | null>(null);
 
-  // 스티커를 떼면 번 점수가 줄어서 잠깐 음수가 될 수 있다
-  const left = Math.max(0, pet.earned - pet.spent);
+  /*
+   * 사고 나서 스티커를 떼거나 체크를 풀면 음수가 된다. 0 으로 가리지 않고 그대로 보여준다 —
+   * 가리면 "풀어도 안 깎이고, 다시 붙여도 안 늘어난다" 로 보여서 새는 것처럼 보인다.
+   * 빚은 실제로 남아 있어서, 다시 벌어 0 을 넘겨야 살 수 있다
+   */
+  const left = pet.earned - pet.spent;
   const owns = useMemo(() => new Set(pet.owned), [pet.owned]);
 
   const save = (next: Pet, failed: string) => {

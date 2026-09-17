@@ -632,8 +632,12 @@ export const BONUS = 100;
 /** 스티커를 이어 붙인 날이 이만큼 갈 때마다 */
 export const STREAK_EVERY = 7;
 export const STREAK_BONUS = 50;
-/** 강의·과제 하나를 다 했다고 표시할 때마다 */
+/**
+ * 강의·과제 하나를 다 했다고 표시할 때마다. 하루 다섯 번까지.
+ * 한도가 없으면 빈 과제를 만들어 체크하기를 되풀이해 끝없이 모을 수 있다.
+ */
 export const PER_TASK = 20;
+export const TASK_CAP = 5;
 /** 토익 퀴즈를 다 맞혔을 때. 하루 한 번만 준다 */
 export const PER_QUIZ = 30;
 /**

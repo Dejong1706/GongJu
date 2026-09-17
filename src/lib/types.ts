@@ -28,6 +28,12 @@ export type Task = {
   title: string;
   date: string; // YYYY-MM-DD
   done: boolean;
+  /**
+   * 체크할 때 실제로 준 점수와 그 날. 풀거나 지울 때 이만큼만 되돌려받는다.
+   * 하루 한도를 넘겨 체크한 것은 0 이다. 이 규칙 전에 체크한 것에는 없다
+   */
+  paid?: number;
+  paidDay?: string;
 };
 
 export type Word = {
@@ -62,6 +68,9 @@ export type Pet = {
    * 하루에 몇 번까지만 주는 것들의 기록.
    * 다른 값과 달리 **날짜가 바뀌면 처음부터**라서, 언제 줬는지를 같이 들고 있어야 한다.
    */
+  /** 강의·과제 체크로 점수를 준 날과 그 날 준 횟수 */
+  taskDay?: string;
+  taskCount?: number;
   /** 토익 퀴즈 점수를 준 날 (YYYY-MM-DD) */
   quizDay?: string;
   /** 타이머 점수를 준 날과 그 날 준 횟수 */

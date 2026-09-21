@@ -37,7 +37,7 @@ import type { YutGame } from "@/lib/types";
  */
 
 /** 편 이름. 정연이 쓰는 앱이지만 둘이 같이 보는 화면이라 이름을 그대로 적는다 */
-const NAME: Record<YutSide, string> = { a: "나", b: "정연" };
+const NAME: Record<YutSide, string> = { a: "오빠", b: "정연" };
 
 function Fruit({ side, kind }: { side: YutSide; kind: "wait" | "on" | "goal" }) {
   const rows = ART[side];

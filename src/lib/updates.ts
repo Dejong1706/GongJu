@@ -23,6 +23,7 @@ export const UPDATES: Update[] = [
     date: "2026-09-21",
     items: [
       { kind: "new", text: "할일 — 강의 탭에 수업과 상관없는 할 일도 적을 수 있어요" },
+      { kind: "change", text: "캘린더 말풍선이 강의와 할일을 같이 세요" },
       { kind: "new", text: "먹빛 전돌 바닥 — 먹빛 한지 벽지와 한 벌인 검은 돌바닥이에요" },
       { kind: "change", text: "단청 한지 벽지가 먹빛 한지 벽지로 바뀌었어요 — 산 사람은 그대로 쓸 수 있어요" },
       { kind: "change", text: "판다 탭이 키우기 화면 하나로 — 맨 위에 스티커 · 상점 · 옮기기" },

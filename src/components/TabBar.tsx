@@ -47,6 +47,23 @@ const ICONS: Record<TabKey, React.ReactNode> = {
   ),
 };
 
+/** 아이콘 오른쪽 아래에 붙는 작은 자물쇠. 잠근 칸에만 얹는다 */
+const LOCK = (
+  <svg
+    className="tab-lock"
+    width="9"
+    height="9"
+    viewBox="0 0 9 9"
+    shapeRendering="crispEdges"
+    fill="currentColor"
+  >
+    <rect x="3" y="0" width="3" height="1" />
+    <rect x="2" y="1" width="1" height="3" /><rect x="6" y="1" width="1" height="3" />
+    <rect x="0" y="3" width="9" height="6" />
+    <rect x="4" y="5" width="1" height="2" fill="#FFD9E8" />
+  </svg>
+);
+
 const LABELS: [TabKey, string][] = [
   ["cal", "캘린더"],
   ["lec", "강의"],
@@ -57,12 +74,21 @@ const LABELS: [TabKey, string][] = [
   ["event", "이벤트"],
 ];
 
+/**
+ * 잠근 칸. 보이기는 그대로 보이되 자물쇠가 붙고, 누르면 열리는 대신 말풍선만 띄운다.
+ * 다시 열어줄 때는 이 배열에서 빼면 끝이다.
+ */
+const LOCKED: TabKey[] = ["event"];
+
 export default function TabBar({
   tab,
   onChange,
+  onLocked,
 }: {
   tab: TabKey;
   onChange: (t: TabKey) => void;
+  /** 잠근 칸을 눌렀을 때 — 탭은 그대로 두고 이것만 부른다 */
+  onLocked: (t: TabKey) => void;
 }) {
   return (
     <nav className="tabwrap">
@@ -71,16 +97,25 @@ export default function TabBar({
         className="tabs"
         style={{ gridTemplateColumns: `repeat(${LABELS.length}, 1fr)` }}
       >
-        {LABELS.map(([key, label]) => (
-          <button
-            key={key}
-            className={`tab ${tab === key ? "tab-on" : ""}`}
-            onClick={() => onChange(key)}
-          >
-            <span className="tab-ic">{ICONS[key]}</span>
-            {label}
-          </button>
-        ))}
+        {LABELS.map(([key, label]) => {
+          const locked = LOCKED.includes(key);
+          return (
+            <button
+              key={key}
+              className={`tab ${tab === key ? "tab-on" : ""} ${
+                locked ? "tab-lock-on" : ""
+              }`}
+              onClick={() => (locked ? onLocked(key) : onChange(key))}
+              aria-label={locked ? `${label} (잠김)` : undefined}
+            >
+              <span className="tab-ic">
+                {ICONS[key]}
+                {locked && LOCK}
+              </span>
+              {label}
+            </button>
+          );
+        })}
       </div>
     </nav>
   );

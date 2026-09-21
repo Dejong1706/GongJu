@@ -22,6 +22,7 @@ export const UPDATES: Update[] = [
   {
     date: "2026-09-21",
     items: [
+      { kind: "change", text: "이벤트 탭에 자물쇠가 걸렸어요 — 눌러도 열리지 않아요" },
       { kind: "new", text: "불러오는 동안 토끼 밑에서 당근이 주황색으로 차올라요" },
       { kind: "fix", text: "'잠깐만' 글자가 다시 통통 튀어요" },
       { kind: "new", text: "윷놀이 이벤트 — 맨 오른쪽 이벤트 탭에서 둘이 번갈아 던져요" },

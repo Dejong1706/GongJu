@@ -325,8 +325,9 @@ src/shop/
 ```
 src/lib/yut.ts · components/EventView.tsx · YutBoard.tsx · YutThrow.tsx · tools/yut-check.mts
 globals.css 의 "윷놀이 이벤트 탭 (한시적)" 덩어리 통째로
-TabBar  — ICONS.event · LABELS 의 ["event","이벤트"] 줄
+TabBar  — ICONS.event · LABELS 의 ["event","이벤트"] 줄 · LOCKED 배열
 AppRoot — EventView import · useYut · tab === "event" 칸 · scroll 의 ev 클래스
+        · 잠금 팝업(locked · "울 아가 혼나요") · globals.css 의 .tab-lock-on · .tab-lock
 types.ts — TabKey 의 "event" · YutGame · store.ts 의 useYut · EMPTY_GAME
 GuidePopup — PER_WIN import 와 WAYS 의 윷놀이 칸 · config.ts 의 EVENT
 ```
@@ -728,6 +729,10 @@ Firestore 문서(`event/yut`) 는 남겨둬도 그만이다. **일부러 다른 
 ## 작업 일지
 
 ### 2026-09-21
+- **이벤트 탭 잠금** (사용자 요청). 탭은 그대로 보이고 아이콘에 작은 자물쇠가 붙는다.
+  누르면 탭이 안 바뀌고 "울 아가 혼나요" 팝업만 뜬다.
+  **잠금 여부는 `TabBar` 의 `LOCKED` 배열 하나**다 — 다시 열어줄 때 거기서 "event" 만 빼면 된다.
+  이벤트 화면/데이터는 손대지 않았다 (자물쇠를 풀면 하던 판이 그대로 이어진다)
 - **로딩 화면에 당근 게이지** (사용자 요청 · 시안 셋 중 "당근 한 개" 로 골랐다).
   토끼 · "잠깐만" 아래에서 주황 당근이 왼쪽부터 찬다
   - **`Splash.tsx` 를 새로 뒀다.** `page.tsx` 의 dynamic 로딩 화면과 `AppRoot` 의 로그인 확인 화면이

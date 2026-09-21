@@ -166,7 +166,7 @@ function App() {
           />
         </div>
         <div className="edge edge-up" />
-        <TabBar tab="panda" onChange={() => {}} />
+        <TabBar tab="panda" onChange={() => {}} onLocked={() => {}} />
       </div>
     </div>
   );

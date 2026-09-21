@@ -201,6 +201,7 @@
     color: var(--ink);
   }
   .tab-ic {
+    position: relative;
     width: 30px;
     height: 26px;
     display: flex;
@@ -211,6 +212,15 @@
   .tab-on .tab-ic {
     background: #fff;
     border-color: var(--ink);
+  }
+  /* 잠근 칸 — 흐리게 두고 아이콘 오른쪽 아래에 자물쇠를 붙인다 */
+  .tab-lock-on {
+    opacity: 0.5;
+  }
+  .tab-lock {
+    position: absolute;
+    right: 0;
+    bottom: 0;
   }
 
   /* ── 공통 ─────────────────────────── */

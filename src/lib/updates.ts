@@ -20,6 +20,14 @@ export const UPDATE_LABEL: Record<UpdateKind, string> = {
 
 export const UPDATES: Update[] = [
   {
+    date: "2026-09-21",
+    items: [
+      { kind: "fix", text: "가구를 뒷벽까지 밀어붙일 수 있어요 — 키 큰 가구가 벽에서 떨어져 서던 문제" },
+      { kind: "fix", text: "화분 · 책 · 꽃병을 키 큰 장 위에도 얹을 수 있어요" },
+      { kind: "fix", text: "창문 · 액자 · 청사초롱이 바닥까지 내려와요" },
+    ],
+  },
+  {
     date: "2026-09-17",
     items: [
       { kind: "new", text: "가구 · 인형 돌리기 — 옮기기를 누르고 ↺ ↻ 를 눌러요" },

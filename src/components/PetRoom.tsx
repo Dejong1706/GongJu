@@ -5,6 +5,7 @@ import { BABY, HEART, type Sprite } from "@/lib/sprites";
 import { BASEBOARD, PANDA, ROOM, SNAP, floorLeftAt, floorRightAt, floorTopAt } from "@/lib/pet";
 import {
   ANIM_MS,
+  ITEMS,
   canTurn,
   floorById,
   itemById,
@@ -463,6 +464,26 @@ function backdrop(wall: Surface, floor: Surface) {
   return out;
 }
 
+/*
+ * 가구 위에 얹는 것(화분 · 책 · 꽃병) 이 올라갈 수 있는 제일 높은 줄 —
+ * **제일 큰 가구를 벽에 붙였을 때의 윗면**이다.
+ * 예전에는 "걸레받이 위 14칸" 으로 못 박아둬서, 가구가 벽까지 가게 된 뒤로는
+ * 키 큰 장 위에 아무것도 못 얹었다 (자개장 윗면보다 11칸 아래에서 막혔다).
+ * 아이템이 늘면 같이 따라 올라가게 **그림에서 잰다.** 한 번 재고 들고 있는데,
+ * 시안실이 시안을 ITEMS 에 밀어 넣는 건 그리기 전이라 시안도 같이 세어진다
+ */
+let reach: number | null = null;
+function topReach() {
+  if (reach === null) {
+    const tall = ITEMS.filter((i) => i.slot === "floor")
+      .flatMap((i) => [i.sprite, ...Object.values(i.views ?? {})])
+      .filter((s): s is Sprite => !!s)
+      .reduce((m, s) => Math.max(m, s.rows.length), 0);
+    reach = ROOM.floorTop - tall;
+  }
+  return reach;
+}
+
 /**
  * 소품이 방 밖으로 못 나가게. 바닥 것은 발끝이 놓인 줄에 따라 좌우 끝이 달라진다.
  * 돌린 가구는 그림 크기가 달라서 **그 방향 그림(sprite)** 으로 잰다
@@ -471,19 +492,31 @@ export function fit(it: Item, x: number, y: number, sprite: Sprite = it.sprite) 
   const w = sprite.rows[0].length;
   const h = sprite.rows.length;
   if (it.slot === "wall") {
+    /*
+     * 아래로는 **맨 아랫줄이 걸레받이에 닿을 때까지** (`floorTop - h`) — 바닥 것과 같은 선이다.
+     * 예전에는 두 줄(8px) 모자란 데서 멈춰서, 바닥까지 내려와야 하는 달밤 창호문이 떠 보였다.
+     * 좌우는 뒷벽 안 — 옆벽은 비스듬해서 걸어둘 수가 없다
+     */
     return {
       x: clamp(x, ROOM.side, ROOM.w - ROOM.side - w),
-      y: clamp(y, 1, ROOM.base - h - 1),
+      y: clamp(y, 1, ROOM.floorTop - h),
     };
   }
   if (it.slot === "top") {
-    // 가구 위로 올라가야 하니 걸레받이 위까지 허용한다. 좌우는 방 안이기만 하면 된다
+    // 제일 큰 가구의 윗면까지 올라간다. 좌우는 방 안이기만 하면 된다 (가구 위에 얹히니까)
     return {
       x: clamp(x, 0, ROOM.w - w),
-      y: clamp(y, ROOM.base - h - 14, ROOM.h - h),
+      y: clamp(y, topReach() - h, ROOM.h - h),
     };
   }
-  const ny = clamp(y, ROOM.floorTop - Math.floor(h / 2), ROOM.h - h);
+  /*
+   * 뒤로 얼마나 갈 수 있나 — **발끝이 벽선(floorTop) 에 닿을 때까지**. 그러면 뒷벽에 딱 붙어 선 모습이 된다.
+   * 예전에는 `floorTop - h/2` 라 키가 클수록 벽에서 멀찍이 섰다
+   * (침대 옆모습 6칸 · 공주 화장대 11칸 · 왕실 침대 17칸 = 68px). 이제 키와 상관없이 벽까지 간다.
+   * 러그 · 방석(flat) 만 벽선 아래로 — 바닥에 까는 것이 벽을 타고 올라가면 걸어둔 그림이 된다
+   */
+  const minY = it.slot === "flat" ? ROOM.floorTop : ROOM.floorTop - h;
+  const ny = clamp(y, minY, ROOM.h - h);
   const feet = ny + h;
   return {
     x: clamp(x, Math.ceil(floorLeftAt(feet)), Math.floor(floorRightAt(feet)) - w),

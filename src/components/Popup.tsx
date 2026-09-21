@@ -12,11 +12,14 @@ export default function Popup({
   children,
   footer,
   headLeft,
+  wide,
 }: {
   title: string;
   onClose: () => void;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  /** 스티커처럼 안이 넓어야 하는 것 — 폭과 높이를 키운다 */
+  wide?: boolean;
   /** 제목 자리에 대신 넣을 것 (상점의 포인트 표시). title 은 읽어주기용으로 남는다 */
   headLeft?: React.ReactNode;
 }) {
@@ -57,7 +60,7 @@ export default function Popup({
       }}
     >
       <div
-        className="pop"
+        className={`pop ${wide ? "pop-wide" : ""}`}
         ref={box}
         role="dialog"
         aria-modal="true"

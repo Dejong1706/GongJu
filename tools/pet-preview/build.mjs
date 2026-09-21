@@ -31,8 +31,19 @@ execFileSync(
   { cwd: root, stdio: "inherit", shell: process.platform === "win32" }
 );
 
-const appCss = readFileSync(join(root, "src", "app", "globals.css"), "utf8")
-  .replace(/^@tailwind .*;$/gm, "")
+/*
+ * CSS 는 **앱과 똑같이 Tailwind 를 태워서** 만든다.
+ * 예전에는 globals.css 에서 @tailwind 줄만 빼고 썼는데, 그러면 Tailwind 유틸(스티커 격자 같은) 이 빠져서
+ * 앱 화면을 통째로 넣는 폰 화면 시안이 무너졌다. 무엇을 쓸지는 tailwind.config.ts 의 content 가 정한다
+ */
+const twCss = join(out, "app.css");
+execFileSync(
+  join(root, "node_modules", ".bin", process.platform === "win32" ? "tailwindcss.cmd" : "tailwindcss"),
+  ["-c", join(root, "tailwind.config.ts"), "-i", join(root, "src", "app", "globals.css"), "-o", twCss, "--minify"],
+  { cwd: root, stdio: "inherit", shell: process.platform === "win32" }
+);
+
+const appCss = readFileSync(twCss, "utf8")
   // 시안실은 Google Fonts 말고는 글꼴을 못 불러온다 (막히면 조용히 빈다). 기본 글꼴로 둔다
   .replace(/@font-face\s*{[^}]*}/g, "");
 const css = appCss + "\n" + readFileSync(join(here, "preview.css"), "utf8");

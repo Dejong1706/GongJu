@@ -10,6 +10,9 @@ import { createRoot } from "react-dom/client";
 import PetRoom, { turnSpot } from "@/components/PetRoom";
 import TurnArrows, { turnLabel, turnTarget } from "@/components/TurnArrows";
 import PixelSprite from "@/components/PixelSprite";
+import PandaView from "@/components/PandaView";
+import PetBar from "@/components/PetBar";
+import TabBar from "@/components/TabBar";
 import { Good, swatch, withItem } from "@/components/PetView";
 import {
   CAT_ROWS,
@@ -54,6 +57,11 @@ function App() {
   const [editing, setEditing] = useState(false);
   const [locked, setLocked] = useState(false);
   const [onlyDrafts, setOnlyDrafts] = useState(false);
+  /** 폰 화면 시안 — 앱 껍데기 안에 키우기 화면을 통째로 넣어 본다 (조작줄 자리 보기) */
+  const [phone, setPhone] = useState(false);
+  const [stickers, setStickers] = useState<number[]>([]);
+  const today = useMemo(() => new Date(), []);
+  const [cursor, setCursor] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [picked, setPicked] = useState<Picked | null>(null);
   /** 옮기기 중 마지막으로 누른 가구. 방향 그림이 있으면 화살표가 뜬다 */
   const [sel, setSel] = useState<string | null>(null);
@@ -116,6 +124,53 @@ function App() {
     </div>
   );
 
+  /*
+   * 폰 화면 시안 — **앱 껍데기(.device) 안에 진짜 PandaView 를 넣는다.**
+   * 조작줄(스티커 · 상점 · 옮기기) 자리와 "스크롤 없이 한 화면에 들어가나" 를 폰에서 바로 본다.
+   * 방은 위 시안실과 같은 `pet` 을 쓰므로, 칸을 눌러 꾸민 방이 그대로 폰 화면에도 나온다.
+   * 포인트는 값을 크게 줘서 상점을 다 열어본다 (시안실에는 점수가 없다)
+   */
+  const phoneView = (
+    <div className="pv-phone">
+      <div className="device">
+        <div className="island" />
+        <header className="appbar">
+          <div className="sprinkle" />
+          <div className="flex flex-col">
+            <button type="button" className="guide-btn">가이드</button>
+            <h1 className="font-pixel text-[17px] leading-[1.4] text-white relative [text-shadow:2px_2px_0_var(--pink-deep)]">
+              정연공듀
+            </h1>
+          </div>
+          <div className="relative text-right leading-[1.5]">
+            <div className="text-[11px]">
+              {today.getMonth() + 1}월 {today.getDate()}일
+              <br />
+              시안
+            </div>
+          </div>
+        </header>
+        <div className="edge edge-down" />
+        <div className="scroll">
+          <PandaView
+            stickers={stickers}
+            onToggleSticker={async (d) =>
+              setStickers((v) => (v.includes(d) ? v.filter((x) => x !== d) : [...v, d]))
+            }
+            today={today}
+            cursor={cursor}
+            onMoveMonth={(diff) => setCursor((c) => new Date(c.getFullYear(), c.getMonth() + diff, 1))}
+            pet={{ ...pet, earned: 999999 }}
+            petError={false}
+            onChangePet={async (next) => setPet({ ...next, earned: 0 })}
+          />
+        </div>
+        <div className="edge edge-up" />
+        <TabBar tab="panda" onChange={() => {}} />
+      </div>
+    </div>
+  );
+
   return (
     <div className="pv">
       <header className="pv-head">
@@ -125,8 +180,12 @@ function App() {
         </p>
       </header>
 
+      {phone && phoneView}
+
       <div className="pv-body">
         <div className="pv-room">
+          {/* 앱과 같은 조작줄. 시안실에는 스티커 · 상점이 따로 있어서 옮기기만 켠다 */}
+          <PetBar onSticker={() => setPhone(true)} editing={editing} onEdit={() => setEditing((v) => !v)} />
           <div className="pet-stage">
             <PetRoom
               pet={pet}
@@ -136,16 +195,13 @@ function App() {
                 setPet((p) => ({ ...p, spots: p.spots.map((s) => (s.id === id ? { ...s, x, y } : s)) }));
               }}
             />
-            {editing && (
-              <p className="pet-tip">
-                {turning ? `끌어서 옮기고 ↺ ↻ 로 돌려요 · ${turnLabel(turning)}` : "가구를 끌어서 옮겨보세요"}
-              </p>
-            )}
             {turning && <TurnArrows spot={turning} onTurn={(dir) => rotate(turning.id, dir)} />}
-            <button className={`pet-fix ${editing ? "pet-fix-on" : ""}`} type="button" onClick={() => setEditing((v) => !v)}>
-              {editing ? "끝내기" : "옮기기"}
-            </button>
           </div>
+          {editing && (
+            <p className="pet-tip">
+              {turning ? `끌어서 옮기고 ↺ ↻ 로 돌려요 · ${turnLabel(turning)}` : "가구를 끌어서 옮겨보세요"}
+            </p>
+          )}
           <div className="pv-tools">
             <button type="button" onClick={() => setPet(START)}>
               방 비우기
@@ -184,6 +240,10 @@ function App() {
             <label>
               <input id="locked" type="checkbox" checked={locked} onChange={(e) => setLocked(e.target.checked)} />
               안 산 모양으로 보기
+            </label>
+            <label>
+              <input id="phone" type="checkbox" checked={phone} onChange={(e) => setPhone(e.target.checked)} />
+              폰 화면으로 보기
             </label>
           </div>
 

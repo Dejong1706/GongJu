@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Popup from "./Popup";
 import PixelSprite from "./PixelSprite";
 import PetRoom, { turnSpot } from "./PetRoom";
+import PetBar from "./PetBar";
 import TurnArrows, { turnLabel, turnTarget } from "./TurnArrows";
 import { COIN } from "@/lib/sprites";
 import {
@@ -108,10 +109,13 @@ export default function PetView({
   pet,
   onChange,
   onError,
+  onOpenSticker,
 }: {
   pet: Pet;
   onChange: (next: Pet) => Promise<void>;
   onError: (msg: string) => void;
+  /** 조작줄의 스티커. 스티커는 이 화면 위에 큰 팝업으로 뜬다 (PandaView 가 띄운다) */
+  onOpenSticker: () => void;
 }) {
   const [open, setOpen] = useState(false);
   // 가구를 옮기는 동안에는 상점을 닫아두고 판다도 세워둔다
@@ -221,55 +225,30 @@ export default function PetView({
 
   return (
     <>
+      <PetBar
+        onSticker={onOpenSticker}
+        onShop={() => {
+          setOpen(true);
+          setMsg("");
+        }}
+        editing={editing}
+        onEdit={() => {
+          setEditing((v) => !v);
+          setMsg("");
+        }}
+      />
+
       <div className="pet-stage">
         <PetRoom pet={pet} editing={editing} onMove={moveItem} />
-
-        {editing && (
-          <p className="pet-tip">
-            {turning ? `끌어서 옮기고 ↺ ↻ 로 돌려요 · ${turnLabel(turning)}` : "가구를 끌어서 옮겨보세요"}
-          </p>
-        )}
+        {/* 돌리기 화살표만 방 위에 남는다 — 집은 가구 옆에 붙어야 해서 */}
         {turning && <TurnArrows spot={turning} onTurn={(dir) => turnItem(turning.id, dir)} />}
-
-        <button
-          className={`pet-fix ${editing ? "pet-fix-on" : ""}`}
-          type="button"
-          aria-pressed={editing}
-          onClick={() => {
-            setEditing((v) => !v);
-            setMsg("");
-          }}
-        >
-          {editing ? "끝내기" : "옮기기"}
-        </button>
-
-        <button
-          className="pet-shop"
-          type="button"
-          hidden={editing}
-          onClick={() => {
-            setOpen(true);
-            setMsg("");
-          }}
-          aria-label="상점 열기"
-        >
-          <svg
-            width="22"
-            height="22"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#3A2230"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <circle cx="9" cy="20" r="1.4" />
-            <circle cx="19" cy="20" r="1.4" />
-            <path d="M2 3h3l2.4 12a1.8 1.8 0 0 0 1.8 1.4h9a1.8 1.8 0 0 0 1.8-1.4L22 7H6" />
-          </svg>
-        </button>
       </div>
+
+      {editing && (
+        <p className="pet-tip">
+          {turning ? `끌어서 옮기고 ↺ ↻ 로 돌려요 · ${turnLabel(turning)}` : "가구를 끌어서 옮겨보세요"}
+        </p>
+      )}
 
       {open && (
         <Popup title="상점" onClose={() => setOpen(false)} headLeft={<Purse n={left} />}>

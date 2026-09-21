@@ -80,6 +80,13 @@ export function swatch(s: Surface) {
     style.backgroundImage =
       `linear-gradient(180deg,#23262E 0 4%,${s.accent ?? "#343B46"} 4% 18%,#23262E 18% 21%,` +
       `${s.accent2 ?? "#C9A227"} 21% 24%,transparent 24% 70%,#C9B79C 70% 100%)`;
+  } else if (s.kind === "jeondol") {
+    // 검은 전돌 — 어두운 줄눈 격자, 한 칸 건너 조금 밝게
+    style.backgroundImage =
+      `linear-gradient(90deg,${s.accent} 0 1px,transparent 1px),` +
+      `linear-gradient(180deg,${s.accent} 0 1px,transparent 1px),` +
+      `conic-gradient(${s.accent2} 25%,transparent 0 50%,${s.accent2} 0 75%,transparent 0)`;
+    style.backgroundSize = "10px 10px, 10px 10px, 20px 20px";
   } else if (s.kind === "maru") {
     // 세로 귀틀 · 칸마다 엇갈린 널 이음
     style.backgroundImage =

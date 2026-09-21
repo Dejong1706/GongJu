@@ -59,5 +59,5 @@ export type Surface = {
   accent2?: string;
   kind?:
     | "dot" | "stripe" | "panel" | "flower" | "palace" | "goldstripe" | "meok"
-    | "plank" | "check" | "grid" | "parquet" | "royal" | "flowertile" | "maru";
+    | "plank" | "check" | "grid" | "parquet" | "royal" | "flowertile" | "maru" | "jeondol";
 };

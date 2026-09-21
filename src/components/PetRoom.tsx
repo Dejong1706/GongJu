@@ -235,7 +235,12 @@ function backdrop(wall: Surface, floor: Surface) {
     // 구름은 먹보다 밝아야 하는데 shade 는 어둡게만 할 수 있어서 따로 둔다
     const cloud = "#4C5464";
     const fiber = shade(wall.base, 0.95);
-    // 벽널은 바탕을 어둡게 하면 회색이 돼서 나무색을 따로 둔다
+    /*
+     * 벽널은 바탕을 어둡게 하면 회색이 돼서 나무색을 따로 둔다.
+     * 9/21 에 창틀과 함께 **흑석**으로 바꿔 전돌 바닥과 한 벌로 맞춰봤다가 되돌렸다 —
+     * 사용자가 "창문이랑 벽지 아래쪽은 고풍스러운 갈색이 어울린다" 고 했다.
+     * 먹빛 띠 · 검은 전돌 사이에서 **나무 한 줄이 방을 덥혀주는** 쪽이 맞다
+     */
     const wood = "#C9A77E";
     const woodLine = "#9C7556";
     for (let x = 0; x < ROOM.w; x++) {
@@ -443,6 +448,59 @@ function backdrop(wall: Surface, floor: Surface) {
         out.push(<rect key={`mb${i}-${y}`} x={Math.round(l + ((r - l) * i) / COLS)} y={y} width={1} height={1} fill={beam} />);
       }
   }
+  /*
+   * 먹빛 전돌 바닥 (조선 세트 시안) — 궁궐 · 절 마당에 깔던 **네모난 검은 전돌(方塼)**.
+   * 먹빛 한지 벽지와 한 벌이다. 나무 바닥밖에 없어서 벽지만 귀하고 바닥이 수수하다는 말을 들었다 (9/21).
+   *
+   * 한 칸 건너 아주 조금 밝게 해서 **구운 흙이 장마다 다른 것**처럼 보이게 하고,
+   * 줄눈은 바닥보다 **어둡게** 판다 — 돌은 줄눈이 파여 있어서 밝으면 타일 스티커처럼 보인다.
+   * 칸 한가운데 점 하나는 **전돌에 찍힌 무늬**다. 뒤쪽 좁은 칸에는 안 찍는다 (뭉쳐서 얼룩이 된다)
+   */
+  if (floor.kind === "jeondol") {
+    const grout = floor.accent ?? floor.base;
+    const alt = floor.accent2 ?? floor.base;
+    const mark = tint(floor.base, 0.1);
+    const COLS = 5;
+    const bands = [ROOM.floorTop, ...rows, ROOM.h];
+    for (let b = 0; b + 1 < bands.length; b++) {
+      for (let y = bands[b] + 1; y < bands[b + 1]; y++) {
+        const l = floorLeftAt(y);
+        const w = floorRightAt(y) - l;
+        for (let c = 0; c < COLS; c++) {
+          if ((b + c) % 2) continue;
+          const x0 = Math.round(l + (w * c) / COLS) + 1;
+          const x1 = Math.round(l + (w * (c + 1)) / COLS);
+          if (x1 > x0) out.push(<rect key={`jd${y}-${c}`} x={x0} y={y} width={x1 - x0} height={1} fill={alt} />);
+        }
+      }
+      /*
+       * 칸 한가운데 찍는 무늬 — 작은 마름모 넷.
+       * 처음엔 두 칸짜리 가로 점이었는데 **긁힌 자국**처럼 보였다.
+       * 칸마다 같은 자리에 같은 모양이 찍혀야 무늬로 읽힌다. 다섯 줄은 돼야 마름모가 들어간다
+       */
+      if (bands[b + 1] - bands[b] >= 5) {
+        const mid = Math.round((bands[b] + bands[b + 1]) / 2);
+        const l = floorLeftAt(mid);
+        const w = floorRightAt(mid) - l;
+        for (let c = 0; c < COLS; c++) {
+          const x = Math.round(l + (w * (c + 0.5)) / COLS);
+          [[0, -1], [-1, 0], [1, 0], [0, 1]].forEach(([dx, dy], k) =>
+            out.push(<rect key={`jm${b}-${c}-${k}`} x={x + dx} y={mid + dy} width={1} height={1} fill={mark} />)
+          );
+        }
+      }
+    }
+    // 줄눈 — 가로는 깊이 줄마다, 세로는 다섯 칸으로
+    rows.forEach((y) => span(`jr${y}`, y));
+    for (let i = 1; i < COLS; i++)
+      for (let y = ROOM.floorTop; y < ROOM.h; y++) {
+        const l = floorLeftAt(y);
+        const rr = floorRightAt(y);
+        if (rr - l < 2) continue;
+        out.push(<rect key={`jc${i}-${y}`} x={Math.round(l + ((rr - l) * i) / COLS)} y={y} width={1} height={1} fill={grout} />);
+      }
+  }
+
   if (floor.kind === "check") {
     const bands = [ROOM.floorTop, ...rows, ROOM.h];
     for (let b = 0; b + 1 < bands.length; b++)

@@ -1632,9 +1632,13 @@
     font-weight: 700;
     color: #2b2622;
   }
-  .ev-tag {
-    font-size: 9px;
-    color: #7d6a55;
+  /* 이름 앞 과일 — 어느 편인지 한눈에 */
+  .ev-badge {
+    line-height: 0;
+    flex: none;
+    transform: scale(1.25);
+    transform-origin: left center;
+    width: 17px;
   }
   .ev-horses {
     display: flex;

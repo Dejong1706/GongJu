@@ -180,10 +180,12 @@ export default function EventView({
   const card = (side: YutSide) => (
     <div className={`ev-side ev-side-${side} ${turn === side && !done ? "ev-side-on" : ""}`}>
       <span className="ev-side-top">
+        <span className="ev-badge">
+          <Fruit side={side} kind="on" />
+        </span>
         <span className="ev-name">{NAME[side]}</span>
         {turn === side && !done && <span className="ev-turn">차례</span>}
       </span>
-      <span className="ev-tag">{FRUIT[side]}</span>
       <span className="ev-horses">
         {game.horses[side].map((p, i) => (
           <Fruit key={i} side={side} kind={p === GOAL ? "goal" : p === WAIT ? "wait" : "on"} />

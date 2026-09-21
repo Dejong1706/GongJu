@@ -117,10 +117,13 @@ function Mat() {
 
 export default function YutThrow({
   who,
+  draw,
   onDone,
 }: {
   /** 지금 던지는 사람 이름 */
   who: string;
+  /** 선 뽑기 — 한 번만 던지고 "몇 칸" 대신 높낮이를 알려준다 */
+  draw?: boolean;
   onDone: (t: Throw) => void;
 }) {
   const faces = useRef<Faces>(rollFaces());
@@ -173,13 +176,14 @@ export default function YutThrow({
     return () => clearInterval(timer);
   }, []);
 
-  const again = result !== null && isExtra(result);
+  // 선 뽑기에서는 윷 · 모가 나와도 한 번 더 던지지 않는다
+  const again = !draw && result !== null && isExtra(result);
 
   return (
     <div className="dim">
       <div className="pop ev-pop">
         <div className="pop-head">
-          <span>윷 던지기</span>
+          <span>{draw ? "선 뽑기" : "윷 던지기"}</span>
           <span className="ev-who">{who} 차례</span>
         </div>
         <div className="pop-body ev-pop-body">
@@ -215,7 +219,7 @@ export default function YutThrow({
                   {THROW_NAME[result]}!
                 </div>
                 <div className="yut-sub">
-                  {THROW_STEP[result]} 옮겨요
+                  {draw ? "높이 나온 쪽이 먼저 던져요" : `${THROW_STEP[result]} 옮겨요`}
                   {again && (
                     <>
                       <br />
@@ -227,7 +231,7 @@ export default function YutThrow({
                   {result === -1 && (
                     <>
                       <br />
-                      백도 가락만 배를 보였어요
+                      {draw ? "백도는 선 뽑기에서 제일 낮아요" : "백도 가락만 배를 보였어요"}
                     </>
                   )}
                 </div>

@@ -26,7 +26,7 @@ import {
   TASK_CAP,
 } from "./pet";
 import type { NewEvent, NewTask, Pet, SchoolEvent, Task, Word, YutGame } from "./types";
-import { GOAL, HORSES, PER_WIN, WAIT } from "./yut";
+import { HORSES, PER_WIN, WAIT, type Throw, type YutSide } from "./yut";
 
 /**
  * Firestore 구조
@@ -395,6 +395,7 @@ export function usePet(uid: string) {
 
 export const EMPTY_GAME: YutGame = {
   playing: false, // 처음에는 시작 버튼만 보인다
+  first: null, // 선 뽑기 전
   turn: "b", // 정연부터 던진다
   horses: { a: Array(HORSES).fill(WAIT), b: Array(HORSES).fill(WAIT) },
   rolls: [],
@@ -469,15 +470,22 @@ export function useYut(uid: string) {
    * **판 번호를 여기서 올린다** — finish 가 "이 판에 이미 줬나" 를 그 번호로 본다
    */
   const start = useCallback(
-    (cur: YutGame) =>
+    (cur: YutGame, turn: YutSide) =>
       write({
         ...EMPTY_GAME,
         playing: true,
-        turn: cur.turn, // 지난 판에서 이긴 쪽이 먼저 던진다
+        turn, // 선 뽑기에서 이긴 쪽
         wins: cur.wins,
         paid: cur.paid,
         round: cur.round + 1,
       }),
+    [write]
+  );
+
+  /** 선 뽑기를 연다 (시작 버튼) · 던진 값을 적는다 · 비기면 둘 다 비운다 */
+  const draw = useCallback(
+    (cur: YutGame, next: { a: Throw | null; b: Throw | null }) =>
+      write({ ...cur, playing: false, first: next }),
     [write]
   );
 
@@ -495,5 +503,5 @@ export function useYut(uid: string) {
     [write]
   );
 
-  return { game, error, write, finish, start, close };
+  return { game, error, write, finish, start, draw, close };
 }

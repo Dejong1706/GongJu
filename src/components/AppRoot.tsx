@@ -114,6 +114,7 @@ function App({ uid }: { uid: string }) {
     write: writeYut,
     finish: finishYut,
     start: startYut,
+    draw: drawYut,
     close: closeYut,
   } = useYut(uid);
   // 하루에 몇 번까지만 주는 것들 — 토익 퀴즈 만점, 타이머 25분
@@ -247,6 +248,7 @@ function App({ uid }: { uid: string }) {
               onWrite={writeYut}
               onFinish={finishYut}
               onStart={startYut}
+              onDraw={drawYut}
               onClose={closeYut}
               today={today}
             />

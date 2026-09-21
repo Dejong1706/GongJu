@@ -15,6 +15,7 @@ import {
   movesFor,
   other,
   PER_WIN,
+  rank,
   realThrow,
   THROW_NAME,
   WAIT,
@@ -75,17 +76,21 @@ export default function EventView({
   onWrite,
   onFinish,
   onStart,
+  onDraw,
   onClose,
   today,
 }: {
   game: YutGame;
   onWrite: (next: YutGame) => Promise<void> | void;
   onFinish: (next: YutGame, winner: YutSide) => Promise<void>;
-  onStart: (cur: YutGame) => Promise<void> | void;
+  onStart: (cur: YutGame, turn: YutSide) => Promise<void> | void;
+  onDraw: (cur: YutGame, next: { a: Throw | null; b: Throw | null }) => Promise<void> | void;
   onClose: (cur: YutGame) => Promise<void> | void;
   today: Date;
 }) {
   const [throwing, setThrowing] = useState(false);
+  /** 선 뽑기로 던지는 중이면 그 편 */
+  const [drawing, setDrawing] = useState<YutSide | null>(null);
   /** 던진 값이 여러 개일 때 지금 쓸 것 */
   const [sel, setSel] = useState(0);
   const [msg, setMsg] = useState("");
@@ -100,6 +105,16 @@ export default function EventView({
       (parseYmd(EVENT.end).getTime() - parseYmd(ymd(today)).getTime()) / 86_400_000
     )
   );
+
+  /*
+   * 선 뽑기. 정연이 먼저 던지고, 둘 다 나오면 높은 쪽이 선이 된다.
+   * 같으면 둘 다 비우고 다시 (전통 방식 — 사용자가 고른 것)
+   */
+  const f = game.first;
+  const bothIn = !!f && f.a != null && f.b != null;
+  const tie = bothIn && rank(f!.a!) === rank(f!.b!);
+  const lead: YutSide | null = bothIn && !tie ? (rank(f!.a!) > rank(f!.b!) ? "a" : "b") : null;
+  const toDraw: YutSide | null = !f ? null : f.b == null ? "b" : f.a == null ? "a" : null;
 
   // 지금 쓸 값과 그 값으로 갈 수 있는 수
   const use: Throw | null = game.rolls.length > 0 ? game.rolls[Math.min(sel, game.rolls.length - 1)] : null;
@@ -214,19 +229,64 @@ export default function EventView({
             if (move) play(move);
           }}
         />
-        {/* 판을 안 열었으면 어둡게 덮고 가운데에 시작 버튼만 둔다 */}
-        {!game.playing && (
-          <div className="ev-cover">
-            <button className="btn ev-btn ev-start" onClick={() => onStart(game)}>
-              게임 시작
-            </button>
-            <span className="ev-cover-sub">
-              {game.wins.a + game.wins.b > 0
-                ? `지금까지 ${game.wins.a + game.wins.b}판 · ${NAME[game.turn]}부터 던져요`
-                : `${NAME[game.turn]}부터 던져요`}
-            </span>
-          </div>
-        )}
+        {/* 판을 안 열었으면 어둡게 덮는다 — 시작 버튼, 그다음 선 뽑기 */}
+        {!game.playing &&
+          (game.first ? (
+            <div className="ev-cover">
+              <span className="ev-draw-ttl">선 뽑기</span>
+              <span className="ev-draw">
+                {(["b", "a"] as YutSide[]).map((side) => (
+                  <span
+                    key={side}
+                    className={`ev-draw-row ${lead === side ? "ev-draw-win" : ""}`}
+                  >
+                    <b>{NAME[side]}</b>
+                    <i>{game.first?.[side] != null ? THROW_NAME[game.first[side]!] : "아직"}</i>
+                  </span>
+                ))}
+              </span>
+              {lead ? (
+                <>
+                  <button className="btn ev-btn ev-start" onClick={() => onStart(game, lead)}>
+                    {NAME[lead]}부터 · 판 시작
+                  </button>
+                  <span className="ev-cover-sub">높이 나온 쪽이 먼저 던져요</span>
+                </>
+              ) : tie ? (
+                <>
+                  <button
+                    className="btn ev-btn ev-start"
+                    onClick={() => onDraw(game, { a: null, b: null })}
+                  >
+                    다시 뽑기
+                  </button>
+                  <span className="ev-cover-sub">같은 값이 나왔어요</span>
+                </>
+              ) : (
+                <button
+                  className="btn ev-btn ev-start"
+                  onClick={() => setDrawing(toDraw)}
+                  disabled={!toDraw}
+                >
+                  {toDraw ? `${NAME[toDraw]} 던지기` : "…"}
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="ev-cover">
+              <button
+                className="btn ev-btn ev-start"
+                onClick={() => onDraw(game, { a: null, b: null })}
+              >
+                게임 시작
+              </button>
+              <span className="ev-cover-sub">
+                {game.wins.a + game.wins.b > 0
+                  ? `지금까지 ${game.wins.a + game.wins.b}판 했어요`
+                  : "한 번씩 던져서 선을 정해요"}
+              </span>
+            </div>
+          ))}
       </div>
 
       <div className="ev-log">
@@ -301,6 +361,18 @@ export default function EventView({
       )}
 
       {throwing && <YutThrow who={NAME[turn]} onDone={finishThrow} />}
+
+      {drawing && (
+        <YutThrow
+          who={NAME[drawing]}
+          draw
+          onDone={(t) => {
+            const side = drawing;
+            setDrawing(null);
+            onDraw(game, { a: f?.a ?? null, b: f?.b ?? null, [side]: t });
+          }}
+        />
+      )}
 
       {/* 이긴 창 — 확인을 누르면 판을 접고 시작 화면으로 돌아간다 */}
       {done && (

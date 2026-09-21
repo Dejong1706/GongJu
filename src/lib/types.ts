@@ -99,6 +99,11 @@ export type YutGame = {
    * 이긴 창을 닫으면 다시 여기로 돌아온다
    */
   playing: boolean;
+  /**
+   * 선 뽑기. **시작을 누르면 여기가 열리고**, 둘이 한 번씩 던져 높은 쪽이 선이 된다.
+   * 같으면 둘 다 비우고 다시 던진다. 판이 열리면 null 로 돌아간다
+   */
+  first?: { a: Throw | null; b: Throw | null } | null;
   /** 지금 던질 쪽 */
   turn: YutSide;
   /** 편마다 말 셋. -1 대기 · 20 골 · 그 밖은 밭 번호 */

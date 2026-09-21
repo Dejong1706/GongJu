@@ -1716,6 +1716,43 @@
     line-height: 1.6;
   }
 
+  /* 선 뽑기 — 덮개 안에서 둘이 한 번씩 던진 값을 늘어놓는다 */
+  .ev-draw-ttl {
+    font-size: 12px;
+    color: #d2a84f;
+    letter-spacing: 0.08em;
+  }
+  .ev-draw {
+    display: flex;
+    gap: 6px;
+  }
+  .ev-draw-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    min-width: 62px;
+    padding: 5px 8px;
+    background: #f7ecd9;
+    border: 2px solid #47301b;
+  }
+  .ev-draw-row b {
+    font-size: 10px;
+    color: #7d6a55;
+  }
+  .ev-draw-row i {
+    font-size: 13px;
+    font-style: normal;
+    color: #2b2622;
+  }
+  .ev-draw-win {
+    background: #c9962c;
+    border-color: #2b2622;
+  }
+  .ev-draw-win b,
+  .ev-draw-win i {
+    color: #2b2622;
+  }
   /* 이긴 창 */
   .ev-win {
     font-size: 12px;

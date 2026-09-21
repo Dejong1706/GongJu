@@ -22,6 +22,8 @@ export const UPDATES: Update[] = [
   {
     date: "2026-09-21",
     items: [
+      { kind: "new", text: "불러오는 동안 토끼 밑에서 당근이 주황색으로 차올라요" },
+      { kind: "fix", text: "'잠깐만' 글자가 다시 통통 튀어요" },
       { kind: "new", text: "윷놀이 이벤트 — 맨 오른쪽 이벤트 탭에서 둘이 번갈아 던져요" },
       { kind: "new", text: "판마다 게임 시작을 누르고, 끝나면 누가 이겼는지 보여줘요" },
       { kind: "new", text: "선은 전통대로 한 번씩 던져서 정해요 — 높이 나온 쪽이 먼저" },

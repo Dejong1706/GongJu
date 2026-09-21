@@ -125,3 +125,38 @@ export const COIN: Sprite = {
   ],
   palette: { K: INK, N: "#FFD34D", W: "#FFFFFF" },
 };
+
+/**
+ * 로딩 화면 당근 게이지. 누워 있고 왼쪽(꼭지 쪽)부터 찬다.
+ *
+ * 한 장을 두 벌로 나눠 쓴다 — 바탕(`CARROT_EMPTY`) 은 먹 테두리 · 초록 꼭지 · 빈 속이고,
+ * 그 위에 속만 그린 `CARROT_FILL` 을 덮은 뒤 왼쪽부터 잘라서 보여준다 (`Splash`).
+ * 두 벌의 `rows` 가 같아야 겹쳐지므로 아래 한 벌만 고친다.
+ *
+ * 몸통은 32칸이다. 잘리는 폭을 6 → 38 으로 32번 나눠 옮기므로(globals.css `carrot-fill`)
+ * **폭을 바꾸면 그 키프레임의 칸 수도 같이 고쳐야** 한 칸씩 또렷하게 찬다.
+ */
+const CARROT_ROWS = [
+  "..G..G..K.............................",
+  ".GLLLLKKHKKKKKKKKKK...................",
+  "..GLLLKHODHHHHDHHHHKKKKKKKK...........",
+  "...GLLKOODOOOODOOOODHHHHDHHKKKKKK.....",
+  "....GGKOODOOOODOOOODOOOODOOHHDHHHKKKK.",
+  ".....GKOODOOOODOOOODOOOODOOOODOOOHDKKK",
+  "......KOODOOOODOOOODOOOODOOOODKKKKK...",
+  "......KOODOOOODOOOODOOOKKKKKKK........",
+  "......KOODOOOOKKKKKKKKK...............",
+  ".......KKKKKKK........................",
+];
+
+/** 빈 당근. 속은 연분홍이라 크림색 바탕 위에서 "아직 안 찬 칸" 으로 보인다 */
+export const CARROT_EMPTY: Sprite = {
+  rows: CARROT_ROWS,
+  palette: { K: INK, G: "#4E9E5C", L: "#8FD08F", O: "#F6E4EC", H: "#F6E4EC", D: "#F6E4EC" },
+};
+
+/** 찬 속만. 테두리 · 꼭지가 없어서 바탕 위에 덮어도 윤곽을 가리지 않는다 */
+export const CARROT_FILL: Sprite = {
+  rows: CARROT_ROWS,
+  palette: { O: "#FF9A3C", H: "#FFC073", D: "#E8761C" },
+};

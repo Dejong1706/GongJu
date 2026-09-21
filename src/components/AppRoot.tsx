@@ -11,8 +11,7 @@ import EventView from "@/components/EventView";
 import TabBar from "@/components/TabBar";
 import GuidePopup from "@/components/GuidePopup";
 import LoginScreen from "@/components/LoginScreen";
-import PixelSprite from "@/components/PixelSprite";
-import { BUNNY } from "@/lib/sprites";
+import Splash from "@/components/Splash";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { useEvents, usePet, useRewards, useStickers, useTasks, useWords, useYut } from "@/lib/store";
 import { useToday } from "@/lib/useToday";
@@ -33,24 +32,6 @@ function Root() {
   if (loading) return <Splash />;
   if (!user) return <LoginScreen />;
   return <App uid={user.uid} />;
-}
-
-function Splash() {
-  return (
-    <div className="device">
-      <div className="island" />
-      <div className="flex-1 flex flex-col items-center justify-center gap-3">
-        <div className="bunny w-[100px]">
-          <PixelSprite sprite={BUNNY} />
-        </div>
-        <p className="loading-wait" aria-label="잠깐만">
-          <span>잠</span>
-          <span>깐</span>
-          <span>만</span>
-        </p>
-      </div>
-    </div>
-  );
 }
 
 function Loading() {

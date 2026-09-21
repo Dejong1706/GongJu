@@ -94,10 +94,10 @@ export default function CalendarView({
       <div className="bubble">
         {weekLeft > 0 ? (
           <>
-            이번 주 강의 · 할일이 <b>{weekLeft}개</b> 남았어요
+            이번 주 강의 · 과제 · 할일이 <b>{weekLeft}개</b> 남았어요
           </>
         ) : (
-          "이번 주 강의 · 할일은 다 했어요"
+          "이번 주 할 일을 다 했어요"
         )}
       </div>
 

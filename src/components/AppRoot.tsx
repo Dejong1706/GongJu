@@ -110,13 +110,12 @@ function App({ uid }: { uid: string }) {
 
   const week = weekOf(ymd(today), SEM_START);
   /*
-   * 캘린더 말풍선은 **강의와 할일**을 센다 (사용자 요청). 과제는 여전히 뺀다 —
-   * 기한이 길어서 섞으면 "이번 주에 밀린 것" 이라는 뜻이 흐려진다.
+   * 캘린더 말풍선은 **종류를 가리지 않고** 이번 주에 안 끝낸 것을 다 센다 (사용자 요청).
+   * 강의만 → 강의 · 할일 → 전부 로 두 번 넓혔다. 종류가 또 늘어도 따라온다.
    * 주차는 강의 목록과 같은 기준(밀린 것은 이번 주로) 을 쓴다.
    */
   const weekLeft = (tasks ?? []).filter(
-    (t) =>
-      t.kind !== "과제" && !t.done && displayWeek(t, week, SEM_START) === week
+    (t) => !t.done && displayWeek(t, week, SEM_START) === week
   ).length;
 
   return (

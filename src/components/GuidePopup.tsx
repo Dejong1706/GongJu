@@ -37,7 +37,7 @@ const WAYS = [
   },
   {
     icon: "✅",
-    name: "강의 · 과제 체크",
+    name: "강의 · 과제 · 할일 체크",
     where: "강의 탭",
     point: PER_TASK,
     notes: [`하루 ${TASK_CAP}번까지`],

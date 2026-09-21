@@ -6,6 +6,9 @@ import { COURSES, SEM_START } from "@/lib/config";
 import { displayWeek, shortDate, weekOf, weekRange, ymd } from "@/lib/date";
 import type { NewTask, Task, TaskKind } from "@/lib/types";
 
+/** 화면에 묶는 차례이자 팝업 버튼 차례. 종류를 늘리면 두 곳이 같이 는다 */
+const KINDS: TaskKind[] = ["강의", "과제", "할일"];
+
 type EditState = {
   id: string | null;
   kind: TaskKind;
@@ -40,8 +43,8 @@ export default function LectureView({
     setMsg("");
   };
 
-  const courseOf = (id: string) =>
-    COURSES.find((c) => c.id === id) ?? COURSES[0];
+  // 할일은 courseId 가 비어 있다. 못 찾으면 과목 없이 보여준다
+  const courseOf = (id: string) => COURSES.find((c) => c.id === id) ?? null;
 
   // 오늘이 몇 주차인지
   const curWeek = weekOf(ymd(today), SEM_START);
@@ -101,7 +104,7 @@ export default function LectureView({
           })
         }
       >
-        ＋ 강의 · 과제 추가
+        ＋ 강의 · 과제 · 할일 추가
       </button>
 
       {!edit && msg && <div className="empty text-center">{msg}</div>}
@@ -165,10 +168,14 @@ export default function LectureView({
                   {t.title}
                 </span>
                 <span className="block mt-1 text-[10px] text-ink-soft">
-                  {c.name} · {shortDate(t.date)}
+                  {c ? `${c.name} · ` : ""}
+                  {shortDate(t.date)}
                 </span>
               </button>
-              <span className="kind" style={{ background: c.color }}>
+              <span
+                className="kind"
+                style={{ background: c?.color ?? "var(--band)" }}
+              >
                 {t.kind}
               </span>
             </div>
@@ -189,7 +196,7 @@ export default function LectureView({
               </span>
             </div>
 
-            {(["강의", "과제"] as TaskKind[]).map((kind) => {
+            {KINDS.map((kind) => {
               const group = list.filter((t) => t.kind === kind);
               if (group.length === 0) return null;
               return (
@@ -205,7 +212,7 @@ export default function LectureView({
 
       {edit && (
         <Popup
-          title={edit.id ? "수정하기" : "강의 · 과제 추가"}
+          title={edit.id ? "수정하기" : "강의 · 과제 · 할일 추가"}
           onClose={() => setEdit(null)}
           footer={
             <>
@@ -223,11 +230,19 @@ export default function LectureView({
           <div className="field">
             <label>종류</label>
             <div className="flex gap-[7px]">
-              {(["강의", "과제"] as TaskKind[]).map((k) => (
+              {KINDS.map((k) => (
                 <button
                   key={k}
                   className={`toggle-btn ${edit.kind === k ? "toggle-on" : ""}`}
-                  onClick={() => setEdit({ ...edit, kind: k })}
+                  onClick={() =>
+                    setEdit({
+                      ...edit,
+                      kind: k,
+                      // 할일은 과목을 안 고른다. 강의 · 과제로 되돌리면 첫 과목부터
+                      courseId:
+                        k === "할일" ? "" : edit.courseId || COURSES[0].id,
+                    })
+                  }
                 >
                   {k}
                 </button>
@@ -235,32 +250,34 @@ export default function LectureView({
             </div>
           </div>
 
-          <div className="field">
-            <label>과목</label>
-            <div className="flex gap-[6px] flex-wrap">
-              {COURSES.map((c) => (
-                <button
-                  key={c.id}
-                  className={`subj-btn ${
-                    edit.courseId === c.id ? "subj-on" : ""
-                  }`}
-                  onClick={() => setEdit({ ...edit, courseId: c.id })}
-                >
-                  <i
-                    className="w-[9px] h-[9px] block flex-none"
-                    style={{ background: c.color }}
-                  />
-                  {c.name}
-                </button>
-              ))}
+          {edit.kind !== "할일" && (
+            <div className="field">
+              <label>과목</label>
+              <div className="flex gap-[6px] flex-wrap">
+                {COURSES.map((c) => (
+                  <button
+                    key={c.id}
+                    className={`subj-btn ${
+                      edit.courseId === c.id ? "subj-on" : ""
+                    }`}
+                    onClick={() => setEdit({ ...edit, courseId: c.id })}
+                  >
+                    <i
+                      className="w-[9px] h-[9px] block flex-none"
+                      style={{ background: c.color }}
+                    />
+                    {c.name}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="field">
             <label>제목</label>
             <input
               value={edit.title}
-              placeholder="마케팅 기초"
+              placeholder={edit.kind === "할일" ? "도서관 책 반납" : "마케팅 기초"}
               onChange={(e) => setEdit({ ...edit, title: e.target.value })}
             />
           </div>

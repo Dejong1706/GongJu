@@ -31,7 +31,7 @@ import type { NewEvent, NewTask, Pet, SchoolEvent, Task, Word } from "./types";
  * Firestore 구조
  *
  *   users/{uid}/events/{id}    학교 일정
- *   users/{uid}/tasks/{id}     강의 · 과제
+ *   users/{uid}/tasks/{id}     강의 · 과제 · 할일
  *   users/{uid}/words/{id}     토익 단어
  *   users/{uid}/stickers/{YYYY-MM}  { days: number[] }
  *

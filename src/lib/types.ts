@@ -21,11 +21,12 @@ export type SchoolEvent = {
   color: string;
 };
 
-export type TaskKind = "강의" | "과제";
+export type TaskKind = "강의" | "과제" | "할일";
 
 export type Task = {
   id: string;
   kind: TaskKind;
+  /** 과목. **할일은 비어 있다** — 수업과 상관없는 일이라 과목을 안 고른다 */
   courseId: string;
   title: string;
   date: string; // YYYY-MM-DD

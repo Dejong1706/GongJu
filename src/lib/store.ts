@@ -25,7 +25,8 @@ import {
   stickerPoints,
   TASK_CAP,
 } from "./pet";
-import type { NewEvent, NewTask, Pet, SchoolEvent, Task, Word } from "./types";
+import type { NewEvent, NewTask, Pet, SchoolEvent, Task, Word, YutGame } from "./types";
+import { GOAL, HORSES, PER_WIN, WAIT } from "./yut";
 
 /**
  * Firestore 구조
@@ -34,6 +35,7 @@ import type { NewEvent, NewTask, Pet, SchoolEvent, Task, Word } from "./types";
  *   users/{uid}/tasks/{id}     강의 · 과제 · 할일
  *   users/{uid}/words/{id}     토익 단어
  *   users/{uid}/stickers/{YYYY-MM}  { days: number[] }
+ *   users/{uid}/event/yut      윷놀이 이벤트 (문서 하나 · 끝나면 지운다)
  *
  * 사용자가 한 명뿐이라 문서 수가 적다. 월별로 잘라 읽는 대신
  * 컬렉션 전체를 구독하고, 오프라인 캐시로 재방문 시 읽기를 아낀다.
@@ -384,4 +386,95 @@ export function usePet(uid: string) {
   );
 
   return { pet, error, write, latest };
+}
+
+/* ── 윷놀이 이벤트 ───────────────────
+ * 이벤트가 끝나면 이 훅과 화면을 통째로 지운다.
+ * 판을 문서 하나에 통으로 쓰기 때문에 다른 데이터와 섞이지 않는다.
+ */
+
+export const EMPTY_GAME: YutGame = {
+  turn: "b", // 정연부터 던진다
+  horses: { a: Array(HORSES).fill(WAIT), b: Array(HORSES).fill(WAIT) },
+  rolls: [],
+  pending: true,
+  log: [],
+  wins: { a: 0, b: 0 },
+  winner: null,
+  round: 1,
+  paid: 0,
+};
+
+export function useYut(uid: string) {
+  const [game, setGame] = useState<YutGame | null>(null);
+  const [error, setError] = useState(false);
+  const ref = useMemo(() => doc(db, "users", uid, "event", "yut"), [uid]);
+
+  useEffect(() => {
+    return onSnapshot(
+      ref,
+      (snap) => {
+        // 문서가 없으면 만들지 않고 빈 판으로 읽는다. 첫 수를 둘 때 생긴다
+        const raw = snap.data() as Partial<YutGame> | undefined;
+        setError(false);
+        setGame({ ...EMPTY_GAME, ...raw });
+      },
+      (err) => {
+        console.error("yut 구독 실패", err);
+        setError(true);
+      }
+    );
+  }, [ref]);
+
+  /** 판을 통째로 덮어쓴다. 판 상태는 조각조각 고치는 게 아니라 늘 통으로 간다 */
+  const write = useCallback(
+    (next: YutGame) => {
+      setGame(next); // 눌렀을 때 바로 반응하도록
+      return setDoc(ref, next);
+    },
+    [ref]
+  );
+
+  /**
+   * 판이 끝났다. **정연(b) 이 이겼을 때만** 포인트를 준다 (사용자가 정한 규칙 —
+   * 져도 깎지 않는다). 포인트를 건드리는 곳이라 배치가 아니라 트랜잭션이다:
+   * 판 문서를 다시 읽어 **그 판에 이미 줬으면 아무것도 안 한다.**
+   * 두 사람이 같은 계정으로 하다 보면 끝나는 순간이 두 번 눌릴 수 있다.
+   */
+  const finish = useCallback(
+    async (next: YutGame, winner: "a" | "b") => {
+      const petRef = doc(db, "users", uid, "pet", "state");
+      await runTransaction(db, async (tx) => {
+        const snap = await tx.get(ref);
+        const cur = { ...EMPTY_GAME, ...(snap.data() as Partial<YutGame> | undefined) };
+        if (cur.paidRound === next.round) return; // 이미 끝낸 판이다
+
+        const pay = winner === "b" ? PER_WIN : 0;
+        tx.set(ref, {
+          ...next,
+          winner,
+          wins: { ...next.wins, [winner]: next.wins[winner] + 1 },
+          paid: cur.paid + pay,
+          paidRound: next.round,
+        });
+        if (pay > 0) tx.set(petRef, { earned: increment(pay) }, { merge: true });
+      });
+    },
+    [ref, uid]
+  );
+
+  /** 다음 판. 이긴 쪽이 먼저 던진다 */
+  const again = useCallback(
+    (cur: YutGame) =>
+      write({
+        ...EMPTY_GAME,
+        turn: cur.winner ?? "b",
+        wins: cur.wins,
+        paid: cur.paid,
+        round: cur.round + 1,
+      }),
+    [write]
+  );
+
+  return { game, error, write, finish, again };
 }

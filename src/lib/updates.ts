@@ -22,6 +22,8 @@ export const UPDATES: Update[] = [
   {
     date: "2026-09-21",
     items: [
+      { kind: "new", text: "윷놀이 이벤트 — 맨 오른쪽 이벤트 탭에서 둘이 번갈아 던져요" },
+      { kind: "new", text: "윷놀이에서 이기면 100 포인트 — 져도 깎이지 않아요" },
       { kind: "new", text: "할일 — 강의 탭에 수업과 상관없는 할 일도 적을 수 있어요" },
       { kind: "change", text: "캘린더 말풍선이 강의 · 과제 · 할일을 모두 세요" },
       { kind: "new", text: "먹빛 전돌 바닥 — 먹빛 한지 벽지와 한 벌인 검은 돌바닥이에요" },

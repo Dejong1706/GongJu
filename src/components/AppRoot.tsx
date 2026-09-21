@@ -6,13 +6,15 @@ import LectureView from "@/components/LectureView";
 import TimeView from "@/components/TimeView";
 import ToeicView from "@/components/ToeicView";
 import PandaView from "@/components/PandaView";
+// 윷놀이 이벤트 — 기간이 끝나면 이 줄과 아래 event 칸을 지운다
+import EventView from "@/components/EventView";
 import TabBar from "@/components/TabBar";
 import GuidePopup from "@/components/GuidePopup";
 import LoginScreen from "@/components/LoginScreen";
 import PixelSprite from "@/components/PixelSprite";
 import { BUNNY } from "@/lib/sprites";
 import { AuthProvider, useAuth } from "@/lib/auth";
-import { useEvents, usePet, useRewards, useStickers, useTasks, useWords } from "@/lib/store";
+import { useEvents, usePet, useRewards, useStickers, useTasks, useWords, useYut } from "@/lib/store";
 import { useToday } from "@/lib/useToday";
 import { SEM_START } from "@/lib/config";
 import { DOW, displayWeek, pad, weekOf, ymd } from "@/lib/date";
@@ -105,6 +107,14 @@ function App({ uid }: { uid: string }) {
     toggle: toggleSticker,
   } = useStickers(uid, monthKey);
   const { pet, error: petError, write: writePet } = usePet(uid);
+  // 윷놀이 이벤트 (한시적)
+  const {
+    game: yut,
+    error: yutError,
+    write: writeYut,
+    finish: finishYut,
+    again: againYut,
+  } = useYut(uid);
   // 하루에 몇 번까지만 주는 것들 — 토익 퀴즈 만점, 타이머 25분
   const { quiz: rewardQuiz, focus: rewardFocus } = useRewards(uid, pet, ymd(today));
 
@@ -148,7 +158,11 @@ function App({ uid }: { uid: string }) {
       </header>
       <div className="edge edge-down" />
 
-      <div className={`scroll ${tab === "toeic" ? "flex flex-col" : ""}`}>
+      <div
+        className={`scroll ${tab === "toeic" ? "flex flex-col" : ""} ${
+          tab === "event" ? "ev" : ""
+        }`}
+      >
         {tab === "cal" &&
           (eventsError ? (
             <Failed />
@@ -217,6 +231,22 @@ function App({ uid }: { uid: string }) {
               pet={pet}
               petError={petError}
               onChangePet={writePet}
+            />
+          ))}
+
+        {/* 윷놀이 이벤트 — 기간이 끝나면 이 칸을 통째로 지운다 */}
+        {tab === "event" &&
+          (yutError ? (
+            <Failed />
+          ) : yut === null ? (
+            <Loading />
+          ) : (
+            <EventView
+              game={yut}
+              onWrite={writeYut}
+              onFinish={finishYut}
+              onAgain={againYut}
+              today={today}
             />
           ))}
       </div>

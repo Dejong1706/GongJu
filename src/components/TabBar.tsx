@@ -39,6 +39,12 @@ const ICONS: Record<TabKey, React.ReactNode> = {
       <rect x="4" y="12" width="2" height="2" /><rect x="12" y="12" width="2" height="2" />
     </svg>
   ),
+  event: (
+    <svg width="16" height="16" viewBox="0 0 18 18" shapeRendering="crispEdges" fill="currentColor">
+      <rect x="2" y="2" width="3" height="14" /><rect x="6" y="3" width="3" height="13" />
+      <rect x="10" y="2" width="3" height="14" /><rect x="14" y="4" width="3" height="12" />
+    </svg>
+  ),
 };
 
 const LABELS: [TabKey, string][] = [
@@ -47,6 +53,8 @@ const LABELS: [TabKey, string][] = [
   ["tt", "시간표"],
   ["toeic", "토익"],
   ["panda", "판다"],
+  // 윷놀이 이벤트 — 기간이 끝나면 이 줄과 위 아이콘을 지운다 (탭은 다시 다섯 칸)
+  ["event", "이벤트"],
 ];
 
 export default function TabBar({
@@ -59,7 +67,10 @@ export default function TabBar({
   return (
     <nav className="tabwrap">
       <div className="sprinkle" />
-      <div className="tabs">
+      <div
+        className="tabs"
+        style={{ gridTemplateColumns: `repeat(${LABELS.length}, 1fr)` }}
+      >
         {LABELS.map(([key, label]) => (
           <button
             key={key}

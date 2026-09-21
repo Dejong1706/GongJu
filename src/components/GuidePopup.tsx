@@ -15,6 +15,8 @@ import {
   STREAK_EVERY,
   TASK_CAP,
 } from "@/lib/pet";
+// 윷놀이 이벤트 — 기간이 끝나면 이 줄과 아래 WAYS 의 이벤트 칸을 지운다
+import { PER_WIN } from "@/lib/yut";
 import { UPDATES, UPDATE_LABEL, type UpdateKind } from "@/lib/updates";
 
 type Page = "points" | "updates";
@@ -55,6 +57,13 @@ const WAYS = [
     where: "시간표 → 타이머",
     point: PER_FOCUS,
     notes: [`멈추지 않고 ${FOCUS_MIN}분마다`, `하루 ${FOCUS_CAP}번까지`],
+  },
+  {
+    icon: "🎲",
+    name: "윷놀이 이기기",
+    where: "이벤트 탭",
+    point: PER_WIN,
+    notes: ["한 판 이길 때마다", "져도 깎이지 않아요"],
   },
 ];
 

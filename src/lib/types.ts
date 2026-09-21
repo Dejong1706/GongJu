@@ -1,6 +1,7 @@
 import type { Facing } from "@/shop";
+import type { Throw, YutSide } from "./yut";
 
-export type TabKey = "cal" | "lec" | "tt" | "toeic" | "panda";
+export type TabKey = "cal" | "lec" | "tt" | "toeic" | "panda" | "event";
 
 export type Course = {
   id: string;
@@ -86,4 +87,30 @@ export type Pet = {
   /** 타이머 점수를 준 날과 그 날 준 횟수 */
   focusDay?: string;
   focusCount?: number;
+};
+/**
+ * 윷놀이 이벤트. **문서 하나**에 판이 통째로 들어간다 — users/{uid}/event/yut
+ * 한 계정으로 둘이 번갈아 하므로 "누구 차례인지" 도 여기 들어 있다.
+ * 이벤트가 끝나면 이 타입과 화면을 통째로 지운다 (문서는 남겨둬도 그만이다).
+ */
+export type YutGame = {
+  /** 지금 던질 쪽 */
+  turn: YutSide;
+  /** 편마다 말 셋. -1 대기 · 20 골 · 그 밖은 밭 번호 */
+  horses: { a: number[]; b: number[] };
+  /** 던져놓고 아직 안 쓴 값 */
+  rolls: Throw[];
+  /** 던질 기회가 남았는지. 윷 · 모가 나오거나 잡으면 다시 선다 */
+  pending: boolean;
+  /** 이번 판에 나온 값 — 화면의 "던진 윷" 칸에 쌓인다 */
+  log: Throw[];
+  wins: { a: number; b: number };
+  /** 판이 끝났으면 이긴 쪽 */
+  winner?: YutSide | null;
+  /** 몇 판째인지. 포인트를 두 번 주지 않으려고 같이 본다 */
+  round: number;
+  /** 정연(b) 이 이 이벤트에서 받은 포인트 합 */
+  paid: number;
+  /** 포인트를 이미 준 판 번호 — 같은 판에 두 번 주지 않는다 */
+  paidRound?: number;
 };

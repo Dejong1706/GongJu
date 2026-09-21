@@ -1528,4 +1528,354 @@
     background: var(--ink-soft);
   }
 
+
+  /* ──────────────────────────────────────────
+     윷놀이 이벤트 탭 (한시적)
+     앱의 분홍을 쓰지 않는다 — 먹 · 고동 · 한지 · 단청.
+     전부 .ev / .yut 접두사라 **이벤트가 끝나면 이 덩어리만 지우면 된다**
+  ────────────────────────────────────────── */
+  .ev {
+    background: #f7ecd9;
+    background-image: repeating-linear-gradient(
+        0deg,
+        rgba(139, 110, 74, 0.05) 0 1px,
+        transparent 1px 7px
+      ),
+      repeating-linear-gradient(90deg, rgba(139, 110, 74, 0.04) 0 1px, transparent 1px 11px);
+    color: #43392f;
+  }
+
+  /* 현판 — 먹빛 판에 금 글씨 */
+  .ev-board-head {
+    background: #2b2622;
+    border: 3px solid #47301b;
+    box-shadow: 3px 3px 0 #6b4a2c;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ev-ttl {
+    font-size: 13px;
+    font-weight: 700;
+    color: #d2a84f;
+    flex: 1;
+    letter-spacing: 0.06em;
+  }
+  .ev-when {
+    font-size: 9px;
+    color: #e2cda9;
+    font-weight: 400;
+  }
+  .ev-dday {
+    background: #a6362b;
+    color: #f7ecd9;
+    padding: 3px 6px;
+    font-size: 10px;
+    flex: none;
+  }
+  .ev-knob {
+    width: 7px;
+    height: 7px;
+    background: #d2a84f;
+    transform: rotate(45deg);
+    flex: none;
+  }
+  /* 색동 — 오방색 띠 */
+  .ev-saekdong {
+    height: 5px;
+    margin-bottom: 12px;
+    border-left: 3px solid #47301b;
+    border-right: 3px solid #47301b;
+    background: repeating-linear-gradient(
+      90deg,
+      #a6362b 0 9px,
+      #2e6f6a 9px 18px,
+      #c9962c 18px 27px,
+      #efe0c8 27px 36px,
+      #2b2622 36px 45px
+    );
+  }
+
+  /* 점수판 */
+  .ev-score {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .ev-side {
+    background: #f7ecd9;
+    border: 3px solid #47301b;
+    box-shadow: 3px 3px 0 #e2cda9;
+    padding: 6px 7px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .ev-side-a.ev-side-on {
+    box-shadow: 3px 3px 0 #c9962c;
+    background: #fdf6e6;
+  }
+  .ev-side-b.ev-side-on {
+    box-shadow: 3px 3px 0 #a6362b;
+    background: #fdf3ec;
+  }
+  .ev-side-top {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .ev-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: #2b2622;
+  }
+  .ev-tag {
+    font-size: 8px;
+    color: #7d6a55;
+  }
+  .ev-pt {
+    font-size: 11px;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    color: #43392f;
+  }
+  .ev-pt b {
+    font-size: 12px;
+  }
+  .ev-side-a .ev-pt b {
+    color: #c9962c;
+  }
+  .ev-side-b .ev-pt b {
+    color: #a6362b;
+  }
+  .ev-horses {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    height: 14px;
+  }
+  .ev-turn {
+    font-size: 8px;
+    color: #f7ecd9;
+    border: 2px solid #47301b;
+    padding: 1px 4px;
+  }
+  .ev-side-a .ev-turn {
+    background: #c9962c;
+    color: #2b2622;
+  }
+  .ev-side-b .ev-turn {
+    background: #a6362b;
+  }
+  /* 두 편 사이 — 색동 세로띠 */
+  .ev-vs {
+    width: 9px;
+    align-self: stretch;
+    border: 2px solid #47301b;
+    background: repeating-linear-gradient(
+      180deg,
+      #a6362b 0 7px,
+      #2e6f6a 7px 14px,
+      #c9962c 14px 21px,
+      #efe0c8 21px 28px,
+      #2b2622 28px 35px
+    );
+  }
+
+  .ev-board-wrap {
+    margin-bottom: 12px;
+  }
+  .yut-board {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  /* 던진 윷 — 나무패를 늘어놓은 함 */
+  .ev-log {
+    border: 3px solid #47301b;
+    background: #efe0c8;
+    box-shadow: 3px 3px 0 #e2cda9;
+    margin-bottom: 10px;
+  }
+  .ev-log-head {
+    background: #6b4a2c;
+    color: #f7ecd9;
+    font-size: 9px;
+    padding: 3px 7px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .ev-log-body {
+    padding: 7px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    min-height: 34px;
+    align-items: center;
+  }
+  .ev-chip {
+    font-size: 11px;
+    min-width: 30px;
+    min-height: 30px;
+    padding: 3px 7px;
+    background: #f7ecd9;
+    border: 2px solid #47301b;
+    box-shadow: 2px 2px 0 #a87a4e;
+    color: #2b2622;
+  }
+  .ev-chip-on {
+    background: #a6362b;
+    color: #f7ecd9;
+    box-shadow: 2px 2px 0 #47301b;
+  }
+  .ev-log-empty {
+    font-size: 10px;
+    color: #7d6a55;
+    padding-left: 2px;
+  }
+
+  /* 버튼 — 먹판에 금 글씨 */
+  .btn.ev-btn {
+    min-height: 50px;
+    font-size: 13px;
+    background: #2b2622;
+    color: #d2a84f;
+    border-color: #47301b;
+    box-shadow: 4px 4px 0 #6b4a2c;
+    letter-spacing: 0.06em;
+  }
+  .btn.ev-btn:disabled {
+    background: #7d6a55;
+    color: #efe0c8;
+    box-shadow: 4px 4px 0 #e2cda9;
+    cursor: default;
+  }
+  .btn.ev-btn-ghost {
+    background: #f7ecd9;
+    color: #2b2622;
+    box-shadow: 4px 4px 0 #e2cda9;
+  }
+  .ev-hint {
+    font-size: 11px;
+    color: #7d6a55;
+    padding: 9px 2px;
+    text-align: center;
+    line-height: 1.6;
+  }
+
+  /* 던지기 팝업 */
+  .ev-pop {
+    background: #f7ecd9;
+    border-color: #47301b;
+    box-shadow: 6px 6px 0 #2b2622;
+  }
+  .ev-pop .pop-head {
+    background: #2b2622;
+    border-bottom-color: #47301b;
+    color: #d2a84f;
+  }
+  .ev-who {
+    font-size: 10px;
+    background: #f7ecd9;
+    color: #2b2622;
+    border: 2px solid #47301b;
+    padding: 2px 5px;
+  }
+  .ev-pop-body {
+    padding: 10px;
+  }
+
+  /* 멍석과 윷가락 */
+  .yut-mat {
+    position: relative;
+    height: 168px;
+    overflow: hidden;
+    border: 4px solid #47301b;
+    box-shadow: inset 0 0 0 3px #6b4a2c, inset 0 -8px 0 rgba(43, 38, 34, 0.22);
+  }
+  .yut-mat-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .yut-shake {
+    animation: yut-shake 0.12s steps(2) 2;
+  }
+  @keyframes yut-shake {
+    0% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(2px);
+    }
+    100% {
+      transform: translateY(0);
+    }
+  }
+  .yut-sticks {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-evenly;
+    padding-bottom: 14px;
+  }
+  .yut-slot {
+    position: relative;
+    width: 26px;
+    height: 96px;
+    flex: none;
+  }
+  .yut-stick {
+    position: absolute;
+    bottom: 8px;
+    left: 0;
+    line-height: 0;
+  }
+  .yut-shadow {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    line-height: 0;
+  }
+  .yut-out {
+    text-align: center;
+    padding: 12px 0 2px;
+    min-height: 62px;
+  }
+  .yut-wait {
+    font-size: 11px;
+    color: #7d6a55;
+    padding-top: 22px;
+  }
+  .yut-name {
+    font-size: 30px;
+    line-height: 1.1;
+    color: #2b2622;
+    text-shadow: 3px 3px 0 #e2cda9;
+    animation: pop 0.12s steps(3);
+  }
+  .yut-name-gold {
+    color: #d2a84f;
+    text-shadow: 3px 3px 0 #2b2622;
+  }
+  .yut-name-back {
+    color: #a6362b;
+    text-shadow: 3px 3px 0 #e2cda9;
+  }
+  .yut-sub {
+    font-size: 11px;
+    color: #7d6a55;
+    margin-top: 6px;
+    line-height: 1.6;
+  }
+  .yut-again {
+    color: #a6362b;
+  }
 }

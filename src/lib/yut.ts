@@ -11,7 +11,8 @@ export type YutSide = "a" | "b";
 export type Throw = -1 | 1 | 2 | 3 | 4 | 5;
 
 export const WAIT = -1; // 아직 안 나간 말
-export const GOAL = 20; // 다 돌아 난 말
+export const GOAL = 20; // 다 돌아 난 말 (판 위가 아니다)
+export const CHAM = 30; // 참먹이 — 출발이자 **마지막 밭**. 여기 서면 아직 난 게 아니다
 export const HORSES = 3; // 한 편의 말 수
 
 export const THROW_NAME: Record<number, string> = {
@@ -37,10 +38,15 @@ export const isExtra = (t: Throw) => t === 4 || t === 5;
 /* ──────────────────────────────────────────────
    밭 29개의 자리.
    한 변에 밭 6개(모서리 포함) = 바깥 20칸, 대각선은 모서리에서 중앙까지 2칸씩.
-   0 = 출발(오른쪽 아래), 반시계로 돈다. 20 = 골(출발과 같은 자리).
+   0 = 참먹이 자리(오른쪽 아래). 거기서 **오른쪽 변을 타고 위로** 올라가 반시계로 돈다
+   (우하 → 우상 → 좌상 → 좌하 → 우하). 20 = 골 — 참먹이를 **지나쳐** 판을 떠난 말이다.
 
-   23 과 33 은 **같은 자리(가운데 '방')** 다 — 지나갈 때는 23, 멈추면 33 으로 둔다.
-   그래야 "방에 서면 골로 질러간다" 가 길 표 하나로 저절로 풀린다.
+   **한 밭에 이름이 여럿인 것들** — 자리는 같고 '어느 길로 들어왔는지'만 다르다.
+   백도는 온 길로 되물러야 해서(대회규정: 직전에 움직인 방향의 반대) 이름을 나눠 둔다.
+     · 방(가운데)  23 지나가는 중 · 33 둘째 지름길로 멈춤 · 34 첫 지름길로 멈춤
+     · 찌모(15)    15 바깥길로 · 35 첫 지름길로
+     · 참먹이      30 바깥길로 · 31 둘째 지름길로 · 32 '도'에서 백도로 물러나서
+   ALIAS 가 이 이름들을 다시 한 밭으로 모은다 — 잡기 · 업기는 자리로만 따진다.
 
    좌표는 도트 격자다 (1 = 도트 한 칸, 폰에서 약 4px).
 ────────────────────────────────────────────── */
@@ -56,56 +62,80 @@ const at = (c: number, r: number, big?: boolean): Node => ({
 
 export const NODES: Record<number, Node> = (() => {
   const n: Record<number, Node> = {};
-  for (let i = 0; i <= 5; i++) n[i] = at(5 - i, 5, i === 0 || i === 5);
-  for (let i = 6; i <= 10; i++) n[i] = at(0, 10 - i, i === 10);
-  for (let i = 11; i <= 15; i++) n[i] = at(i - 10, 0, i === 15);
-  for (let i = 16; i <= 19; i++) n[i] = at(5, i - 15);
+  for (let i = 0; i <= 5; i++) n[i] = at(5, 5 - i, i === 0 || i === 5); // 오른쪽 변 — 위로
+  for (let i = 6; i <= 10; i++) n[i] = at(10 - i, 0, i === 10); // 윗변 — 왼쪽으로
+  for (let i = 11; i <= 15; i++) n[i] = at(0, i - 10, i === 15); // 왼쪽 변 — 아래로
+  for (let i = 16; i <= 19; i++) n[i] = at(i - 15, 5); // 아랫변 — 오른쪽으로 골까지
   n[20] = n[0];
-  n[21] = { x: 20, y: 66 };
-  n[22] = { x: 31, y: 55 };
+  n[21] = { x: 66, y: 20 }; // 우상 모서리(5)에서 방으로 내려오는 지름길
+  n[22] = { x: 55, y: 31 };
   n[23] = { x: 43, y: 43, big: true, mid: true };
-  n[24] = { x: 55, y: 31 };
-  n[25] = { x: 66, y: 20 };
+  n[24] = { x: 31, y: 55 };
+  n[25] = { x: 20, y: 66 }; // 좌하 모서리(15)로 합류
   n[26] = { x: 20, y: 20 };
   n[27] = { x: 31, y: 31 };
   n[28] = { x: 55, y: 55 };
   n[29] = { x: 66, y: 66 };
-  n[33] = n[23];
+  // 같은 자리의 딴 이름들 — 말은 여기 서 있어도 같은 밭에 그려진다
+  n[30] = n[31] = n[32] = n[0]; // 참먹이
+  n[33] = n[34] = n[23]; // 방
+  n[35] = n[15]; // 찌모
   return n;
 })();
+
+/** 이름이 여럿인 밭을 하나로 모은다 — 잡기 · 업기 · 수 고르기는 **자리**로만 따진다 */
+const ALIAS: Record<number, number> = { 0: CHAM, 31: CHAM, 32: CHAM, 34: 33, 35: 15 };
+export const field = (pos: number) => ALIAS[pos] ?? pos;
 
 /** 판 한 변의 길이 (도트 칸) */
 export const BOARD = PAD * 2 + GAP * 5;
 
-/** 다음 밭. 지름길은 **모서리에 멈춘 말이 떠날 때만** 탄다 (FIRST) */
+/**
+ * 다음 밭. 지름길은 **모서리에 멈춘 말이 떠날 때만** 탄다 (FIRST).
+ * 바깥길 · 지름길 모두 **참먹이를 거쳐** 골로 나간다 — 참먹이에 서면 아직 안 난 것이다.
+ */
 const NEXT: Record<number, number> = {
-  21: 22, 22: 23, 23: 24, 24: 25, 25: 15,
-  26: 27, 27: 33, 33: 28, 28: 29, 29: GOAL,
+  19: CHAM, 30: GOAL, 31: GOAL, 32: GOAL,
+  21: 22, 22: 23, 23: 24, 24: 25, 25: 35, 35: 16,
+  26: 27, 27: 33, 33: 28, 34: 28, 28: 29, 29: 31,
 };
-for (let i = 0; i <= 19; i++) NEXT[i] = i + 1;
+for (let i = 0; i <= 18; i++) NEXT[i] = i + 1;
 
+/*
+ * 대회규정은 모서리 · 방에서 **진행 방향을 고를 수 있다**고 하지만,
+ * 여기서는 늘 지름길을 태운다 — 말을 한 번 누르면 바로 가는 조작을 지키려고 (사용자가 고른 것).
+ */
 const FIRST: Record<number, number> = { 5: 21, 10: 26 };
 
-/** 백도로 되돌아갈 밭 */
+/**
+ * 백도로 되돌아갈 밭 — **온 길로** 되돌아간다.
+ * '도'(1) 에서 백도면 참먹이에 선 것으로 친다(32) — 다음에 뭐가 나오든 난다.
+ * 거기서 백도가 또 나오면 도로 '도' 자리로 간다.
+ */
 const BACK: Record<number, number> = {
-  21: 5, 22: 21, 23: 22, 24: 23, 25: 24,
-  26: 10, 27: 26, 33: 27, 28: 33, 29: 28,
+  1: 32, 30: 19, 31: 29, 32: 1,
+  21: 5, 22: 21, 23: 22, 24: 23, 25: 24, 35: 25,
+  26: 10, 27: 26, 33: 27, 34: 22, 28: 33, 29: 28,
 };
 
-/** 멈춘 자리가 가운데면 33 으로 바꿔 둔다 — 다음엔 골 쪽으로 나간다 */
-const settle = (pos: number) => (pos === 23 ? 33 : pos);
+/** 첫 지름길로 가운데에 멈췄으면 34 로 둔다 — 다음엔 골 쪽으로 나간다 */
+const settle = (pos: number) => (pos === 23 ? 34 : pos);
 
 function backOne(pos: number): number | null {
   if (pos === WAIT || pos === GOAL) return null;
   if (BACK[pos] !== undefined) return settle(BACK[pos]);
-  return pos >= 1 ? pos - 1 : pos; // 출발점에서 더 뒤로는 안 간다
+  return pos - 1; // 바깥길은 한 칸 뒤 — 도(1) · 참먹이 · 지름길은 BACK 에 적어 뒀다
 }
+
+/** 참먹이 규칙을 고치기 전 판에서 0 에 서 있던 말 — 도에서 백도로 물러난 것이었다 */
+const old0 = (pos: number) => (pos === 0 ? 32 : pos);
 
 /**
  * pos 에 있는 말이 t 만큼 갔을 때 닿는 밭. 갈 수 없으면 null.
- * 골은 딱 맞지 않아도 지나가면 난다.
+ * 골은 딱 맞지 않아도 **참먹이를 지나치기만 하면** 난다.
  */
-export function advance(pos: number, t: Throw): number | null {
+export function advance(raw: number, t: Throw): number | null {
+  const pos = old0(raw);
   if (pos === GOAL) return null;
   if (t === -1) return backOne(pos);
 
@@ -151,9 +181,12 @@ export type Horses = Record<YutSide, number[]>;
 
 export const other = (s: YutSide): YutSide => (s === "a" ? "b" : "a");
 
-/** 그 자리에 선 같은 편 말의 번호들 — 업은 말은 늘 같이 움직인다 */
+/**
+ * 그 자리에 선 같은 편 말의 번호들 — 업은 말은 늘 같이 움직인다.
+ * 이름이 여럿인 밭(방 · 찌모 · 참먹이)이 있어 **자리로** 따진다
+ */
 export const stackAt = (horses: number[], pos: number) =>
-  horses.map((p, i) => (p === pos ? i : -1)).filter((i) => i >= 0);
+  horses.map((p, i) => (field(p) === field(pos) ? i : -1)).filter((i) => i >= 0);
 
 /** 판 위(대기 · 골 제외)에 있는 밭들 */
 export const onBoard = (horses: number[]) =>
@@ -170,8 +203,8 @@ export function movesFor(horses: number[], t: Throw): Move[] {
   const seen = new Set<number>();
   horses.forEach((pos, i) => {
     if (pos === GOAL) return;
-    if (seen.has(pos)) return;
-    seen.add(pos);
+    if (seen.has(field(pos))) return;
+    seen.add(field(pos));
     const to = advance(pos, t);
     if (to === null) return;
     list.push({ from: pos, to, horses: pos === WAIT ? [i] : stackAt(horses, pos) });
@@ -199,15 +232,20 @@ export function applyMove(
   side: YutSide,
   move: Move
 ): MoveResult {
-  const mine = [...horses[side]];
-  move.horses.forEach((i) => (mine[i] = move.to));
+  /*
+   * 먼저 가 있던 내 말도 **방금 들어온 말의 이름**을 따라간다 —
+   * 업은 덩어리는 같이 움직이니 되물릴 길도 하나여야 한다
+   */
+  const mine = horses[side].map((p, i) =>
+    move.horses.includes(i) || (move.to !== GOAL && field(p) === field(move.to)) ? move.to : p
+  );
 
   const foeSide = other(side);
   let foe = [...horses[foeSide]];
   let caught = false;
   if (move.to !== GOAL) {
-    caught = foe.some((p) => p === move.to);
-    if (caught) foe = foe.map((p) => (p === move.to ? WAIT : p));
+    caught = foe.some((p) => p !== WAIT && field(p) === field(move.to));
+    if (caught) foe = foe.map((p) => (p !== WAIT && field(p) === field(move.to) ? WAIT : p));
   }
 
   return {

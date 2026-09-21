@@ -95,6 +95,8 @@ export default function EventView({
 
   const turn = game.turn;
   const done = !!game.winner;
+  /** 판이 돌고 있는 동안 — 기록 칸에 지금 던지는 쪽 이름을 붙인다 */
+  const live = game.playing && !done;
   const mine = game.horses[turn];
 
   const left = Math.max(
@@ -132,7 +134,8 @@ export default function EventView({
     const pending = game.pending || !!extra.caught;
     const horses = extra.horses ?? game.horses;
     if (rolls.length === 0 && !pending) {
-      return save({ ...game, horses, rolls: [], pending: true, turn: other(turn) });
+      // 차례를 넘기면서 **기록도 비운다** — 다음 사람은 자기가 던진 것만 본다
+      return save({ ...game, horses, rolls: [], log: [], pending: true, turn: other(turn) });
     }
     return save({ ...game, horses, rolls, pending });
   };
@@ -283,7 +286,10 @@ export default function EventView({
 
       <div className="ev-log">
         <div className="ev-log-head">
-          <span>던진 윷</span>
+          {/* 이 칸은 **지금 던지는 쪽** 것만 담는다 — 이름과 색으로 못박아 둔다 */}
+          <span className={live ? `ev-key ev-key-${turn}` : ""}>
+            {live ? `${NAME[turn]}이 던진 윷` : "던진 윷"}
+          </span>
           <span>{game.log.length > 0 ? `${game.log.length}번` : "아직 없음"}</span>
         </div>
         <div className="ev-log-body">
@@ -302,7 +308,7 @@ export default function EventView({
                 <button
                   key={i}
                   type="button"
-                  className={`ev-chip ${isNow ? "ev-chip-on" : ""}`}
+                  className={`ev-chip ev-chip-${turn} ${isNow ? "ev-chip-on" : ""}`}
                   onClick={() => usable && setSel(i - unusedFrom)}
                 >
                   {THROW_NAME[t]}
@@ -319,35 +325,41 @@ export default function EventView({
         </div>
       ) : done ? (
         <div className="ev-hint">판이 끝났어요</div>
-      ) : game.rolls.length > 0 ? (
-        <>
-          {outMove ? (
-            <button className="btn ev-btn" onClick={() => play(outMove)}>
-              새 {FRUIT[turn]} 내보내기
-            </button>
-          ) : moves.length === 0 ? (
-            <button className="btn ev-btn" onClick={skip}>
-              옮길 말이 없어요 · 건너뛰기
-            </button>
-          ) : (
-            <button className="btn ev-btn ev-btn-ghost" disabled>
-              옮길 {FRUIT[turn]}를 고르세요
-            </button>
-          )}
-          <div className="ev-hint">
-            {msg ||
-              (use !== null
-                ? `${THROW_NAME[use]} — 판에서 점선이 그려진 ${FRUIT[turn]}를 눌러요`
-                : "")}
-          </div>
-        </>
       ) : (
         <>
-          <button className="btn ev-btn" onClick={() => setThrowing(true)}>
-            윷 던지기
-          </button>
+          {/*
+           * 윷 · 모가 나와도 **옮기고 나서 던질 필요가 없다** — 먼저 다 던져 값을 모아 두고
+           * 어느 것부터 쓸지 보고 정한다 (9/22 사용자 요청). 그래서 두 버튼이 나란히 선다.
+           * 옮길 말을 고르는 건 판을 눌러서 하니, 던질 수 있을 때는 그 안내를 아랫줄로 내린다
+           */}
+          <div className="ev-acts">
+            {game.rolls.length > 0 &&
+              (outMove ? (
+                <button className="btn ev-btn" onClick={() => play(outMove)}>
+                  새 {FRUIT[turn]} 내보내기
+                </button>
+              ) : moves.length === 0 ? (
+                <button className="btn ev-btn" onClick={skip}>
+                  옮길 말이 없어요 · 건너뛰기
+                </button>
+              ) : game.pending ? null : (
+                <button className="btn ev-btn ev-btn-ghost" disabled>
+                  옮길 {FRUIT[turn]}를 고르세요
+                </button>
+              ))}
+            {game.pending && (
+              <button className="btn ev-btn" onClick={() => setThrowing(true)}>
+                {game.log.length > 0 ? "한 번 더 던지기" : "윷 던지기"}
+              </button>
+            )}
+          </div>
           <div className="ev-hint">
-            {msg || `${NAME[turn]}이 던질 차례예요 · 정연이 이기면 ${PER_WIN} 포인트`}
+            {msg ||
+              (use === null
+                ? `${NAME[turn]}이 던질 차례예요 · 정연이 이기면 ${PER_WIN} 포인트`
+                : game.pending
+                ? `${THROW_NAME[use]} — 지금 옮겨도 되고, 더 던지고 골라도 돼요`
+                : `${THROW_NAME[use]} — 판에서 점선이 그려진 ${FRUIT[turn]}를 눌러요`)}
           </div>
         </>
       )}

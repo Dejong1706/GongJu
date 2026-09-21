@@ -20,6 +20,23 @@ export const UPDATE_LABEL: Record<UpdateKind, string> = {
 
 export const UPDATES: Update[] = [
   {
+    date: "2026-09-22",
+    items: [
+      {
+        kind: "fix",
+        text: "윷놀이 말길과 규칙을 실제 윷놀이에 맞췄어요 — 오른쪽 위로 돌고, 출발점을 지나야 나요",
+      },
+      {
+        kind: "change",
+        text: "윷 · 모가 나오면 옮기지 않고 계속 던진 뒤, 나온 값 중에 골라 옮길 수 있어요",
+      },
+      {
+        kind: "change",
+        text: "던진 윷 칸에는 지금 던지는 사람 것만 보여요 — 차례가 넘어가면 비워져요",
+      },
+    ],
+  },
+  {
     date: "2026-09-21",
     items: [
       { kind: "change", text: "이벤트 탭에 자물쇠가 걸렸어요 — 눌러도 열리지 않아요" },

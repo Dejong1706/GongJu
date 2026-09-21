@@ -1849,6 +1849,21 @@
     padding: 3px 7px;
     display: flex;
     justify-content: space-between;
+    gap: 6px;
+  }
+  /* 머리의 이름 — 앞에 붙는 작은 네모가 패 테두리와 같은 색이다 */
+  .ev-key {
+    white-space: nowrap;
+  }
+  .ev-key::before {
+    content: "";
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 3px;
+    vertical-align: -1px;
+    background: var(--side);
+    border: 1px solid #2b2622;
   }
   .ev-log-body {
     padding: 7px;
@@ -1858,18 +1873,39 @@
     min-height: 34px;
     align-items: center;
   }
+  /*
+   * 기록 칸은 **지금 던지는 쪽** 것만 담고 차례가 넘어가면 비워진다.
+   * 그래서 색도 그 편 과일 색 하나로 간다 — 점수판의 과일과 짝이 맞는다
+   * (정연 딸기 빨강 · 병근 망고 주황). 9/22 사용자 요청
+   */
+  .ev-chip,
+  .ev-key {
+    --side: #47301b;
+    --edge: #a87a4e;
+  }
+  .ev-chip-b,
+  .ev-key-b {
+    --side: #ad2b3c; /* 딸기 */
+    --edge: #7d1d2a;
+  }
+  .ev-chip-a,
+  .ev-key-a {
+    --side: #d4862a; /* 망고 */
+    --edge: #a35f12;
+  }
   .ev-chip {
     font-size: 11px;
     min-width: 30px;
     min-height: 30px;
     padding: 3px 7px;
     background: #f7ecd9;
-    border: 2px solid #47301b;
-    box-shadow: 2px 2px 0 #a87a4e;
+    border: 2px solid var(--side);
+    box-shadow: 2px 2px 0 var(--edge);
     color: #2b2622;
   }
+  /* 지금 쓸 값 — 그 편 색으로 꽉 채운다 */
   .ev-chip-on {
-    background: #a6362b;
+    background: var(--side);
     color: #f7ecd9;
     box-shadow: 2px 2px 0 #47301b;
   }
@@ -1877,6 +1913,20 @@
     font-size: 10px;
     color: #7d6a55;
     padding-left: 2px;
+  }
+
+  /* 버튼 줄 — 던지기 · 옮기기가 같이 설 때는 나란히 세운다 (한 화면에 들어가야 한다) */
+  .ev-acts {
+    display: flex;
+    gap: 8px;
+  }
+  .ev-acts:empty {
+    display: none;
+  }
+  .ev-acts .btn.ev-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 12px 6px;
   }
 
   /* 버튼 — 먹판에 금 글씨 */

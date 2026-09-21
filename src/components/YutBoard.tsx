@@ -117,13 +117,13 @@ const BACKDROP: Cell[] = (() => {
     }
   }
 
-  // 출발이자 골 — 화살표
+  // 출발이자 골 — 화살표. 말은 오른쪽 변을 타고 **위로** 올라가므로 위를 가리킨다
   const g = NODES[0];
   out.push(
-    cell(g.x - 3, g.y - 1, 6, 1, K.red),
-    cell(g.x - 1, g.y - 3, 1, 5, K.red),
+    cell(g.x - 1, g.y - 3, 1, 6, K.red),
+    cell(g.x - 3, g.y - 1, 5, 1, K.red),
     cell(g.x - 2, g.y - 2, 1, 1, K.red),
-    cell(g.x - 2, g.y, 1, 1, K.red)
+    cell(g.x, g.y - 2, 1, 1, K.red)
   );
   return out;
 })();

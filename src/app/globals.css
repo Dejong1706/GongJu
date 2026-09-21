@@ -1633,24 +1633,8 @@
     color: #2b2622;
   }
   .ev-tag {
-    font-size: 8px;
+    font-size: 9px;
     color: #7d6a55;
-  }
-  .ev-pt {
-    font-size: 11px;
-    display: flex;
-    align-items: baseline;
-    gap: 4px;
-    color: #43392f;
-  }
-  .ev-pt b {
-    font-size: 12px;
-  }
-  .ev-side-a .ev-pt b {
-    color: #c9962c;
-  }
-  .ev-side-b .ev-pt b {
-    color: #a6362b;
   }
   .ev-horses {
     display: flex;
@@ -1771,10 +1755,6 @@
   .ev-win-pt {
     font-size: 17px;
     color: #a6362b;
-  }
-  .ev-win-score {
-    font-size: 10px;
-    color: #7d6a55;
   }
 
   .yut-board {

@@ -38,8 +38,6 @@ import type { YutGame } from "@/lib/types";
 
 /** 편 이름. 정연이 쓰는 앱이지만 둘이 같이 보는 화면이라 이름을 그대로 적는다 */
 const NAME: Record<YutSide, string> = { a: "나", b: "정연" };
-/** 정연 쪽만 진짜 포인트가 오간다 */
-const TAG: Record<YutSide, string> = { a: "가상 포인트", b: "진짜 포인트" };
 
 function Fruit({ side, kind }: { side: YutSide; kind: "wait" | "on" | "goal" }) {
   const rows = ART[side];
@@ -174,29 +172,25 @@ export default function EventView({
     });
   };
 
-  const card = (side: YutSide) => {
-    const horses = game.horses[side];
-    const point = side === "b" ? game.paid : game.wins.a * PER_WIN;
-    return (
-      <div className={`ev-side ev-side-${side} ${turn === side && !done ? "ev-side-on" : ""}`}>
-        <span className="ev-side-top">
-          <span className="ev-name">{NAME[side]}</span>
-          {turn === side && !done && <span className="ev-turn">차례</span>}
-        </span>
-        <span className="ev-tag">
-          {FRUIT[side]} · {TAG[side]}
-        </span>
-        <span className="ev-pt">
-          {game.wins[side]}승<b>{point}P</b>
-        </span>
-        <span className="ev-horses">
-          {horses.map((p, i) => (
-            <Fruit key={i} side={side} kind={p === GOAL ? "goal" : p === WAIT ? "wait" : "on"} />
-          ))}
-        </span>
-      </div>
-    );
-  };
+  /*
+   * 이름 · 차례 · 말 셋만 보여준다. 판마다 100점 고정이라
+   * 승수나 딴 포인트를 세어 보여줄 이유가 없다 (사용자 요청).
+   * wins · paid 는 문서에 계속 쌓이므로 다시 보여주고 싶으면 여기만 되살리면 된다
+   */
+  const card = (side: YutSide) => (
+    <div className={`ev-side ev-side-${side} ${turn === side && !done ? "ev-side-on" : ""}`}>
+      <span className="ev-side-top">
+        <span className="ev-name">{NAME[side]}</span>
+        {turn === side && !done && <span className="ev-turn">차례</span>}
+      </span>
+      <span className="ev-tag">{FRUIT[side]}</span>
+      <span className="ev-horses">
+        {game.horses[side].map((p, i) => (
+          <Fruit key={i} side={side} kind={p === GOAL ? "goal" : p === WAIT ? "wait" : "on"} />
+        ))}
+      </span>
+    </div>
+  );
 
   return (
     <>
@@ -280,11 +274,7 @@ export default function EventView({
               >
                 게임 시작
               </button>
-              <span className="ev-cover-sub">
-                {game.wins.a + game.wins.b > 0
-                  ? `지금까지 ${game.wins.a + game.wins.b}판 했어요`
-                  : "한 번씩 던져서 선을 정해요"}
-              </span>
+              <span className="ev-cover-sub">한 번씩 던져서 선을 정해요</span>
             </div>
           ))}
       </div>
@@ -394,10 +384,6 @@ export default function EventView({
                     <span className="ev-win-pt">＋{PER_WIN} 포인트</span>
                   </>
                 )}
-                <br />
-                <span className="ev-win-score">
-                  {NAME.a} {game.wins.a} · {game.wins.b} {NAME.b}
-                </span>
               </div>
             </div>
             <div className="pop-foot">

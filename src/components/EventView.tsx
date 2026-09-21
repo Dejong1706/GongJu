@@ -74,13 +74,15 @@ export default function EventView({
   game,
   onWrite,
   onFinish,
-  onAgain,
+  onStart,
+  onClose,
   today,
 }: {
   game: YutGame;
   onWrite: (next: YutGame) => Promise<void> | void;
   onFinish: (next: YutGame, winner: YutSide) => Promise<void>;
-  onAgain: (cur: YutGame) => Promise<void> | void;
+  onStart: (cur: YutGame) => Promise<void> | void;
+  onClose: (cur: YutGame) => Promise<void> | void;
   today: Date;
 }) {
   const [throwing, setThrowing] = useState(false);
@@ -204,10 +206,27 @@ export default function EventView({
       </div>
 
       <div className="ev-board-wrap">
-        <YutBoard horses={game.horses} pick={done ? [] : boardPicks} onPick={(pos) => {
-          const move = moves.find((m) => m.from === pos);
-          if (move) play(move);
-        }} />
+        <YutBoard
+          horses={game.horses}
+          pick={game.playing && !done ? boardPicks : []}
+          onPick={(pos) => {
+            const move = moves.find((m) => m.from === pos);
+            if (move) play(move);
+          }}
+        />
+        {/* 판을 안 열었으면 어둡게 덮고 가운데에 시작 버튼만 둔다 */}
+        {!game.playing && (
+          <div className="ev-cover">
+            <button className="btn ev-btn ev-start" onClick={() => onStart(game)}>
+              게임 시작
+            </button>
+            <span className="ev-cover-sub">
+              {game.wins.a + game.wins.b > 0
+                ? `지금까지 ${game.wins.a + game.wins.b}판 · ${NAME[game.turn]}부터 던져요`
+                : `${NAME[game.turn]}부터 던져요`}
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="ev-log">
@@ -242,16 +261,12 @@ export default function EventView({
         </div>
       </div>
 
-      {done ? (
-        <>
-          <button className="btn ev-btn" onClick={() => onAgain(game)}>
-            한 판 더
-          </button>
-          <div className="ev-hint">
-            {NAME[game.winner as YutSide]}의 {FRUIT[game.winner as YutSide]}가 다 들어왔어요
-            {game.winner === "b" && ` · ＋${PER_WIN} 포인트`}
-          </div>
-        </>
+      {!game.playing ? (
+        <div className="ev-hint">
+          말 셋을 먼저 다 내보내면 이겨요 · 정연이 이기면 {PER_WIN} 포인트
+        </div>
+      ) : done ? (
+        <div className="ev-hint">판이 끝났어요</div>
       ) : game.rolls.length > 0 ? (
         <>
           {outMove ? (
@@ -286,6 +301,41 @@ export default function EventView({
       )}
 
       {throwing && <YutThrow who={NAME[turn]} onDone={finishThrow} />}
+
+      {/* 이긴 창 — 확인을 누르면 판을 접고 시작 화면으로 돌아간다 */}
+      {done && (
+        <div className="dim">
+          <div className="pop ev-pop">
+            <div className="pop-head">
+              <span>한 판 끝!</span>
+            </div>
+            <div className="pop-body">
+              <div className="ev-win">
+                <span className="ev-win-fruit">
+                  <Fruit side={game.winner as YutSide} kind="on" />
+                </span>
+                <b>{NAME[game.winner as YutSide]}</b>의{" "}
+                {FRUIT[game.winner as YutSide]}가 다 들어왔어요
+                {game.winner === "b" && (
+                  <>
+                    <br />
+                    <span className="ev-win-pt">＋{PER_WIN} 포인트</span>
+                  </>
+                )}
+                <br />
+                <span className="ev-win-score">
+                  {NAME.a} {game.wins.a} · {game.wins.b} {NAME.b}
+                </span>
+              </div>
+            </div>
+            <div className="pop-foot">
+              <button className="btn ev-btn" onClick={() => onClose(game)}>
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -1687,8 +1687,59 @@
   }
 
   .ev-board-wrap {
+    position: relative;
     margin-bottom: 12px;
   }
+  /* 시작 전 — 판을 어둡게 덮고 가운데 시작 버튼만 */
+  .ev-cover {
+    position: absolute;
+    inset: 0;
+    background: rgba(43, 38, 34, 0.62);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 20px;
+  }
+  .btn.ev-start {
+    width: auto;
+    min-width: 150px;
+    padding: 12px 20px;
+    border-width: 4px;
+    box-shadow: 4px 4px 0 #a6362b;
+  }
+  .ev-cover-sub {
+    font-size: 10px;
+    color: #efe0c8;
+    text-align: center;
+    line-height: 1.6;
+  }
+
+  /* 이긴 창 */
+  .ev-win {
+    font-size: 12px;
+    text-align: center;
+    line-height: 1.9;
+    color: #43392f;
+  }
+  .ev-win-fruit {
+    display: block;
+    margin-bottom: 4px;
+    transform: scale(2);
+    transform-origin: center;
+    height: 26px;
+    line-height: 0;
+  }
+  .ev-win-pt {
+    font-size: 17px;
+    color: #a6362b;
+  }
+  .ev-win-score {
+    font-size: 10px;
+    color: #7d6a55;
+  }
+
   .yut-board {
     display: block;
     width: 100%;

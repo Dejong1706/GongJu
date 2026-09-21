@@ -113,7 +113,8 @@ function App({ uid }: { uid: string }) {
     error: yutError,
     write: writeYut,
     finish: finishYut,
-    again: againYut,
+    start: startYut,
+    close: closeYut,
   } = useYut(uid);
   // 하루에 몇 번까지만 주는 것들 — 토익 퀴즈 만점, 타이머 25분
   const { quiz: rewardQuiz, focus: rewardFocus } = useRewards(uid, pet, ymd(today));
@@ -245,7 +246,8 @@ function App({ uid }: { uid: string }) {
               game={yut}
               onWrite={writeYut}
               onFinish={finishYut}
-              onAgain={againYut}
+              onStart={startYut}
+              onClose={closeYut}
               today={today}
             />
           ))}

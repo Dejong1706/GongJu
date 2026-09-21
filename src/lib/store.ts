@@ -394,6 +394,7 @@ export function usePet(uid: string) {
  */
 
 export const EMPTY_GAME: YutGame = {
+  playing: false, // 처음에는 시작 버튼만 보인다
   turn: "b", // 정연부터 던진다
   horses: { a: Array(HORSES).fill(WAIT), b: Array(HORSES).fill(WAIT) },
   rolls: [],
@@ -401,7 +402,7 @@ export const EMPTY_GAME: YutGame = {
   log: [],
   wins: { a: 0, b: 0 },
   winner: null,
-  round: 1,
+  round: 0, // 첫 판을 시작할 때 1 이 된다
   paid: 0,
 };
 
@@ -463,12 +464,16 @@ export function useYut(uid: string) {
     [ref, uid]
   );
 
-  /** 다음 판. 이긴 쪽이 먼저 던진다 */
-  const again = useCallback(
+/**
+   * 판을 연다. 전적(wins · paid) 은 이어지고 말과 기록만 새로 깐다.
+   * **판 번호를 여기서 올린다** — finish 가 "이 판에 이미 줬나" 를 그 번호로 본다
+   */
+  const start = useCallback(
     (cur: YutGame) =>
       write({
         ...EMPTY_GAME,
-        turn: cur.winner ?? "b",
+        playing: true,
+        turn: cur.turn, // 지난 판에서 이긴 쪽이 먼저 던진다
         wins: cur.wins,
         paid: cur.paid,
         round: cur.round + 1,
@@ -476,5 +481,19 @@ export function useYut(uid: string) {
     [write]
   );
 
-  return { game, error, write, finish, again };
+  /** 이겼다는 창을 닫는다 — 판을 접고 시작 화면으로 돌아간다 */
+  const close = useCallback(
+    (cur: YutGame) =>
+      write({
+        ...EMPTY_GAME,
+        playing: false,
+        turn: cur.winner ?? cur.turn,
+        wins: cur.wins,
+        paid: cur.paid,
+        round: cur.round,
+      }),
+    [write]
+  );
+
+  return { game, error, write, finish, start, close };
 }

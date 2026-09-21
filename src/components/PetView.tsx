@@ -75,10 +75,11 @@ export function swatch(s: Surface) {
       `radial-gradient(${s.accent} 1.2px,transparent 1.6px)`;
     style.backgroundSize = "100% 100%, 10px 10px";
     style.backgroundPosition = "0 0, 0 2px";
-  } else if (s.kind === "dancheong") {
-    // 위 단청 띠(빨강 · 초록) · 크림 한지 · 아래 나무 벽널
+  } else if (s.kind === "meok") {
+    // 위 먹빛 띠 + 금 실선 · 크림 한지 · 아래 나무 벽널 (방에서는 PetRoom 이 같은 순서로 그린다)
     style.backgroundImage =
-      `linear-gradient(180deg,${s.accent2} 0 5%,${s.accent} 5% 22%,${s.accent2} 22% 27%,transparent 27% 70%,#C9B79C 70% 100%)`;
+      `linear-gradient(180deg,#23262E 0 4%,${s.accent ?? "#343B46"} 4% 18%,#23262E 18% 21%,` +
+      `${s.accent2 ?? "#C9A227"} 21% 24%,transparent 24% 70%,#C9B79C 70% 100%)`;
   } else if (s.kind === "maru") {
     // 세로 귀틀 · 칸마다 엇갈린 널 이음
     style.backgroundImage =

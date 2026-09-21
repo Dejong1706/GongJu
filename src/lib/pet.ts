@@ -13,8 +13,6 @@ import { ITEMS } from "@/shop";
  */
 export const ROOM = { w: 80, h: 92, base: 54, floorTop: 55, side: 12 } as const;
 export const BASEBOARD = "#8A6B7C";
-/** 가구는 두 칸 격자에 붙는다. 손가락으로 끌면 한 칸은 못 맞춘다 */
-export const SNAP = 2;
 
 /** 그 열에서 바닥이 시작하는 줄. 옆벽이면 앞으로 올수록 내려온다 */
 export function floorTopAt(x: number) {

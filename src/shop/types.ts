@@ -58,6 +58,6 @@ export type Surface = {
   /** 꽃 벽지의 꽃술처럼 색이 하나 더 필요할 때 */
   accent2?: string;
   kind?:
-    | "dot" | "stripe" | "panel" | "flower" | "palace" | "goldstripe" | "dancheong"
+    | "dot" | "stripe" | "panel" | "flower" | "palace" | "goldstripe" | "meok"
     | "plank" | "check" | "grid" | "parquet" | "royal" | "flowertile" | "maru";
 };

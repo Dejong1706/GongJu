@@ -2,7 +2,7 @@
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BABY, HEART, type Sprite } from "@/lib/sprites";
-import { BASEBOARD, PANDA, ROOM, SNAP, floorLeftAt, floorRightAt, floorTopAt } from "@/lib/pet";
+import { BASEBOARD, PANDA, ROOM, floorLeftAt, floorRightAt, floorTopAt } from "@/lib/pet";
 import {
   ANIM_MS,
   ITEMS,
@@ -220,12 +220,20 @@ function backdrop(wall: Surface, floor: Surface) {
   }
 
   /*
-   * 단청 한지 벽지 (조선 세트 시안) — 크림 한지 바탕, 맨 위만 단청 띠 (빨강 · 초록에 8칸마다 노란 꽃),
-   * 가운데는 한지 결 몇 점만, 아래 12줄은 나무 벽널. 벽지는 조용해야 해서 무늬를 위아래에만 뒀다
+   * 먹빛 한지 벽지 (조선 세트) — 크림 한지 바탕, 맨 위만 **먹빛 띠**, 아래 12줄은 나무 벽널.
+   * 가운데는 한지 결 몇 점뿐이다 — 벽지는 방 전체에 깔리므로 조용해야 한다.
+   *
+   * 9/21 에 띠를 갈았다. 전에는 **단청 띠**(진홍 · 청록 바탕에 여덟 칸마다 금 · 흰 네모) 였는데
+   * 사용자가 "한국스럽기보다 유목민 무늬 같다" 고 했다. **기와 처마**도 같이 시안을 냈지만
+   * (다섯 칸이 기와 한 장, 아래가 둥근 막새) 먹빛이 뽑혔고 둘 다 코드에서 지웠다.
+   * 되살릴 일이 생기면 history.md "먹빛 한지 벽지" 에 그리던 방법이 적혀 있다
    */
-  if (wall.kind === "dancheong") {
-    const green = wall.accent ?? wall.base;
-    const red = wall.accent2 ?? green;
+  if (wall.kind === "meok") {
+    const body = wall.accent ?? wall.base;
+    const gold = wall.accent2 ?? body;
+    const deep = shade(body, 0.68);
+    // 구름은 먹보다 밝아야 하는데 shade 는 어둡게만 할 수 있어서 따로 둔다
+    const cloud = "#4C5464";
     const fiber = shade(wall.base, 0.95);
     // 벽널은 바탕을 어둡게 하면 회색이 돼서 나무색을 따로 둔다
     const wood = "#C9A77E";
@@ -234,15 +242,18 @@ function backdrop(wall: Surface, floor: Surface) {
       const h = floorTopAt(x) - 1;
       if (h <= 0) continue;
       const k = ((x % 8) + 8) % 8;
-      out.push(<rect key={`dt${x}`} x={x} y={0} width={1} height={1} fill={red} />);
-      out.push(<rect key={`dg${x}`} x={x} y={1} width={1} height={4} fill={green} />);
-      out.push(<rect key={`db${x}`} x={x} y={5} width={1} height={1} fill={red} />);
-      if (k === 3 || k === 4) {
-        out.push(<rect key={`df${x}`} x={x} y={2} width={1} height={2} fill="#F2C14E" />);
-        out.push(<rect key={`dr${x}`} x={x} y={1} width={1} height={1} fill={red} />);
-        out.push(<rect key={`ds${x}`} x={x} y={4} width={1} height={1} fill={red} />);
-      }
-      if (k === 2 || k === 5) out.push(<rect key={`dw${x}`} x={x} y={2} width={1} height={2} fill="#FFFFFF" />);
+      out.push(<rect key={`kt${x}`} x={x} y={0} width={1} height={1} fill={deep} />);
+      out.push(<rect key={`kb${x}`} x={x} y={1} width={1} height={4} fill={body} />);
+      out.push(<rect key={`kk${x}`} x={x} y={5} width={1} height={1} fill={deep} />);
+      // 금 실선 한 줄 — 먹이 한지 위에 그냥 얹힌 것처럼 보이지 않게 받쳐준다
+      out.push(<rect key={`kg${x}`} x={x} y={6} width={1} height={1} fill={gold} />);
+      /*
+       * 구름무늬 — 여덟 칸마다 한 덩이. 가운데가 부풀고 양옆이 흐른다.
+       * 점을 흩뿌려 봤더니 먹 위에 앉은 **먼지**처럼 보였다 — 한 덩이로 뭉쳐야 구름이 된다
+       */
+      if (k === 2 || k === 5) out.push(<rect key={`kc${x}`} x={x} y={3} width={1} height={1} fill={cloud} />);
+      if (k === 3 || k === 4) out.push(<rect key={`kc2${x}`} x={x} y={2} width={1} height={2} fill={cloud} />);
+
       const my = h - 12;
       for (let y = 12; y < my - 2; y += 9)
         if ((x * 7 + y * 3) % 11 === 0) out.push(<rect key={`dh${x}-${y}`} x={x} y={y} width={1} height={1} fill={fiber} />);
@@ -544,8 +555,8 @@ export function turnSpot(it: Item, sp: Spot, dir: 1 | -1): Spot {
   const w0 = from.rows[0].length, h0 = from.rows.length;
   const w1 = to.rows[0].length, h1 = to.rows.length;
   /*
-   * 두 칸 격자(SNAP) 에는 안 붙인다 — 붙이면 폭 차이가 홀수일 때마다 반올림이 쌓여 한 바퀴 돌리면 4~6칸 밀려 있었다.
-   * 반 칸이 남으면 커질 때는 내리고 작아질 때는 올려서, 갔다 오면 제자리가 되게 한다 (벽에 막힌 fit 은 어쩔 수 없다)
+   * 반 칸이 남으면 커질 때는 내리고 작아질 때는 올려서, 갔다 오면 제자리가 되게 한다 (벽에 막힌 fit 은 어쩔 수 없다).
+   * 예전에 두 칸 격자에 붙이던 시절에는 폭 차이가 홀수일 때마다 반올림이 쌓여 한 바퀴 돌리면 4~6칸 밀려 있었다
    */
   const dx = (w0 - w1) / 2;
   const x = at.x + (w1 > w0 ? Math.floor(dx) : Math.ceil(dx));
@@ -666,8 +677,14 @@ export default function PetRoom({
     const g = grab.current;
     if (!g || g.id !== it.id) return;
     grab.current = null;
-    // 두 칸 격자에 붙인다. 손가락으로 한 칸은 못 맞춘다
-    const f = fit(it, Math.round(g.x / SNAP) * SNAP, Math.round(g.y / SNAP) * SNAP, sprite);
+    /*
+     * **손이 간 칸 그대로 놓는다.**
+     * 9/21 전에는 두 칸 격자에 붙였는데(`Math.round(x / 2) * 2`), 그러면 홀수 칸에 못 놓는다 —
+     * 한 칸 옮기면 반올림이 제자리로 되돌리고, 어떤 칸은 두 칸씩 튀었다.
+     * 창문을 뒷벽 가운데쯤에 두고 한 칸 밀어 보다가 사용자가 찾았다.
+     * 끄는 동안에는 이미 fit() 이 정수 칸으로 잡아주므로 여기서 더 손댈 게 없다
+     */
+    const f = fit(it, g.x, g.y, sprite);
     setDrag(null);
     onMove?.(it.id, f.x, f.y);
   };

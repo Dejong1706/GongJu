@@ -23,15 +23,30 @@ import {
  * 이벤트가 끝나면 이 파일째 지운다.
  */
 
-type Stick = { y: number; v: number; spin: number; face: number; rest: boolean; bounce: number };
+type Stick = {
+  y: number;
+  v: number;
+  /** 좌우로 흩어진 거리 (px). 멍석 밖으로 못 나가게 SPREAD 안에 가둔다 */
+  x: number;
+  vx: number;
+  spin: number;
+  face: number;
+  rest: boolean;
+  bounce: number;
+};
 
 const G = 1.7;
 const TICK = 60;
+/** 좌우로 흩어질 수 있는 최대 거리 — 슬롯 사이 틈만큼만 (9/23) */
+const SPREAD = 9;
 
 const make = (): Stick[] =>
   [0, 1, 2, 3].map((i) => ({
     y: 5 + i * 4,
     v: 7 + Math.random() * 3, // 솟는 힘 — 멍석 안에 갇히도록 잡은 값
+    x: 0,
+    // 던진 손에서 갈라지듯 좌우로 — 가운데 둘은 조금, 바깥 둘은 바깥쪽으로 더
+    vx: (i - 1.5) * 0.55 + (Math.random() - 0.5) * 1.6,
     spin: Math.floor(Math.random() * 4),
     face: 0,
     rest: false,
@@ -152,9 +167,16 @@ export default function YutThrow({
           const next = { ...s };
           next.v -= G;
           next.y += next.v;
+          // 옆으로도 미끄러진다. 멍석을 벗어나면 벽에 맞은 듯 되튄다
+          next.x += next.vx;
+          if (next.x < -SPREAD || next.x > SPREAD) {
+            next.x = next.x < 0 ? -SPREAD : SPREAD;
+            next.vx = -next.vx * 0.5;
+          }
           if (next.y <= 0) {
             next.y = 0;
             next.bounce++;
+            next.vx *= 0.5; // 바닥에 닿을 때마다 옆으로 가는 힘이 죽는다
             if (next.bounce >= 3 || Math.abs(next.v) < 4) {
               next.rest = true;
               next.face = faces.current[i]; // 여기서 면이 정해진다
@@ -192,13 +214,19 @@ export default function YutThrow({
             <div className="yut-sticks">
               {sticks.map((s, i) => (
                 <span className="yut-slot" key={i}>
+                  {/* 자리는 늘 정수 px — 반 픽셀이 나오면 도트가 어긋나 깨져 보인다 */}
                   <span
                     className="yut-stick"
-                    style={{ transform: `translateY(${-Math.round(s.y)}px)` }}
+                    style={{
+                      transform: `translate(${Math.round(s.x)}px, ${-Math.round(s.y)}px)`,
+                    }}
                   >
                     <Stick face={s.rest ? s.face : (s.spin + i) % 4} back={i === 3} />
                   </span>
-                  <span className="yut-shadow">
+                  <span
+                    className="yut-shadow"
+                    style={{ transform: `translateX(${Math.round(s.x)}px)` }}
+                  >
                     <Shadow h={s.y} />
                   </span>
                 </span>

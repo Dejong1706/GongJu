@@ -399,13 +399,23 @@ export const EMPTY_GAME: YutGame = {
   turn: "b", // 정연부터 던진다
   horses: { a: Array(HORSES).fill(WAIT), b: Array(HORSES).fill(WAIT) },
   rolls: [],
-  pending: true,
+  owe: 1, // 차례가 오면 한 번 던진다
   log: [],
   wins: { a: 0, b: 0 },
   winner: null,
   round: 0, // 첫 판을 시작할 때 1 이 된다
   paid: 0,
 };
+
+/**
+ * 문서를 판으로 읽는다. **`owe`(남은 던질 횟수) 가 없는 옛 문서**는 `pending` 참/거짓을
+ * 1/0 으로 바꿔 읽는다 — 이벤트가 도는 중에 바꾼 것이라 진행 중인 판이 있을 수 있다.
+ */
+function readGame(raw: Partial<YutGame> | undefined): YutGame {
+  const game = { ...EMPTY_GAME, ...raw };
+  if (raw && raw.owe === undefined) game.owe = raw.pending ? 1 : 0;
+  return game;
+}
 
 export function useYut(uid: string) {
   const [game, setGame] = useState<YutGame | null>(null);
@@ -419,7 +429,7 @@ export function useYut(uid: string) {
         // 문서가 없으면 만들지 않고 빈 판으로 읽는다. 첫 수를 둘 때 생긴다
         const raw = snap.data() as Partial<YutGame> | undefined;
         setError(false);
-        setGame({ ...EMPTY_GAME, ...raw });
+        setGame(readGame(raw));
       },
       (err) => {
         console.error("yut 구독 실패", err);
@@ -448,7 +458,7 @@ export function useYut(uid: string) {
       const petRef = doc(db, "users", uid, "pet", "state");
       await runTransaction(db, async (tx) => {
         const snap = await tx.get(ref);
-        const cur = { ...EMPTY_GAME, ...(snap.data() as Partial<YutGame> | undefined) };
+        const cur = readGame(snap.data() as Partial<YutGame> | undefined);
         if (cur.paidRound === next.round) return; // 이미 끝낸 판이다
 
         const pay = winner === "b" ? PER_WIN : 0;
@@ -503,7 +513,28 @@ export function useYut(uid: string) {
     [write]
   );
 
-  return { game, error, write, finish, start, draw, close };
+  /**
+   * 두던 판을 접고 시작 화면으로 되돌린다 (9/23 사용자 요청 — 잘못 시작했거나 그만두고 싶을 때
+   * 끝까지 두는 수밖에 없었다). **전적과 판 번호는 그대로 둔다** —
+   * 번호를 되돌리면 `finish` 의 `paidRound` 와 어긋나 같은 번호에 두 번 줄 수 있다.
+   * 이긴 창을 닫는 것(`close`) 과 같은 자리로 돌아가지만, 이쪽은 승수를 안 올린다
+   */
+  const reset = useCallback(
+    (cur: YutGame) =>
+      write({
+        ...EMPTY_GAME,
+        playing: false,
+        first: null,
+        turn: cur.turn,
+        wins: cur.wins,
+        paid: cur.paid,
+        round: cur.round,
+        paidRound: cur.paidRound,
+      }),
+    [write]
+  );
+
+  return { game, error, write, finish, start, draw, close, reset };
 }
 
 /**

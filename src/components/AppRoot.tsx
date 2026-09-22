@@ -109,6 +109,7 @@ function App({ uid }: { uid: string }) {
     start: startYut,
     draw: drawYut,
     close: closeYut,
+    reset: resetYut,
   } = useYut(uid);
   // 이벤트 잠금 (한시적). 아직 못 읽었으면(null) 잠긴 쪽으로 본다
   const { locked: lockRaw, setLocked: setEventLock } = useEventLock(uid);
@@ -246,7 +247,7 @@ function App({ uid }: { uid: string }) {
               onStart={startYut}
               onDraw={drawYut}
               onClose={closeYut}
-              today={today}
+              onReset={resetYut}
             />
           ))}
       </div>

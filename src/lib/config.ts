@@ -19,12 +19,6 @@ export const SEM_NAME = "2학기";
  * 시간표. 아직 편집 화면이 없어서 코드에 둔다.
  * days: 0=일 ~ 6=토
  */
-/**
- * 윷놀이 이벤트 기간. **끝나면 탭째로 들어낸다** — 지울 것은 history.md 참고.
- * 화면에는 남은 날짜(D-n) 로만 쓰인다
- */
-export const EVENT = { start: "2026-09-21", end: "2026-09-28" };
-
 export const COURSES: Course[] = [
   {
     id: "apac",

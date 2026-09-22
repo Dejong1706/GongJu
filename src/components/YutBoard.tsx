@@ -5,6 +5,7 @@ import {
   ART,
   BOARD,
   DIGIT,
+  FIELD_NAME,
   FRUIT_PAL,
   GOAL,
   K,
@@ -117,14 +118,11 @@ const BACKDROP: Cell[] = (() => {
     }
   }
 
-  // 출발이자 골 — 화살표. 말은 오른쪽 변을 타고 **위로** 올라가므로 위를 가리킨다
-  const g = NODES[0];
-  out.push(
-    cell(g.x - 1, g.y - 3, 1, 6, K.red),
-    cell(g.x - 3, g.y - 1, 5, 1, K.red),
-    cell(g.x - 2, g.y - 2, 1, 1, K.red),
-    cell(g.x, g.y - 2, 1, 1, K.red)
-  );
+  /*
+   * 예전에는 참먹이에 진행 방향을 가리키는 빨간 화살표가 있었다.
+   * 이제 그 자리에 "참먹이" 라고 적고, 오른쪽 변에 도 · 개 · 걸 · 윷 · 모 가 올라가므로
+   * **이름이 곧 방향**이다 (9/23). 말도 한 칸씩 걸어가서 길이 보인다
+   */
   return out;
 })();
 
@@ -132,11 +130,16 @@ export default function YutBoard({
   horses,
   pick = [],
   onPick,
+  go = [],
+  onGo,
 }: {
   horses: Horses;
-  /** 지금 고를 수 있는 밭 */
+  /** 지금 고를 수 있는 밭 — 점선 테두리 */
   pick?: number[];
   onPick?: (pos: number) => void;
+  /** 갈림길에서 고를 **갈 곳** — 금빛 과녁. 밭 고르기와 동시에 서지 않는다 */
+  go?: number[];
+  onGo?: (pos: number) => void;
 }) {
   const pieces = useMemo(() => {
     const out: Cell[] = [];
@@ -169,6 +172,28 @@ export default function YutBoard({
       {BACKDROP.map((c, i) => (
         <rect key={`b${i}`} x={c.x} y={c.y} width={c.w} height={c.h} fill={c.f} />
       ))}
+
+      {/*
+       * 밭 이름 — **말보다 먼저 그려서 말이 덮게** 한다. 말이 선 밭은 이름을 볼 일이 없다.
+       * 도트가 아니라 진짜 글자다 (세 글자를 5칸 도트로는 못 쓴다).
+       * 옅은 고동이라 판 무늬처럼 깔리고 말·점선을 방해하지 않는다
+       */}
+      {Object.entries(FIELD_NAME).map(([key, name]) => {
+        const n = NODES[Number(key)];
+        return (
+          <text
+            key={`n${key}`}
+            className="yut-name-field"
+            x={n.x}
+            y={n.y}
+            textAnchor="middle"
+            dominantBaseline="central"
+          >
+            {name}
+          </text>
+        );
+      })}
+
       {pieces.map((c, i) => (
         <rect key={`p${i}`} x={c.x} y={c.y} width={c.w} height={c.h} fill={c.f} />
       ))}
@@ -196,6 +221,38 @@ export default function YutBoard({
               fill="transparent"
               style={{ cursor: "pointer" }}
               onClick={() => onPick?.(pos)}
+            />
+          </g>
+        );
+      })}
+
+      {/*
+       * 갈림길에서 고를 갈 곳 — 금빛 과녁. 점선(고를 말) 과 헷갈리지 않게 **꽉 찬 테두리**다.
+       * 참먹이를 지나 나는 수는 NODES[20] 이 참먹이 자리라 거기 선다
+       */}
+      {go.map((pos) => {
+        const n = NODES[pos];
+        if (!n) return null;
+        return (
+          <g key={`go${pos}`} className="yut-go">
+            {[
+              cell(n.x - 8, n.y - 9, 17, 1, K.gold),
+              cell(n.x - 8, n.y + 8, 17, 1, K.gold),
+              cell(n.x - 8, n.y - 9, 1, 18, K.gold),
+              cell(n.x + 8, n.y - 9, 1, 18, K.gold),
+              cell(n.x - 2, n.y - 1, 5, 1, K.red),
+              cell(n.x, n.y - 3, 1, 5, K.red),
+            ].map((c, i) => (
+              <rect key={i} x={c.x} y={c.y} width={c.w} height={c.h} fill={c.f} />
+            ))}
+            <rect
+              x={n.x - 8}
+              y={n.y - 9}
+              width={17}
+              height={18}
+              fill="transparent"
+              style={{ cursor: "pointer" }}
+              onClick={() => onGo?.(pos)}
             />
           </g>
         );

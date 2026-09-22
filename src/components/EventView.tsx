@@ -1,10 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import YutBoard from "./YutBoard";
 import YutThrow from "./YutThrow";
-import { EVENT } from "@/lib/config";
-import { parseYmd, shortDate, ymd } from "@/lib/date";
 import {
   applyMove,
   ART,
@@ -14,11 +12,13 @@ import {
   isExtra,
   movesFor,
   other,
+  pathOf,
   PER_WIN,
   rank,
   realThrow,
   THROW_NAME,
   WAIT,
+  type Horses,
   type Move,
   type Throw,
   type YutSide,
@@ -39,28 +39,41 @@ import type { YutGame } from "@/lib/types";
 /** 편 이름. 정연이 쓰는 앱이지만 둘이 같이 보는 화면이라 이름을 그대로 적는다 */
 const NAME: Record<YutSide, string> = { a: "병근", b: "정연" };
 
+/**
+ * 골인 표시 — **먹빛 패에 금색 체크** (9/23 사용자 요청).
+ * 전에는 과일의 윤곽만 남겼는데 **아직 안 나간 말인지 다 난 말인지 구분이 안 됐다.**
+ * 업은 말 숫자패(`YutBoard` 의 `count`) 와 같은 먹·금이라 "다 됐다" 는 표시로 읽힌다
+ */
+const CHECK = [
+  [1, 4], [2, 5], [3, 6],
+  [1, 5], [2, 6], [3, 7],
+  [4, 5], [5, 4], [6, 3], [7, 2],
+  [4, 6], [5, 5], [6, 4], [7, 3],
+];
+
 function Fruit({ side, kind }: { side: YutSide; kind: "wait" | "on" | "goal" }) {
   const rows = ART[side];
   return (
     <svg width="13" height="13" viewBox="0 0 9 9" shapeRendering="crispEdges" aria-hidden="true">
       {kind === "wait" ? (
+        /* 아직 안 나간 말 — 빈 칸. 9/21 부터 이 모양 그대로다 */
         <>
           <rect x="1" y="1" width="7" height="7" fill="#efe0c8" stroke="#a87a4e" strokeWidth="1" />
           <rect x="4" y="4" width="1" height="1" fill="#a87a4e" />
+        </>
+      ) : kind === "goal" ? (
+        <>
+          <rect x="0" y="0" width="9" height="9" fill="#47301b" />
+          <rect x="1" y="1" width="7" height="7" fill="#2b2622" />
+          {CHECK.map(([x, y]) => (
+            <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill="#d2a84f" />
+          ))}
         </>
       ) : (
         rows.map((row, r) =>
           row.split("").map((ch, c) =>
             ch === "." ? null : (
-              <rect
-                key={`${r}-${c}`}
-                x={c}
-                y={r}
-                width="1"
-                height="1"
-                /* 골인한 말은 색을 빼고 윤곽만 — 다 들어갔다는 표시 */
-                fill={kind === "goal" ? (ch === "o" ? "#a87a4e" : "#f7ecd9") : FRUIT_PAL[ch]}
-              />
+              <rect key={`${r}-${c}`} x={c} y={r} width="1" height="1" fill={FRUIT_PAL[ch]} />
             )
           )
         )
@@ -76,7 +89,7 @@ export default function EventView({
   onStart,
   onDraw,
   onClose,
-  today,
+  onReset,
 }: {
   game: YutGame;
   onWrite: (next: YutGame) => Promise<void> | void;
@@ -84,7 +97,7 @@ export default function EventView({
   onStart: (cur: YutGame, turn: YutSide) => Promise<void> | void;
   onDraw: (cur: YutGame, next: { a: Throw | null; b: Throw | null }) => Promise<void> | void;
   onClose: (cur: YutGame) => Promise<void> | void;
-  today: Date;
+  onReset: (cur: YutGame) => Promise<void> | void;
 }) {
   const [throwing, setThrowing] = useState(false);
   /** 선 뽑기로 던지는 중이면 그 편 */
@@ -92,19 +105,26 @@ export default function EventView({
   /** 던진 값이 여러 개일 때 지금 쓸 것 */
   const [sel, setSel] = useState(0);
   const [msg, setMsg] = useState("");
+  /** 갈림길에 선 말을 눌렀다 — 갈 곳을 고르는 중 */
+  const [fork, setFork] = useState<number | null>(null);
+  /** 판을 접을까 묻는 창 */
+  const [asking, setAsking] = useState(false);
+  /** 한 칸씩 걸어가는 중 — 옮긴 뒤에야 판을 고쳐 쓴다 */
+  const [walk, setWalk] = useState<{
+    side: YutSide;
+    ids: number[];
+    path: number[];
+    step: number;
+  } | null>(null);
+  const pending = useRef<Move | null>(null);
 
   const turn = game.turn;
   const done = !!game.winner;
   /** 판이 돌고 있는 동안 — 기록 칸에 지금 던지는 쪽 이름을 붙인다 */
   const live = game.playing && !done;
   const mine = game.horses[turn];
-
-  const left = Math.max(
-    0,
-    Math.round(
-      (parseYmd(EVENT.end).getTime() - parseYmd(ymd(today)).getTime()) / 86_400_000
-    )
-  );
+  /** 남은 던질 횟수. 옛 문서는 `pending` 참/거짓으로 들어 있다 */
+  const owe = game.owe ?? (game.pending ? 1 : 0);
 
   /*
    * 선 뽑기. 정연이 먼저 던지고, 둘 다 나오면 높은 쪽이 선이 된다.
@@ -119,8 +139,21 @@ export default function EventView({
   // 지금 쓸 값과 그 값으로 갈 수 있는 수
   const use: Throw | null = game.rolls.length > 0 ? game.rolls[Math.min(sel, game.rolls.length - 1)] : null;
   const moves = use === null ? [] : movesFor(mine, use);
-  const boardPicks = moves.filter((m) => m.from !== WAIT).map((m) => m.from);
+  /** 누를 수 있는 밭. 갈림길에 선 말은 수가 둘이라 같은 밭이 두 번 나오므로 한 번으로 줄인다 */
+  const boardPicks = [...new Set(moves.filter((m) => m.from !== WAIT).map((m) => m.from))];
   const outMove = moves.find((m) => m.from === WAIT);
+  /** 갈림길을 누른 뒤 — 갈 수 있는 두 곳 */
+  const forkMoves = fork === null ? [] : moves.filter((m) => m.from === fork);
+
+  /** 걸어가는 동안에는 말을 잠깐 다른 밭에 그려둔다 — 판 문서는 도착해서야 고친다 */
+  const shown: Horses = walk
+    ? {
+        ...game.horses,
+        [walk.side]: game.horses[walk.side].map((p, i) =>
+          walk.ids.includes(i) ? walk.path[walk.step] : p
+        ),
+      }
+    : game.horses;
 
   const save = (next: YutGame) => {
     setSel(0);
@@ -128,35 +161,76 @@ export default function EventView({
     return Promise.resolve(onWrite(next)).catch(() => setMsg("보내지 못했어요"));
   };
 
-  /** 던진 값 하나를 썼다 — 남은 값이 없고 더 던질 것도 없으면 차례가 넘어간다 */
+  /**
+   * 던진 값 하나를 썼다 — 남은 값이 없고 **빚진 던지기도 없으면** 차례가 넘어간다.
+   * 잡았으면 던질 빚이 하나 는다 (윷 · 모와 따로 쌓인다)
+   */
   const spend = (index: number, extra: { horses?: YutGame["horses"]; caught?: boolean }) => {
     const rolls = game.rolls.filter((_, i) => i !== index);
-    const pending = game.pending || !!extra.caught;
+    const next = owe + (extra.caught ? 1 : 0);
     const horses = extra.horses ?? game.horses;
-    if (rolls.length === 0 && !pending) {
+    if (rolls.length === 0 && next === 0) {
       // 차례를 넘기면서 **기록도 비운다** — 다음 사람은 자기가 던진 것만 본다
-      return save({ ...game, horses, rolls: [], log: [], pending: true, turn: other(turn) });
+      return save({ ...game, horses, rolls: [], log: [], owe: 1, turn: other(turn) });
     }
-    return save({ ...game, horses, rolls, pending });
+    return save({ ...game, horses, rolls, owe: next });
   };
 
-  const play = (move: Move) => {
-    if (use === null) return;
+  /** 걸음이 끝났다 — 이제야 판을 고쳐 쓴다 */
+  const commit = (move: Move) => {
     const res = applyMove(game.horses, turn, move);
-    const index = game.rolls.indexOf(use);
+    const index = use === null ? -1 : game.rolls.indexOf(use);
     if (res.won) {
-      const next: YutGame = {
-        ...game,
-        horses: res.horses,
-        rolls: [],
-        pending: false,
-      };
-      onFinish(next, turn).catch(() => setMsg("끝내지 못했어요"));
+      onFinish({ ...game, horses: res.horses, rolls: [], owe: 0 }, turn).catch(() =>
+        setMsg("끝내지 못했어요")
+      );
       return;
     }
     if (res.caught) setMsg(`${FRUIT[turn]}가 ${FRUIT[other(turn)]}를 잡았어요 — 한 번 더 던져요`);
     spend(index, { horses: res.horses, caught: res.caught });
   };
+
+  /**
+   * 말을 옮긴다. **순간이동하지 않고 한 칸씩 걸어간다** (9/23 사용자 요청) —
+   * 지름길을 탔는지 바깥으로 돌았는지가 눈에 보인다.
+   * 줄이기 설정이면 걷지 않고 바로 옮긴다.
+   */
+  const play = (move: Move) => {
+    if (use === null || walk) return;
+    setFork(null);
+    const path = pathOf(move.from, use, move.branch);
+    const still =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (path.length === 0 || still) {
+      commit(move);
+      return;
+    }
+    pending.current = move;
+    setWalk({ side: turn, ids: move.horses, path, step: 0 });
+  };
+
+  // 한 칸에 0.13초. 마지막 칸을 밟으면 잠깐 두었다가 판을 고친다
+  useEffect(() => {
+    if (!walk) return;
+    const last = walk.step >= walk.path.length - 1;
+    const timer = setTimeout(
+      () => {
+        if (!last) {
+          setWalk((w) => (w ? { ...w, step: w.step + 1 } : w));
+          return;
+        }
+        const move = pending.current;
+        pending.current = null;
+        setWalk(null);
+        if (move) commit(move);
+      },
+      last ? 90 : 130
+    );
+    return () => clearTimeout(timer);
+    // commit 은 매 렌더 새로 만들어진다 — walk 이 바뀔 때마다 이 효과가 다시 돌아 최신 것을 쥔다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [walk]);
 
   const skip = () => {
     if (use === null) return;
@@ -171,7 +245,8 @@ export default function EventView({
       ...game,
       rolls: [...game.rolls, real],
       log: [...game.log, real],
-      pending: isExtra(t),
+      // 한 번 던져 빚을 갚고, 윷 · 모면 다시 진다
+      owe: Math.max(0, owe - 1) + (isExtra(t) ? 1 : 0),
     });
   };
 
@@ -201,14 +276,8 @@ export default function EventView({
     <>
       <div className="ev-board-head">
         <span className="ev-knob" />
-        <span className="ev-ttl">
-          윷 한 판
-          <span className="ev-when">
-            {" · "}
-            {shortDate(EVENT.start)} ~ {shortDate(EVENT.end)}
-          </span>
-        </span>
-        <span className="ev-dday">{left > 0 ? `D-${left}` : "오늘까지"}</span>
+        {/* 기간 · D-day 는 뺐다 (9/23 사용자 요청) — 언제까지인지 말로 하지 않기로 했다 */}
+        <span className="ev-ttl">윷 한 판</span>
         <span className="ev-knob" />
       </div>
       <div className="ev-saekdong" />
@@ -221,10 +290,18 @@ export default function EventView({
 
       <div className="ev-board-wrap">
         <YutBoard
-          horses={game.horses}
-          pick={game.playing && !done ? boardPicks : []}
+          horses={shown}
+          /* 걸어가는 동안에는 아무것도 못 누른다 — 두 번 눌리면 한 수가 두 번 간다 */
+          pick={game.playing && !done && !walk && fork === null ? boardPicks : []}
           onPick={(pos) => {
-            const move = moves.find((m) => m.from === pos);
+            const opts = moves.filter((m) => m.from === pos);
+            // 갈림길이면 바로 안 가고 갈 곳을 묻는다
+            if (opts.length > 1) setFork(pos);
+            else if (opts[0]) play(opts[0]);
+          }}
+          go={forkMoves.map((m) => m.to)}
+          onGo={(pos) => {
+            const move = forkMoves.find((m) => m.to === pos);
             if (move) play(move);
           }}
         />
@@ -309,7 +386,11 @@ export default function EventView({
                   key={i}
                   type="button"
                   className={`ev-chip ev-chip-${turn} ${isNow ? "ev-chip-on" : ""}`}
-                  onClick={() => usable && setSel(i - unusedFrom)}
+                  onClick={() => {
+                    if (!usable) return;
+                    setFork(null); // 값을 바꾸면 고르던 갈림길은 무효다
+                    setSel(i - unusedFrom);
+                  }}
                 >
                   {THROW_NAME[t]}
                 </button>
@@ -333,35 +414,95 @@ export default function EventView({
            * 옮길 말을 고르는 건 판을 눌러서 하니, 던질 수 있을 때는 그 안내를 아랫줄로 내린다
            */}
           <div className="ev-acts">
-            {game.rolls.length > 0 &&
+            {fork !== null && (
+              <button className="btn ev-btn ev-btn-ghost" onClick={() => setFork(null)}>
+                다시 고르기
+              </button>
+            )}
+            {fork === null &&
+              game.rolls.length > 0 &&
               (outMove ? (
-                <button className="btn ev-btn" onClick={() => play(outMove)}>
+                <button className="btn ev-btn" onClick={() => play(outMove)} disabled={!!walk}>
                   새 {FRUIT[turn]} 내보내기
                 </button>
               ) : moves.length === 0 ? (
-                <button className="btn ev-btn" onClick={skip}>
+                <button className="btn ev-btn" onClick={skip} disabled={!!walk}>
                   옮길 말이 없어요 · 건너뛰기
                 </button>
-              ) : game.pending ? null : (
+              ) : owe > 0 ? null : (
                 <button className="btn ev-btn ev-btn-ghost" disabled>
                   옮길 {FRUIT[turn]}를 고르세요
                 </button>
               ))}
-            {game.pending && (
-              <button className="btn ev-btn" onClick={() => setThrowing(true)}>
+            {fork === null && owe > 0 && (
+              <button
+                className="btn ev-btn"
+                onClick={() => setThrowing(true)}
+                disabled={!!walk}
+              >
                 {game.log.length > 0 ? "한 번 더 던지기" : "윷 던지기"}
               </button>
             )}
           </div>
           <div className="ev-hint">
             {msg ||
-              (use === null
+              (fork !== null
+                ? "갈림길이에요 — 갈 곳을 눌러요"
+                : walk
+                ? "가는 중…"
+                : use === null
                 ? `${NAME[turn]}이 던질 차례예요 · 정연이 이기면 ${PER_WIN} 포인트`
-                : game.pending
+                : owe > 0
                 ? `${THROW_NAME[use]} — 지금 옮겨도 되고, 더 던지고 골라도 돼요`
                 : `${THROW_NAME[use]} — 판에서 점선이 그려진 ${FRUIT[turn]}를 눌러요`)}
           </div>
         </>
+      )}
+
+      {/*
+       * 판 접기 (9/23 사용자 요청). 잘못 시작했거나 그만두고 싶어도 끝까지 두는 수밖에 없었다.
+       * **눈에 안 띄게 조용한 글씨**로 둔다 — 실수로 눌러 두던 판이 날아가면 안 된다.
+       * 전적은 그대로 두고 시작 화면으로만 돌아간다
+       */}
+      {(game.playing || !!game.first) && !done && (
+        <button type="button" className="ev-reset" onClick={() => setAsking(true)}>
+          판 초기화
+        </button>
+      )}
+
+      {/* 앱의 분홍 Popup 을 쓰지 않는다 — 이긴 창과 같은 먹빛 창을 손으로 짠다 */}
+      {asking && (
+        <div className="dim" onClick={(e) => e.target === e.currentTarget && setAsking(false)}>
+          <div className="pop ev-pop" role="dialog" aria-modal="true" aria-label="판 초기화">
+            <div className="pop-head">
+              <span>판 초기화</span>
+            </div>
+            <div className="pop-body">
+              <p className="ev-ask">
+                두던 판을 접고 게임 시작 화면으로 돌아가요
+                <br />
+                지금 놓인 말은 전부 없어져요
+              </p>
+            </div>
+            <div className="pop-foot">
+              <button
+                className="btn ev-btn"
+                onClick={() => {
+                  setAsking(false);
+                  setFork(null);
+                  setWalk(null);
+                  pending.current = null;
+                  onReset(game);
+                }}
+              >
+                초기화
+              </button>
+              <button className="btn ev-btn ev-btn-ghost" onClick={() => setAsking(false)}>
+                그만두기
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {throwing && <YutThrow who={NAME[turn]} onDone={finishThrow} />}

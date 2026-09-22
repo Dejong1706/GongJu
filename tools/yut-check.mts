@@ -3,7 +3,7 @@
  * 화면 없이 길 · 잡기 · 업기 · 윷가락 판정만 확인한다.
  * 이벤트가 끝나면 이 파일도 같이 지운다.
  */
-import { advance, applyMove, field, judge, movesFor, realThrow, CHAM, GOAL, WAIT } from "../src/lib/yut.ts";
+import { advance, applyMove, field, isFork, judge, movesFor, pathOf, realThrow, CHAM, GOAL, WAIT } from "../src/lib/yut.ts";
 
 let bad = 0;
 const eq = (got: unknown, want: unknown, what: string) => {
@@ -81,13 +81,13 @@ eq(moves.length, 2, "같은 밭의 두 말은 수 하나로 묶인다 (업기)")
 eq(moves[0].horses, [0, 1], "업은 말은 같이 움직인다");
 
 const caught = applyMove({ a: [7, WAIT, WAIT], b: [5, WAIT, WAIT] }, "b", {
-  from: 5, to: 7, horses: [0],
+  from: 5, to: 7, horses: [0], branch: 0,
 });
 eq(caught.horses.a, [WAIT, WAIT, WAIT], "잡힌 말은 대기로 돌아간다");
 eq(caught.caught, true, "잡았다고 알려준다");
 
 const atCham = applyMove({ a: [CHAM, WAIT, WAIT], b: [29, WAIT, WAIT] }, "b", {
-  from: 29, to: 31, horses: [0],
+  from: 29, to: 31, horses: [0], branch: 0,
 });
 eq(atCham.caught, true, "참먹이에 선 말은 잡힌다 — 들어온 길이 달라도 같은 자리");
 
@@ -96,19 +96,43 @@ eq(stack.length, 2, "같은 방에 선 두 말은 들어온 길이 달라도 업
 eq(stack[0].horses, [0, 1], "업은 말은 같이 움직인다");
 
 const same = applyMove({ a: [WAIT, WAIT, WAIT], b: [33, 22, WAIT] }, "b", {
-  from: 22, to: 34, horses: [1],
+  from: 22, to: 34, horses: [1], branch: 0,
 });
 eq(same.horses.b, [34, 34, WAIT], "업히면 되물릴 길도 방금 들어온 말을 따라간다");
 
 const safe = applyMove({ a: [GOAL, WAIT, WAIT], b: [5, WAIT, WAIT] }, "b", {
-  from: 5, to: GOAL, horses: [0],
+  from: 5, to: GOAL, horses: [0], branch: 0,
 });
 eq(safe.caught, false, "골에서는 잡지 않는다");
 
 const win = applyMove({ a: [WAIT, WAIT, WAIT], b: [GOAL, GOAL, 19] }, "b", {
-  from: 19, to: GOAL, horses: [2],
+  from: 19, to: GOAL, horses: [2], branch: 0,
 });
 eq(win.won, true, "셋이 다 나면 이긴다");
+
+// 갈림길 — 멈춘 말은 지름길과 바깥길 중에 고른다 (9/23)
+eq(isFork(5), true, "우상 모서리는 갈림길");
+eq(isFork(10), true, "좌상 모서리도 갈림길");
+eq(isFork(34), true, "첫 지름길로 멈춘 방도 갈림길");
+eq(isFork(33), false, "둘째 지름길로 멈춘 방은 갈림길이 아니다");
+eq(isFork(4), false, "보통 밭은 갈림길이 아니다");
+eq(advance(5, 2, 1), 7, "우상에서 개 · 바깥길 → 7");
+eq(advance(5, 2, 0), 22, "같은 자리 같은 값이라도 지름길이면 22");
+eq(advance(10, 3, 1), 13, "좌상에서 걸 · 바깥길");
+eq(advance(34, 2, 1), 25, "방에서 개 · 첫 지름길을 마저 타면 25");
+eq(advance(34, 2, 0), 29, "참먹이 쪽으로 질러가면 29");
+eq(movesFor([5, WAIT, WAIT], 2).length, 3, "갈림길 말은 수가 둘 + 새 말 내보내기");
+eq(movesFor([5, WAIT, WAIT], 2).filter((m) => m.from === 5).map((m) => m.to), [22, 7], "갈림길 두 수 — 지름길이 앞");
+eq(movesFor([4, WAIT, WAIT], 2).filter((m) => m.from === 4).length, 1, "갈림길이 아니면 수 하나");
+eq(advance(5, -1, 1), 4, "백도에는 갈림길이 없다");
+
+// 걸어가는 길 — 화면이 한 칸씩 밟는 데 쓴다
+eq(pathOf(WAIT, 2), [1, 2], "대기에서 개 → 1 · 2 를 밟는다");
+eq(pathOf(5, 3, 0), [21, 22, 34], "우상에서 걸 · 지름길 — 마지막은 멈춘 방 이름");
+eq(pathOf(5, 3, 1), [6, 7, 8], "같은 걸 · 바깥길");
+eq(pathOf(19, 2), [30], "참먹이를 지나 나면 걸음은 참먹이까지만");
+eq(pathOf(CHAM, 1), [], "참먹이에서 바로 나면 밟을 밭이 없다");
+eq(pathOf(3, -1), [2], "백도는 한 걸음");
 
 // 윷가락
 eq(judge([0, 0, 0, 0]), 4, "배 넷 → 윷");

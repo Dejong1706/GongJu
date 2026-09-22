@@ -91,6 +91,26 @@ export const field = (pos: number) => ALIAS[pos] ?? pos;
 export const BOARD = PAD * 2 + GAP * 5;
 
 /**
+ * 판에 적는 밭 이름 (9/23 사용자 요청). **아는 이름만** 적는다 —
+ * 스무 밭에 다 붙이면 (모도 · 모개 · 꺾도 …) 판이 글자로 덮인다.
+ *
+ * 글씨는 **밭 한가운데, 말보다 아래**에 깔린다 — 말이 선 밭은 이름을 볼 일이 없다.
+ * 도 → 모 가 오른쪽 변을 타고 올라가므로 **이름이 곧 진행 방향**이다.
+ * 그래서 참먹이에 있던 빨간 화살표는 뺐다 (말이 한 칸씩 걸어가는 것도 방향을 보여준다).
+ */
+export const FIELD_NAME: Record<number, string> = {
+  1: "도",
+  2: "개",
+  3: "걸",
+  4: "윷",
+  5: "모",
+  10: "꺾",
+  15: "찌모",
+  23: "방",
+  0: "참먹이",
+};
+
+/**
  * 다음 밭. 지름길은 **모서리에 멈춘 말이 떠날 때만** 탄다 (FIRST).
  * 바깥길 · 지름길 모두 **참먹이를 거쳐** 골로 나간다 — 참먹이에 서면 아직 안 난 것이다.
  */
@@ -101,11 +121,25 @@ const NEXT: Record<number, number> = {
 };
 for (let i = 0; i <= 18; i++) NEXT[i] = i + 1;
 
-/*
- * 대회규정은 모서리 · 방에서 **진행 방향을 고를 수 있다**고 하지만,
- * 여기서는 늘 지름길을 태운다 — 말을 한 번 누르면 바로 가는 조작을 지키려고 (사용자가 고른 것).
+/**
+ * 갈림길 — **멈춘 말이 떠날 때** 고를 수 있는 다음 밭. 앞이 지름길(0), 뒤가 바깥길(1).
+ * 지나쳐 가는 말은 못 고른다 (대회규정: 멈춘 자리에서만 방향을 정한다).
+ *
+ * 9/22 까지는 늘 지름길을 태웠는데(`FIRST`), **일부러 돌아서 잡으러 가는 수**가 아예 없어서
+ * 9/23 에 고르게 했다 (사용자 요청).
+ *
+ * - `5` 우상 모서리 · `10` 좌상 모서리 — 지름길로 들어갈지 변을 따라 갈지
+ * - `34` **첫 지름길로 멈춘 방** — 참먹이로 질러갈지(28) 첫 지름길을 마저 타 찌모로 갈지(24)
+ * - `33`(둘째 지름길로 멈춘 방) 은 갈림길이 아니다 — 나머지 팔이 전부 왔던 길 쪽이다
  */
-const FIRST: Record<number, number> = { 5: 21, 10: 26 };
+const FORK: Record<number, number[]> = {
+  5: [21, 6],
+  10: [26, 11],
+  34: [28, 24],
+};
+
+/** 갈림길에 선 말인가 — 화면이 "갈 곳을 고르라" 고 물을 자리다 */
+export const isFork = (pos: number) => FORK[pos] !== undefined;
 
 /**
  * 백도로 되돌아갈 밭 — **온 길로** 되돌아간다.
@@ -131,30 +165,55 @@ function backOne(pos: number): number | null {
 const old0 = (pos: number) => (pos === 0 ? 32 : pos);
 
 /**
- * pos 에 있는 말이 t 만큼 갔을 때 닿는 밭. 갈 수 없으면 null.
- * 골은 딱 맞지 않아도 **참먹이를 지나치기만 하면** 난다.
+ * 한 걸음씩 밟아 간다. `fields` 는 **거쳐 가는 밭을 순서대로** 담고 (화면이 한 칸씩 걸린다),
+ * `end` 는 닿은 자리다. 골은 딱 맞지 않아도 **참먹이를 지나치기만 하면** 난다 —
+ * 그때 `fields` 는 참먹이까지만 담는다 (판을 떠나는 걸음은 그릴 자리가 없다).
  */
-export function advance(raw: number, t: Throw): number | null {
-  const pos = old0(raw);
-  if (pos === GOAL) return null;
-  if (t === -1) return backOne(pos);
-
+function run(pos: number, t: Throw, branch: number): { fields: number[]; end: number } {
+  const fields: number[] = [];
   let cur = pos;
   for (let i = 0; i < t; i++) {
     if (cur === WAIT) {
       cur = 1; // 대기하던 말이 첫 칸에 들어선다
+      fields.push(cur);
       continue;
     }
-    const next = i === 0 && FIRST[cur] !== undefined ? FIRST[cur] : NEXT[cur];
+    const fork = i === 0 ? FORK[cur] : undefined;
+    const next = fork ? fork[branch] ?? fork[0] : NEXT[cur];
     /*
      * **번호가 크다고 골이 아니다** — 지름길 밭은 21~29 · 33 이라 GOAL(20) 보다 크다.
      * 여기서 next >= GOAL 로 끊었더니 지름길에 들어서는 순간 나 버렸다.
      * 골에 닿으면 남은 걸음은 버린다 (딱 맞지 않아도 난다)
      */
-    if (next === undefined || next === GOAL) return GOAL;
+    if (next === undefined || next === GOAL) return { fields, end: GOAL };
     cur = next;
+    fields.push(cur);
   }
-  return settle(cur);
+  const end = settle(cur);
+  if (fields.length > 0) fields[fields.length - 1] = end; // 방에 멈췄으면 이름을 바꿔 둔다
+  return { fields, end };
+}
+
+/**
+ * pos 에 있는 말이 t 만큼 갔을 때 닿는 밭. 갈 수 없으면 null.
+ * `branch` 는 갈림길에서 고른 길 — 0 지름길 · 1 바깥길 (FORK 참고).
+ */
+export function advance(raw: number, t: Throw, branch = 0): number | null {
+  const pos = old0(raw);
+  if (pos === GOAL) return null;
+  if (t === -1) return backOne(pos);
+  return run(pos, t, branch).end;
+}
+
+/** 거쳐 가는 밭들 — 말이 한 칸씩 걸어가는 데 쓴다. 백도는 한 걸음이다 */
+export function pathOf(raw: number, t: Throw, branch = 0): number[] {
+  const pos = old0(raw);
+  if (pos === GOAL) return [];
+  if (t === -1) {
+    const back = backOne(pos);
+    return back === null ? [] : [back];
+  }
+  return run(pos, t, branch).fields;
 }
 
 /* ── 윷가락 ────────────────────────────────── */
@@ -192,11 +251,15 @@ export const stackAt = (horses: number[], pos: number) =>
 export const onBoard = (horses: number[]) =>
   [...new Set(horses.filter((p) => p !== WAIT && p !== GOAL))];
 
-export type Move = { from: number; to: number; horses: number[] };
+/** `branch` 는 갈림길에서 고른 길 — 0 지름길 · 1 바깥길 */
+export type Move = { from: number; to: number; horses: number[]; branch: number };
 
 /**
  * 지금 던진 값으로 갈 수 있는 수를 모은다.
  * 같은 밭에 선 말은 한 덩어리(업은 것)라 수 하나로 묶인다.
+ *
+ * **갈림길에 선 말은 수가 둘**이다 — `from` 이 같고 `to` 가 다르다.
+ * 어느 쪽인지는 화면이 물어본다 (`isFork`).
  */
 export function movesFor(horses: number[], t: Throw): Move[] {
   const list: Move[] = [];
@@ -205,9 +268,15 @@ export function movesFor(horses: number[], t: Throw): Move[] {
     if (pos === GOAL) return;
     if (seen.has(field(pos))) return;
     seen.add(field(pos));
-    const to = advance(pos, t);
-    if (to === null) return;
-    list.push({ from: pos, to, horses: pos === WAIT ? [i] : stackAt(horses, pos) });
+    const mine = pos === WAIT ? [i] : stackAt(horses, pos);
+    const branches = t > 0 && isFork(pos) ? [0, 1] : [0];
+    branches.forEach((branch) => {
+      const to = advance(pos, t, branch);
+      if (to === null) return;
+      // 두 길이 같은 밭에 닿으면 고를 것이 없다
+      if (list.some((m) => m.from === pos && m.to === to)) return;
+      list.push({ from: pos, to, horses: mine, branch });
+    });
   });
   return list;
 }

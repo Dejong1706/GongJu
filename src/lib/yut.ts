@@ -6,6 +6,8 @@
  * 다른 곳은 건드리지 않았으므로 지워도 앱은 그대로 돈다 (지울 것 목록은 history.md).
  */
 
+import type { YutGame } from "./types";
+
 export type YutSide = "a" | "b";
 /** 백도 · 도 · 개 · 걸 · 윷 · 모 */
 export type Throw = -1 | 1 | 2 | 3 | 4 | 5;
@@ -90,28 +92,9 @@ export const field = (pos: number) => ALIAS[pos] ?? pos;
 /** 판 한 변의 길이 (도트 칸) */
 export const BOARD = PAD * 2 + GAP * 5;
 
-/**
- * 판에 적는 밭 이름 (9/23 사용자 요청). **아는 이름만** 적는다 —
- * 스무 밭에 다 붙이면 (모도 · 모개 · 꺾도 …) 판이 글자로 덮인다.
- *
- * 글씨는 **밭 한가운데, 말보다 아래**에 깔린다 — 말이 선 밭은 이름을 볼 일이 없다.
- * 도 → 모 가 오른쪽 변을 타고 올라가므로 **이름이 곧 진행 방향**이다.
- * 그래서 참먹이에 있던 빨간 화살표는 뺐다 (말이 한 칸씩 걸어가는 것도 방향을 보여준다).
- */
-export const FIELD_NAME: Record<number, string> = {
-  1: "도",
-  2: "개",
-  3: "걸",
-  4: "윷",
-  5: "모",
-  10: "꺾",
-  15: "찌모",
-  23: "방",
-  0: "참먹이",
-};
 
 /**
- * 다음 밭. 지름길은 **모서리에 멈춘 말이 떠날 때만** 탄다 (FIRST).
+ * 다음 밭 — 갈림길이 아닌 자리에서는 갈 곳이 하나다 (갈림길은 아래 FORK).
  * 바깥길 · 지름길 모두 **참먹이를 거쳐** 골로 나간다 — 참먹이에 서면 아직 안 난 것이다.
  */
 const NEXT: Record<number, number> = {
@@ -386,6 +369,32 @@ export const K = {
 
 /** 이겼을 때 정연이 받는 포인트 */
 export const PER_WIN = 100;
+
+/**
+ * 잡힌 말이 튕겨 날아가는 걸음 수 (9/23 사용자가 고른 연출).
+ * 판 위쪽 — 제 편 점수판 쪽으로 솟아 화면 밖으로 나간다.
+ * 파문 · 터짐 같은 것 대신 이걸 고른 건 **말이 어디로 돌아갔는지**를 눈으로 알려주기 때문이다
+ */
+export const FLY_STEPS = 7;
+
+/**
+ * 아무도 안 둔 판. **`store.ts` 가 아니라 여기 둔다** —
+ * 시안 페이지가 이 값을 쓰는데, `store.ts` 를 들여오면 Firebase 까지 딸려 와서
+ * 설정값 없이 초기화하다 터진다 (`store.ts` 는 이 이름을 그대로 다시 내보낸다)
+ */
+export const EMPTY_GAME: YutGame = {
+  playing: false, // 처음에는 시작 버튼만 보인다
+  first: null, // 선 뽑기 전
+  turn: "b", // 정연부터 던진다
+  horses: { a: Array(HORSES).fill(WAIT), b: Array(HORSES).fill(WAIT) },
+  rolls: [],
+  owe: 1, // 차례가 오면 한 번 던진다
+  log: [],
+  wins: { a: 0, b: 0 },
+  winner: null,
+  round: 0, // 첫 판을 시작할 때 1 이 된다
+  paid: 0,
+};
 
 /**
  * 선 뽑기에서의 높낮이 — 모 > 윷 > 걸 > 개 > 도 > 백도.

@@ -6,6 +6,8 @@ import YutThrow from "./YutThrow";
 import {
   applyMove,
   ART,
+  field,
+  FLY_STEPS,
   FRUIT,
   FRUIT_PAL,
   GOAL,
@@ -117,6 +119,13 @@ export default function EventView({
     step: number;
   } | null>(null);
   const pending = useRef<Move | null>(null);
+  /** 방금 잡힌 말이 날아가는 중 — 판 문서는 이미 고쳤고 그림만 남아 있다 */
+  const [fly, setFly] = useState<{
+    side: YutSide;
+    pos: number;
+    n: number;
+    step: number;
+  } | null>(null);
 
   const turn = game.turn;
   const done = !!game.winner;
@@ -155,6 +164,11 @@ export default function EventView({
       }
     : game.horses;
 
+  /** 움직임 줄이기 설정 — 걸음도 날아가기도 건너뛴다 */
+  const still = () =>
+    typeof window !== "undefined" &&
+    !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
   const save = (next: YutGame) => {
     setSel(0);
     setMsg("");
@@ -186,9 +200,28 @@ export default function EventView({
       );
       return;
     }
-    if (res.caught) setMsg(`${FRUIT[turn]}가 ${FRUIT[other(turn)]}를 잡았어요 — 한 번 더 던져요`);
+    if (res.caught) {
+      setMsg(`${FRUIT[turn]}가 ${FRUIT[other(turn)]}를 잡았어요 — 한 번 더 던져요`);
+      // 잡힌 말은 판에서 바로 지우고, 그림만 따로 날려 보낸다 (판을 붙잡아두지 않는다)
+      const foe = other(turn);
+      const n = game.horses[foe].filter(
+        (p) => p !== WAIT && field(p) === field(move.to)
+      ).length;
+      if (n > 0 && !still()) setFly({ side: foe, pos: move.to, n, step: 0 });
+    }
     spend(index, { horses: res.horses, caught: res.caught });
   };
+
+  // 0.045초에 한 걸음. 다 날면 그림을 치운다
+  useEffect(() => {
+    if (!fly) return;
+    if (fly.step >= FLY_STEPS) {
+      setFly(null);
+      return;
+    }
+    const timer = setTimeout(() => setFly((cur) => (cur ? { ...cur, step: cur.step + 1 } : cur)), 45);
+    return () => clearTimeout(timer);
+  }, [fly]);
 
   /**
    * 말을 옮긴다. **순간이동하지 않고 한 칸씩 걸어간다** (9/23 사용자 요청) —
@@ -199,10 +232,7 @@ export default function EventView({
     if (use === null || walk) return;
     setFork(null);
     const path = pathOf(move.from, use, move.branch);
-    const still =
-      typeof window !== "undefined" &&
-      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    if (path.length === 0 || still) {
+    if (path.length === 0 || still()) {
       commit(move);
       return;
     }
@@ -297,6 +327,7 @@ export default function EventView({
             if (opts.length > 1) setFork(pos);
             else if (opts[0]) play(opts[0]);
           }}
+          fly={fly}
           go={forkMoves.map((m) => m.to)}
           onGo={(pos) => {
             const move = forkMoves.find((m) => m.to === pos);
@@ -496,6 +527,7 @@ export default function EventView({
                   setAsking(false);
                   setFork(null);
                   setWalk(null);
+                  setFly(null);
                   pending.current = null;
                   onReset(game);
                 }}

@@ -23,7 +23,7 @@ export const UPDATES: Update[] = [
     date: "2026-09-23",
     items: [
       { kind: "new", text: "윷놀이 — 말이 한 칸씩 걸어가요" },
-      { kind: "new", text: "윷놀이 — 판에 밭 이름이 적혔어요 (도 · 개 · 걸 · 윷 · 모 · 방 · 참먹이)" },
+      { kind: "new", text: "윷놀이 — 말을 잡으면 잡힌 말이 튕겨 날아가요" },
       { kind: "new", text: "윷놀이 — 모서리와 방에서 지름길로 갈지 바깥으로 돌지 고를 수 있어요" },
       { kind: "new", text: "윷놀이 — 판 아래 '판 초기화' 로 두던 판을 접고 다시 시작할 수 있어요" },
       { kind: "change", text: "윷놀이 — 윷가락이 좌우로도 흩어져요" },

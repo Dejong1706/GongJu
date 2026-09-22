@@ -323,12 +323,13 @@ src/shop/
 ### 끝나면 지울 것 (이 목록대로만 지우면 된다)
 
 ```
-src/lib/yut.ts · components/EventView.tsx · YutBoard.tsx · YutThrow.tsx · tools/yut-check.mts
+src/lib/yut.ts · components/EventView.tsx · YutBoard.tsx · YutThrow.tsx
+tools/yut-check.mts · tools/yut-preview/ 통째로
 globals.css 의 "윷놀이 이벤트 탭 (한시적)" · "이벤트 잠금 (한시적)" 두 덩어리 통째로
 TabBar  — ICONS.event · LABELS 의 ["event","이벤트"] 줄 · LOCK · eventLocked · onLocked
 AppRoot — EventView import · useYut · useEventLock · tab === "event" 칸 · scroll 의 ev 클래스
         · 잠금 팝업(locked · "울 아가 혼나요") · globals.css 의 .tab-lock-on · .tab-lock
-types.ts — TabKey 의 "event" · YutGame · store.ts 의 useYut · useEventLock · EMPTY_GAME
+types.ts — TabKey 의 "event" · YutGame · store.ts 의 useYut · useEventLock · EMPTY_GAME 다시 내보내기
 GuidePopup — PER_WIN import 와 WAYS 의 윷놀이 칸
         · LOCK_PW · LockMark · LockPad · lockbox 칸 · eventLocked/onSetEventLock
 tools/pet-preview/App.tsx — TabBar 에 넘기는 onLocked · eventLocked
@@ -447,13 +448,16 @@ Firestore 문서(`event/yut`) 는 남겨둬도 그만이다. **일부러 다른 
   줄이기 설정이면 걷지 않는다
 - **갈림길을 누르면 갈 곳 둘이 금빛 과녁으로 깜빡인다** (9/23). 고를 말은 점선, 갈 곳은 꽉 찬 테두리 —
   둘이 같은 모양이면 무엇을 누르는 건지 헷갈린다. `다시 고르기` 로 무른다
-- **밭 이름을 판에 적었다** (9/23 사용자 요청) — 도 · 개 · 걸 · 윷 · 모 · 꺾 · 찌모 · 방 · 참먹이 아홉 개만.
-  스무 밭에 다 붙이면(모도 · 모개 · 꺾도 …) 판이 글자로 덮인다.
-  **도트가 아니라 진짜 글자다** — 세 글자를 5칸 도트로는 못 쓴다. 뷰박스 78칸에 `font-size: 2.4` 라
-  폰에서 11px 남짓(갈무리 원래 크기)이고, 더 키우면 `참먹이` 가 밭을 넘는다.
-  **말보다 먼저 그려서 말이 덮는다** — 말이 선 밭은 이름을 볼 일이 없다.
-  참먹이에 있던 **빨간 화살표는 뺐다** — 오른쪽 변에 도 → 모 가 올라가니 이름이 곧 방향이고,
-  말이 걸어가는 것도 방향을 보여준다
+- **판 위에는 글자를 쓰지 않는다.** 9/23 에 밭 이름(도 · 개 · 걸 · 윷 · 모 · 꺾 · 찌모 · 방 · 참먹이)을
+  넣어 봤다가 **"판에 글자가 없는 게 예쁘다"** 고 해서 그날 걷어냈다 (사용자).
+  방향은 참먹이의 **빨간 화살표**와 말이 걸어가는 모습이 알려준다.
+  다시 넣고 싶어지면 알아둘 것 — 도트로는 못 쓰고(세 글자가 5칸에 안 들어간다) SVG 글자를 써야 하며,
+  뷰박스 78칸에 `font-size: 2.4` 가 폰에서 11px 남짓이다. 말보다 먼저 그려야 말이 덮는다
+- **잡힌 말은 튕겨 날아간다** (9/23 사용자가 파문 · 터짐 · 판 흔들림 중에서 고른 것).
+  제 편 점수판 쪽(a 왼쪽 · b 오른쪽) 으로 솟아 판 밖으로 나간다 — 고른 이유가
+  **말이 어디로 돌아갔는지를 알려주는 건 이것뿐**이어서다.
+  걸음과 달리 **판 문서를 안 늦춘다** — 잡힌 말은 바로 지우고 그림만 겉돌게 띄운다.
+  그래서 상대 폰에서는 그냥 사라진다
 - **점수판에는 이름 · 차례 · 말 셋만 둔다.** 처음엔 "몇 승 · 몇 P · 진짜/가상 포인트" 도 적었는데,
   판마다 100점 고정이라 셀 이유가 없다고 해서 뺐다 (9/21 사용자).
   `wins` · `paid` 는 문서에 그대로 쌓이므로 **되살리려면 `card()` 만 고치면 된다**
@@ -502,16 +506,26 @@ Firestore 문서(`event/yut`) 는 남겨둬도 그만이다. **일부러 다른 
 
 ### 시안 — 이 주소 하나만 고친다 (판다 시안실과 같은 규칙)
 
-**https://claude.ai/artifact/QGYYx8jnLVPV8iMnooX1jJ** — 윷놀이 화면 시안.
+**https://claude.ai/artifact/QGYYx8jnLVPV8iMnooX1jJ** — 윷놀이 시안.
 판다 시안실과 **다른 페이지**다(주제가 다르다). 새로 만들지 말고 늘 이 주소를 고쳐 올린다.
 
-- **앱 글꼴(갈무리) 을 넣는 법을 찾았다** — 아티팩트는 구글 폰트만 불러올 수 있어서 판다 시안실은 글꼴을 빼고 만들었는데,
-  `cdn.jsdelivr.net/npm/galmuri/dist/Galmuri11.woff2` 를 받아 **base64 로 박아 넣으면** 된다 (둘 합쳐 0.7MB, 한도는 16MB).
-  판다 시안실에도 쓸 수 있다
-- 소스는 시안용으로 따로 쓴 HTML 한 장이다 (앱 코드를 묶는 판다 시안실과 다르다).
-  **앱에 넣은 뒤로는 앱 코드가 정본**이다 — 시안을 또 고칠 일이 있으면 앱에서 옮겨 심는다
-- 9/22 에 말길 방향 · 참먹이 규칙 · 기록 · 던지기 개편을 앱에서 그대로 옮겨 심었다.
-  편 이름도 그때 "오빠 → 병근" 으로 맞췄다 (시안에만 옛 이름이 남아 있었다)
+**9/23 에 만드는 법을 바꿨다 — 이제 앱 코드를 그대로 묶는다** (판다 시안실과 같은 방식).
+전에는 시안용으로 따로 쓴 HTML 한 장이라 앱을 고칠 때마다 손으로 옮겨 심어야 했고, 결국 뒤처졌다.
+
+```
+node tools/yut-preview/build.mjs   →  tools/yut-preview/out/index.html 을 Artifact 로 올린다
+```
+
+- `tools/yut-preview/App.tsx` 가 **앱의 `EventView` 를 그대로 띄운다.** Firestore 대신
+  판을 화면 state 에 들고, `useYut` 이 하는 일(`write` · `finish` · `start` · `draw` · `close` · `reset`) 만 흉내 낸다
+- 아래 **자리 만들기** 칸은 시안에만 있다 — 갈림길 · 잡기 직전 · 나기 직전처럼
+  손으로 만들기 번거로운 자리를 한 번에 세운다
+- **`store.ts` 를 들여오면 안 된다.** `firebase.ts` 가 딸려 와서 설정값 없이 초기화하다 터진다.
+  그래서 `EMPTY_GAME` 을 `lib/yut.ts` 로 옮기고 `store.ts` 가 다시 내보내게 했다
+  (묶음에서 firebase 가 빠지면서 907KB 로 줄기도 했다)
+- 글꼴은 `build.mjs` 가 갈무리 woff2 를 받아 **base64 로 박아 넣는다**
+  (아티팩트는 구글 폰트 말고는 스타일시트를 못 불러온다). 한 번 받으면 `out/` 에 두고 다시 쓴다
+- `env-shim.js` 는 판다 시안실 것을 같이 쓴다 (React 를 production 으로 돌리는 한 줄뿐이다)
 
 ---
 
@@ -837,6 +851,11 @@ Firestore 문서(`event/yut`) 는 남겨둬도 그만이다. **일부러 다른 
   매번이 아니라 타이밍 따라 들쭉날쭉했다. **셈을 setState 밖에서** 하고 넷이 다 누운 뒤에 값을 읽는다.
   `setShake` 를 갱신 함수 안에서 부르던 것도 같이 뺐다 — 갱신 함수는 순수해야 한다
 - **판에 말이 없을 때의 백도** — 도로 바꿔 치던 것을 걷어내고 한 번 쉬게 했다. 위 "길" 참고
+- **판 위 밭 이름을 도로 걷어냈다** (사용자 — 글자가 없는 게 예쁘다). 참먹이 화살표를 되살렸다
+- **잡힌 말이 튕겨 날아간다.** 잡기 연출 다섯 안 중에 고른 것. 위 "화면" 참고
+- **시안 페이지를 앱 코드로 묶게 바꿨다** (`tools/yut-preview/`). 위 "시안" 참고 —
+  손으로 옮겨 심던 HTML 한 장이 결국 뒤처져서, 판다 시안실과 같은 방식으로 돌렸다.
+  `EMPTY_GAME` 을 `store.ts` 에서 `lib/yut.ts` 로 옮긴 것도 이 때문이다 (Firebase 가 딸려 오면 터진다)
 
 ### 2026-09-23
 - **윷놀이 손질 일곱 가지** (사용자가 "고도화할 게 남았나" 물어 훑고 고른 것). 위 "윷놀이 이벤트" 참고.

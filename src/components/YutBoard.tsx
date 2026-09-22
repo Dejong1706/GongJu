@@ -5,7 +5,7 @@ import {
   ART,
   BOARD,
   DIGIT,
-  FIELD_NAME,
+  FLY_STEPS,
   FRUIT_PAL,
   GOAL,
   K,
@@ -119,10 +119,17 @@ const BACKDROP: Cell[] = (() => {
   }
 
   /*
-   * 예전에는 참먹이에 진행 방향을 가리키는 빨간 화살표가 있었다.
-   * 이제 그 자리에 "참먹이" 라고 적고, 오른쪽 변에 도 · 개 · 걸 · 윷 · 모 가 올라가므로
-   * **이름이 곧 방향**이다 (9/23). 말도 한 칸씩 걸어가서 길이 보인다
+   * 출발이자 골 — 화살표. 말은 오른쪽 변을 타고 **위로** 올라가므로 위를 가리킨다.
+   * 9/23 에 밭 이름(도 · 개 · 걸 …) 을 넣으면서 잠깐 뺐다가, **판에 글자가 없는 쪽이 낫다**고 해서
+   * 이름을 걷어내고 화살표를 도로 살렸다 (사용자). 방향을 알려주는 게 판 위에 이것뿐이다
    */
+  const g = NODES[0];
+  out.push(
+    cell(g.x - 1, g.y - 3, 1, 6, K.red),
+    cell(g.x - 3, g.y - 1, 5, 1, K.red),
+    cell(g.x - 2, g.y - 2, 1, 1, K.red),
+    cell(g.x, g.y - 2, 1, 1, K.red)
+  );
   return out;
 })();
 
@@ -132,6 +139,7 @@ export default function YutBoard({
   onPick,
   go = [],
   onGo,
+  fly,
 }: {
   horses: Horses;
   /** 지금 고를 수 있는 밭 — 점선 테두리 */
@@ -140,6 +148,11 @@ export default function YutBoard({
   /** 갈림길에서 고를 **갈 곳** — 금빛 과녁. 밭 고르기와 동시에 서지 않는다 */
   go?: number[];
   onGo?: (pos: number) => void;
+  /**
+   * 방금 잡힌 말 — 판에서는 이미 지워졌고 **이 그림만 남아 날아간다.**
+   * 판 문서를 붙잡아두지 않으려고 겉돌게 뒀다 (걸음과 달리 게임 상태를 안 늦춘다)
+   */
+  fly?: { side: YutSide; pos: number; n: number; step: number } | null;
 }) {
   const pieces = useMemo(() => {
     const out: Cell[] = [];
@@ -173,30 +186,37 @@ export default function YutBoard({
         <rect key={`b${i}`} x={c.x} y={c.y} width={c.w} height={c.h} fill={c.f} />
       ))}
 
-      {/*
-       * 밭 이름 — **말보다 먼저 그려서 말이 덮게** 한다. 말이 선 밭은 이름을 볼 일이 없다.
-       * 도트가 아니라 진짜 글자다 (세 글자를 5칸 도트로는 못 쓴다).
-       * 옅은 고동이라 판 무늬처럼 깔리고 말·점선을 방해하지 않는다
-       */}
-      {Object.entries(FIELD_NAME).map(([key, name]) => {
-        const n = NODES[Number(key)];
-        return (
-          <text
-            key={`n${key}`}
-            className="yut-name-field"
-            x={n.x}
-            y={n.y}
-            textAnchor="middle"
-            dominantBaseline="central"
-          >
-            {name}
-          </text>
-        );
-      })}
-
       {pieces.map((c, i) => (
         <rect key={`p${i}`} x={c.x} y={c.y} width={c.w} height={c.h} fill={c.f} />
       ))}
+
+      {/*
+       * 잡힌 말 — 제 편 점수판 쪽(a 왼쪽 · b 오른쪽) 으로 솟아 판 밖으로 나간다.
+       * SVG 가 제 테두리에서 잘라주므로 따로 지울 것이 없다.
+       * 자리는 늘 정수 — 반 칸이 나오면 도트가 어긋난다
+       */}
+      {fly &&
+        (() => {
+          const n = NODES[fly.pos];
+          const lean = fly.side === "a" ? -1 : 1;
+          const dx = lean * 2 * fly.step;
+          const dy = -7 * fly.step;
+          const cells: Cell[] = [];
+          for (let s = fly.n - 1; s >= 0; s--) {
+            cells.push(...art(ART[fly.side], n.x - 4 + s * 2, n.y - 5 - s * 3));
+          }
+          return (
+            <g
+              transform={`translate(${dx} ${dy})`}
+              opacity={Math.max(0, 1 - fly.step / FLY_STEPS)}
+              pointerEvents="none"
+            >
+              {cells.map((c, i) => (
+                <rect key={i} x={c.x} y={c.y} width={c.w} height={c.h} fill={c.f} />
+              ))}
+            </g>
+          );
+        })()}
 
       {/* 고를 수 있는 밭 — 점선 테두리와 누를 자리. 말보다 위에 얹어야 겹쳐 있어도 눌린다 */}
       {pick.map((pos) => {

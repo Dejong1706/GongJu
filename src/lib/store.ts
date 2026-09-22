@@ -26,7 +26,8 @@ import {
   TASK_CAP,
 } from "./pet";
 import type { NewEvent, NewTask, Pet, SchoolEvent, Task, Word, YutGame } from "./types";
-import { HORSES, PER_WIN, WAIT, type Throw, type YutSide } from "./yut";
+import { EMPTY_GAME, PER_WIN, type Throw, type YutSide } from "./yut";
+export { EMPTY_GAME };
 
 /**
  * Firestore 구조
@@ -393,19 +394,6 @@ export function usePet(uid: string) {
  * 판을 문서 하나에 통으로 쓰기 때문에 다른 데이터와 섞이지 않는다.
  */
 
-export const EMPTY_GAME: YutGame = {
-  playing: false, // 처음에는 시작 버튼만 보인다
-  first: null, // 선 뽑기 전
-  turn: "b", // 정연부터 던진다
-  horses: { a: Array(HORSES).fill(WAIT), b: Array(HORSES).fill(WAIT) },
-  rolls: [],
-  owe: 1, // 차례가 오면 한 번 던진다
-  log: [],
-  wins: { a: 0, b: 0 },
-  winner: null,
-  round: 0, // 첫 판을 시작할 때 1 이 된다
-  paid: 0,
-};
 
 /**
  * 문서를 판으로 읽는다. **`owe`(남은 던질 횟수) 가 없는 옛 문서**는 `pending` 참/거짓을

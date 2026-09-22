@@ -21,6 +21,84 @@ import { UPDATES, UPDATE_LABEL, type UpdateKind } from "@/lib/updates";
 
 type Page = "points" | "updates";
 
+/**
+ * 이벤트 잠금 (한시적 — 이벤트와 함께 지운다).
+ * **정연에게 보이면 안 되는 자리**라 업데이트 내역 맨 아래에 색 없이 붙여둔다.
+ * 잠그는 건 그냥 잠그고, **푸는 것만** 네 자리를 받는다.
+ */
+const LOCK_PW = "2320";
+
+/** 잠금 칸에 붙는 작은 자물쇠 */
+function LockMark() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 18 18" shapeRendering="crispEdges" fill="currentColor" aria-hidden="true">
+      <rect x="6" y="2" width="6" height="2" /><rect x="5" y="3" width="2" height="5" />
+      <rect x="11" y="3" width="2" height="5" /><rect x="3" y="8" width="12" height="9" />
+    </svg>
+  );
+}
+
+/** 네 자리 비밀번호 창. 폰 자판이 올라오면 창이 가려져서 숫자판을 직접 그린다 */
+function LockPad({ onPass, onClose }: { onPass: () => void; onClose: () => void }) {
+  const [typed, setTyped] = useState("");
+  const [wrong, setWrong] = useState(false);
+
+  const push = (key: string) => {
+    if (key === "clear") {
+      setTyped("");
+      setWrong(false);
+      return;
+    }
+    if (key === "back") {
+      setTyped((t) => t.slice(0, -1));
+      setWrong(false);
+      return;
+    }
+    if (typed.length >= 4) return;
+    setWrong(false);
+    const next = typed + key;
+    setTyped(next);
+    if (next.length < 4) return;
+
+    // 네 자리가 차면 바로 본다. 틀리면 비우고 흔든다
+    if (next === LOCK_PW) onPass();
+    else
+      setTimeout(() => {
+        setTyped("");
+        setWrong(true);
+      }, 120);
+  };
+
+  return (
+    <Popup title="비밀번호" onClose={onClose}>
+      <div className={`pw-dots ${wrong ? "pw-shake" : ""}`}>
+        {[0, 1, 2, 3].map((i) => (
+          <span key={i} className={`pw-dot ${i < typed.length ? "filled" : ""}`}>
+            {i < typed.length ? "●" : ""}
+          </span>
+        ))}
+      </div>
+      <div className="pw-msg">{wrong ? "비밀번호가 달라요" : ""}</div>
+      <div className="pw-keys">
+        {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((n) => (
+          <button key={n} type="button" onClick={() => push(n)}>
+            {n}
+          </button>
+        ))}
+        <button type="button" className="quiet" onClick={() => push("clear")}>
+          지움
+        </button>
+        <button type="button" onClick={() => push("0")}>
+          0
+        </button>
+        <button type="button" className="quiet" onClick={() => push("back")} aria-label="한 칸 지우기">
+          ←
+        </button>
+      </div>
+    </Popup>
+  );
+}
+
 /*
  * 숫자는 전부 pet.ts 상수에서 가져온다. 값을 바꿔도 가이드를 따로 안 고쳐도 된다.
  * 어디서 · 얼마 · 조건 세 줄로 끊어서 폰에서 한눈에 읽히게 한다.
@@ -77,10 +155,21 @@ const dateLabel = (d: string) => {
   return `${m}월 ${day}일 ${dow}요일`;
 };
 
-export default function GuidePopup({ onClose }: { onClose: () => void }) {
+export default function GuidePopup({
+  onClose,
+  eventLocked,
+  onSetEventLock,
+}: {
+  onClose: () => void;
+  /* 이벤트 잠금 (한시적) — 이벤트를 지울 때 이 둘도 지운다 */
+  eventLocked: boolean;
+  onSetEventLock: (locked: boolean) => void;
+}) {
   const [page, setPage] = useState<Page>("points");
+  const [pad, setPad] = useState(false);
 
   return (
+    <>
     <Popup title="가이드" onClose={onClose}>
       <div className="guide-tabs">
         {(
@@ -130,6 +219,7 @@ export default function GuidePopup({ onClose }: { onClose: () => void }) {
           </div>
         </>
       ) : (
+        <>
         <ol className="guide-log">
           {UPDATES.map((u, i) => (
             <li key={u.date} className="guide-day">
@@ -160,7 +250,42 @@ export default function GuidePopup({ onClose }: { onClose: () => void }) {
             </li>
           ))}
         </ol>
+
+        {/*
+         * 이벤트 잠금 (한시적 — 이벤트와 함께 지운다).
+         * 목록에서 한 칸 떨어뜨리고 색을 하나도 안 쓴다. 숨기는 방법이 그것뿐이다
+         */}
+        <div className="lockbox">
+          <div className="lockhead">
+            <LockMark />
+            <span className="lockttl">이벤트</span>
+            <span className={`lockchip ${eventLocked ? "" : "open"}`}>
+              {eventLocked ? "잠김" : "열림"}
+            </span>
+          </div>
+          <div className="lockbtns">
+            <button type="button" disabled={eventLocked} onClick={() => onSetEventLock(true)}>
+              잠금
+            </button>
+            <button type="button" disabled={!eventLocked} onClick={() => setPad(true)}>
+              잠금해제
+            </button>
+          </div>
+        </div>
+        </>
       )}
     </Popup>
+
+    {/* 이벤트 잠금 (한시적). 가이드 위에 겹쳐 뜬다 — 가이드 안에 두면 좁은 칸에 갇힌다 */}
+    {pad && (
+      <LockPad
+        onClose={() => setPad(false)}
+        onPass={() => {
+          onSetEventLock(false);
+          setPad(false);
+        }}
+      />
+    )}
+    </>
   );
 }

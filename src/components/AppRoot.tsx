@@ -14,7 +14,16 @@ import Popup from "@/components/Popup";
 import LoginScreen from "@/components/LoginScreen";
 import Splash from "@/components/Splash";
 import { AuthProvider, useAuth } from "@/lib/auth";
-import { useEvents, usePet, useRewards, useStickers, useTasks, useWords, useYut } from "@/lib/store";
+import {
+  useEventLock,
+  useEvents,
+  usePet,
+  useRewards,
+  useStickers,
+  useTasks,
+  useWords,
+  useYut,
+} from "@/lib/store";
 import { useToday } from "@/lib/useToday";
 import { SEM_START } from "@/lib/config";
 import { DOW, displayWeek, pad, weekOf, ymd } from "@/lib/date";
@@ -101,6 +110,9 @@ function App({ uid }: { uid: string }) {
     draw: drawYut,
     close: closeYut,
   } = useYut(uid);
+  // 이벤트 잠금 (한시적). 아직 못 읽었으면(null) 잠긴 쪽으로 본다
+  const { locked: lockRaw, setLocked: setEventLock } = useEventLock(uid);
+  const eventLocked = lockRaw !== false;
   // 하루에 몇 번까지만 주는 것들 — 토익 퀴즈 만점, 타이머 25분
   const { quiz: rewardQuiz, focus: rewardFocus } = useRewards(uid, pet, ymd(today));
 
@@ -240,10 +252,21 @@ function App({ uid }: { uid: string }) {
       </div>
 
       <div className="edge edge-up" />
-      <TabBar tab={tab} onChange={setTab} onLocked={() => setLocked(true)} />
+      <TabBar
+        tab={tab}
+        onChange={setTab}
+        onLocked={() => setLocked(true)}
+        eventLocked={eventLocked}
+      />
 
       {/* 헤더 안에 두면 .dim 이 헤더(position: relative) 크기에 갇힌다. 앱 전체를 덮게 여기 둔다 */}
-      {guide && <GuidePopup onClose={() => setGuide(false)} />}
+      {guide && (
+        <GuidePopup
+          onClose={() => setGuide(false)}
+          eventLocked={eventLocked}
+          onSetEventLock={setEventLock}
+        />
+      )}
 
       {locked && (
         <Popup

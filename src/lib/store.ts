@@ -505,3 +505,43 @@ export function useYut(uid: string) {
 
   return { game, error, write, finish, start, draw, close };
 }
+
+/**
+ * 이벤트 탭 잠금 (한시적 · 윷놀이와 함께 지운다).
+ * 처음에는 `TabBar` 의 `LOCKED` 배열이었는데, 여닫을 때마다 코드를 고치고 올려야 해서
+ * Firestore 로 옮겼다 (9/22 사용자 — 가이드에서 몰래 여닫는다).
+ *
+ * **판 문서와 따로 둔다** — `useYut` 의 `write` 는 판을 통째로 덮어써서,
+ * 같은 문서에 얹으면 판을 새로 열 때마다 잠금이 날아간다.
+ *
+ * 문서가 없으면 **잠긴 것으로 본다.** 불러오는 동안(null)도 화면은 잠긴 쪽을 보여준다 —
+ * 늦게 열리는 건 괜찮아도 잠깐 열려 보이면 안 된다.
+ */
+export function useEventLock(uid: string) {
+  const [locked, setLocked] = useState<boolean | null>(null);
+  const ref = useMemo(() => doc(db, "users", uid, "event", "lock"), [uid]);
+
+  useEffect(() => {
+    return onSnapshot(
+      ref,
+      (snap) => {
+        const raw = snap.data() as { locked?: boolean } | undefined;
+        setLocked(raw?.locked ?? true);
+      },
+      (err) => {
+        console.error("이벤트 잠금 구독 실패", err);
+        setLocked(true);
+      }
+    );
+  }, [ref]);
+
+  const set = useCallback(
+    (next: boolean) => {
+      setLocked(next); // 눌렀을 때 바로 반응하도록
+      return setDoc(ref, { locked: next });
+    },
+    [ref]
+  );
+
+  return { locked, setLocked: set };
+}

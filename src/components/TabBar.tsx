@@ -74,21 +74,22 @@ const LABELS: [TabKey, string][] = [
   ["event", "이벤트"],
 ];
 
-/**
- * 잠근 칸. 보이기는 그대로 보이되 자물쇠가 붙고, 누르면 열리는 대신 말풍선만 띄운다.
- * 다시 열어줄 때는 이 배열에서 빼면 끝이다.
- */
-const LOCKED: TabKey[] = ["event"];
-
 export default function TabBar({
   tab,
   onChange,
   onLocked,
+  eventLocked,
 }: {
   tab: TabKey;
   onChange: (t: TabKey) => void;
   /** 잠근 칸을 눌렀을 때 — 탭은 그대로 두고 이것만 부른다 */
   onLocked: (t: TabKey) => void;
+  /**
+   * 이벤트 칸이 잠겼다 (한시적). 잠그면 보이기는 그대로 보이되 자물쇠가 붙고,
+   * 누르면 열리는 대신 말풍선만 뜬다. **여닫는 곳은 Firestore 다** —
+   * 예전에는 여기 `LOCKED` 배열이었지만 여닫을 때마다 코드를 올려야 했다 (store.ts 의 useEventLock)
+   */
+  eventLocked: boolean;
 }) {
   return (
     <nav className="tabwrap">
@@ -98,7 +99,7 @@ export default function TabBar({
         style={{ gridTemplateColumns: `repeat(${LABELS.length}, 1fr)` }}
       >
         {LABELS.map(([key, label]) => {
-          const locked = LOCKED.includes(key);
+          const locked = key === "event" && eventLocked;
           return (
             <button
               key={key}

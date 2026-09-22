@@ -1596,6 +1596,132 @@
     background: var(--ink-soft);
   }
 
+  /* ──────────────────────────────────────────
+     이벤트 잠금 (한시적 — 윷놀이와 함께 지운다)
+     가이드 → 업데이트 내역 맨 아래의 숨긴 칸 · 비밀번호 창
+  ────────────────────────────────────────── */
+  /* 목록에서 한 칸 떨어뜨리고 색을 하나도 안 쓴다. 눈이 그냥 지나가게 두는 게 목적이다 */
+  .lockbox {
+    margin-top: 22px;
+    padding: 9px 10px 10px;
+    border: 1px dashed var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .lockhead {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--ink-soft);
+  }
+  .lockttl {
+    flex: 1;
+    font-size: 10px;
+  }
+  .lockchip {
+    font-size: 9px;
+    line-height: 1;
+    padding: 3px 5px;
+    background: #fff;
+    border: 1px solid var(--line);
+    color: var(--ink-soft);
+  }
+  .lockchip.open {
+    background: var(--mint);
+    border-color: var(--mint);
+    color: #fff;
+  }
+  .lockbtns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .lockbtns button {
+    min-height: 32px;
+    font-size: 10px;
+    background: #fff;
+    color: var(--ink-soft);
+    border: 1px solid var(--line);
+  }
+  .lockbtns button:active {
+    transform: translate(1px, 1px);
+  }
+  .lockbtns button:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  /* 비밀번호 — 폰 자판이 올라오면 창을 가려서 숫자판을 직접 그렸다 */
+  .pw-dots {
+    display: flex;
+    justify-content: center;
+    gap: 9px;
+    margin: 4px 0 10px;
+  }
+  .pw-dot {
+    width: 34px;
+    height: 42px;
+    border: 2px solid var(--ink);
+    background: var(--cream);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+  .pw-dot.filled {
+    background: #fff;
+  }
+  .pw-msg {
+    min-height: 14px;
+    margin-bottom: 8px;
+    font-size: 10px;
+    text-align: center;
+    color: var(--pink-deep);
+  }
+  .pw-keys {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  .pw-keys button {
+    min-height: 44px;
+    font-size: 15px;
+    background: #fff;
+    color: var(--ink);
+    border: 2px solid var(--ink);
+    box-shadow: 2px 2px 0 var(--band-dark);
+  }
+  .pw-keys button:active {
+    transform: translate(2px, 2px);
+    box-shadow: none;
+  }
+  .pw-keys .quiet {
+    font-size: 11px;
+    color: var(--ink-soft);
+    box-shadow: 2px 2px 0 var(--line);
+  }
+  .pw-shake {
+    animation: pw-shake 0.3s steps(2) 2;
+  }
+  @keyframes pw-shake {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    25% {
+      transform: translateX(-5px);
+    }
+    75% {
+      transform: translateX(5px);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pw-shake {
+      animation: none;
+    }
+  }
+
 
   /* ──────────────────────────────────────────
      윷놀이 이벤트 탭 (한시적)

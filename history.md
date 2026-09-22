@@ -324,12 +324,14 @@ src/shop/
 
 ```
 src/lib/yut.ts · components/EventView.tsx · YutBoard.tsx · YutThrow.tsx · tools/yut-check.mts
-globals.css 의 "윷놀이 이벤트 탭 (한시적)" 덩어리 통째로
-TabBar  — ICONS.event · LABELS 의 ["event","이벤트"] 줄 · LOCKED 배열
-AppRoot — EventView import · useYut · tab === "event" 칸 · scroll 의 ev 클래스
+globals.css 의 "윷놀이 이벤트 탭 (한시적)" · "이벤트 잠금 (한시적)" 두 덩어리 통째로
+TabBar  — ICONS.event · LABELS 의 ["event","이벤트"] 줄 · LOCK · eventLocked · onLocked
+AppRoot — EventView import · useYut · useEventLock · tab === "event" 칸 · scroll 의 ev 클래스
         · 잠금 팝업(locked · "울 아가 혼나요") · globals.css 의 .tab-lock-on · .tab-lock
-types.ts — TabKey 의 "event" · YutGame · store.ts 의 useYut · EMPTY_GAME
+types.ts — TabKey 의 "event" · YutGame · store.ts 의 useYut · useEventLock · EMPTY_GAME
 GuidePopup — PER_WIN import 와 WAYS 의 윷놀이 칸 · config.ts 의 EVENT
+        · LOCK_PW · LockMark · LockPad · lockbox 칸 · eventLocked/onSetEventLock
+tools/pet-preview/App.tsx — TabBar 에 넘기는 onLocked · eventLocked
 ```
 
 Firestore 문서(`event/yut`) 는 남겨둬도 그만이다. **일부러 다른 곳을 안 건드렸다** —
@@ -433,6 +435,32 @@ Firestore 문서(`event/yut`) 는 남겨둬도 그만이다. **일부러 다른 
   도트 그림이라 회전시키지 않고 **면 네 장을 갈아끼운다.** 그림자가 높이 따라 줄어든다.
   줄이기 설정이면 굴리지 않고 결과만 보여준다
 - **넷째 가락이 백도 가락**이다. 그림에도 단청 적색 점을 새겨서 보면 안다
+
+### 잠금 — 가이드에서 몰래 여닫는다 (9/22)
+
+9/21 에는 **`TabBar` 의 `LOCKED` 배열**이 잠금이었다. 여닫을 때마다 코드를 고쳐 올려야 해서
+**앱 안에서 여닫도록** 옮겼다 (사용자 요청). 자물쇠가 붙는 모양과
+"울 아가 혼나요" 팝업은 9/21 것 그대로다 — **바뀐 건 무엇이 잠금을 정하느냐뿐이다.**
+
+**열쇠는 가이드 → 업데이트 내역 맨 아래**의 색 없는 점선 칸이다. 목록에서 한 칸 떨어뜨리고
+글씨 10px · 회색뿐이라 눈이 그냥 지나간다. **색을 안 쓰는 게 숨기는 방법이다.**
+
+- **잠금은 바로 잠근다. 푸는 것만 네 자리(`2320`)를 받는다** (사용자가 정했다).
+  실수로 잠그는 건 다시 풀면 그만이지만, 실수로 열리면 들킨다
+- 비밀번호 창은 **숫자판을 직접 그린다**(`LockPad`). 폰 자판이 올라오면 창을 덮는다.
+  네 자리가 차는 순간 판정하고, 틀리면 비우고 흔든다
+- 가이드 **안**이 아니라 **옆**에 띄운다 — `Popup` 안에 `.dim` 을 또 두면 좁은 칸에 갇힌다
+
+**어디에 저장하나 — `users/{uid}/event/lock` 문서 하나 (`{ locked: boolean }`).**
+계정에 두는 것이라 **한 쪽에서 잠그면 다른 쪽 폰에서도 잠긴다** (9/22 사용자 —
+계정은 하나이고 둘이 같이 쓴다). **판 문서(`event/yut`) 에 얹지 않았다** —
+`useYut` 의 `write` 가 판을 `setDoc` 으로 통째로 덮어써서 같은 문서에 두면
+판을 새로 열 때마다 잠금이 날아간다.
+
+- **문서가 없으면 잠긴 것으로 본다.** 불러오는 동안(`null`) 도 잠긴 쪽을 보여준다 —
+  늦게 열리는 건 괜찮아도 **잠깐 열려 보이면 안 된다** (`eventLocked = lockRaw !== false`)
+- **업데이트 내역에는 아무것도 안 적었다.** 정연 쪽에서 보이는 건 9/21 과 똑같고
+  (자물쇠 · "울 아가 혼나요"), 여닫는 자리를 적으면 숨긴 뜻이 없어진다. 그 목록을 정연이 본다
 
 ### 시안 — 이 주소 하나만 고친다 (판다 시안실과 같은 규칙)
 
@@ -776,6 +804,13 @@ Firestore 문서(`event/yut`) 는 남겨둬도 그만이다. **일부러 다른 
 - **윷 · 모는 모아 던지고 나서 고른다** (사용자 요청). 옮기지 않고 계속 던질 수 있고,
   나온 값들 중에 골라 옮긴다. 두 버튼이 `.ev-acts` 한 줄에 나란히 선다
 - 셋 다 시안 페이지(버전 13) 에도 옮겨 심었다
+- **이벤트 잠금을 가이드에서 여닫는다** (사용자 요청). 위 "잠금 — 가이드에서 몰래 여닫는다" 참고.
+  어제 넣은 `TabBar` 의 `LOCKED` 배열을 Firestore(`event/lock`) 로 옮긴 것이고,
+  **자물쇠 모양과 "울 아가 혼나요" 팝업은 그대로 뒀다**
+  - 시안을 먼저 보였다 (숨긴 칸 · 비밀번호 창 · 탭을 숨길지 자물쇠로 둘지):
+    **https://claude.ai/artifact/J3zpqBMo3z92yH6YWQ7t1B** (윷놀이 시안과 다른 페이지다)
+  - **작업하는 동안 원격에 9/21 잠금 커밋이 올라와 있는 걸 몰랐다.** 로컬이 `3507d06` 에 멈춰 있어서
+    같은 것을 다시 만들었다가 원격 것에 맞춰 도로 얹었다. **손대기 전에 `git fetch` 부터 할 것**
 
 ### 2026-09-21
 - **이벤트 탭 잠금** (사용자 요청). 탭은 그대로 보이고 아이콘에 작은 자물쇠가 붙는다.

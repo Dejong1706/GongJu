@@ -151,51 +151,64 @@ export default function YutThrow({
       typeof window !== "undefined" &&
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     if (still) {
-      setSticks((list) => list.map((s, i) => ({ ...s, y: 0, rest: true, face: faces.current[i] })));
+      setSticks(sticks.map((s, i) => ({ ...s, y: 0, rest: true, face: faces.current[i] })));
       setResult(judge(faces.current));
       return;
     }
 
+    /*
+     * **셈은 setState 밖에서 한다.** 전에는 `setSticks(list => …)` 안에서 `moving` 을 켜고
+     * 그 값을 밖에서 봤는데, React 는 그 함수를 **이 자리에서 돌려주지 않을 때가 있다.**
+     * 그러면 `moving` 이 거짓인 채로 첫 틱에 타이머가 멈춰서,
+     * **가락이 구르다 만 면(모로 선 면까지)에 멈춰 있는데 값은 나와 버렸다** —
+     * "개인데 한 짝만 뒤집혀 있다" 가 이것이다 (9/23 사용자가 잡아준 것).
+     * 이제 다음 상태를 먼저 만들고, 그걸 그대로 넣는다.
+     */
+    let cur = sticks; // 효과는 한 번만 돈다 — make() 가 만든 첫 값이다
     let tick = 0;
     const timer = setInterval(() => {
       tick++;
       let moving = false;
-      setSticks((list) =>
-        list.map((s, i) => {
-          if (s.rest) return s;
-          moving = true;
-          const next = { ...s };
-          next.v -= G;
-          next.y += next.v;
-          // 옆으로도 미끄러진다. 멍석을 벗어나면 벽에 맞은 듯 되튄다
-          next.x += next.vx;
-          if (next.x < -SPREAD || next.x > SPREAD) {
-            next.x = next.x < 0 ? -SPREAD : SPREAD;
-            next.vx = -next.vx * 0.5;
+      let landed = false;
+      cur = cur.map((s, i) => {
+        if (s.rest) return s;
+        moving = true;
+        const next = { ...s };
+        next.v -= G;
+        next.y += next.v;
+        // 옆으로도 미끄러진다. 멍석을 벗어나면 벽에 맞은 듯 되튄다
+        next.x += next.vx;
+        if (next.x < -SPREAD || next.x > SPREAD) {
+          next.x = next.x < 0 ? -SPREAD : SPREAD;
+          next.vx = -next.vx * 0.5;
+        }
+        if (next.y <= 0) {
+          next.y = 0;
+          next.bounce++;
+          next.vx *= 0.5; // 바닥에 닿을 때마다 옆으로 가는 힘이 죽는다
+          if (next.bounce >= 3 || Math.abs(next.v) < 4) {
+            next.rest = true;
+            next.face = faces.current[i]; // 여기서 면이 정해진다
+            landed = true;
+          } else {
+            next.v = -next.v * 0.44; // 튕긴다
           }
-          if (next.y <= 0) {
-            next.y = 0;
-            next.bounce++;
-            next.vx *= 0.5; // 바닥에 닿을 때마다 옆으로 가는 힘이 죽는다
-            if (next.bounce >= 3 || Math.abs(next.v) < 4) {
-              next.rest = true;
-              next.face = faces.current[i]; // 여기서 면이 정해진다
-              setShake((n) => n + 1);
-            } else {
-              next.v = -next.v * 0.44; // 튕긴다
-            }
-          }
-          // 공중에서는 빨리, 떨어질수록 천천히 돈다
-          if (!next.rest && tick % (next.bounce >= 2 ? 3 : 1) === 0) next.spin++;
-          return next;
-        })
-      );
+        }
+        // 공중에서는 빨리, 떨어질수록 천천히 돈다
+        if (!next.rest && tick % (next.bounce >= 2 ? 3 : 1) === 0) next.spin++;
+        return next;
+      });
+      setSticks(cur);
+      if (landed) setShake((n) => n + 1);
+      // 넷이 다 누웠다 — 이제야 값을 읽는다. 그림과 값이 어긋날 수 없다
       if (!moving) {
         clearInterval(timer);
         setResult(judge(faces.current));
       }
     }, TICK);
     return () => clearInterval(timer);
+    // sticks 는 처음 값만 쓴다 (효과가 한 번만 돌아서 늘 make() 의 결과다)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 선 뽑기에서는 윷 · 모가 나와도 한 번 더 던지지 않는다

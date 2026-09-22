@@ -282,11 +282,12 @@ export function movesFor(horses: number[], t: Throw): Move[] {
 }
 
 /**
- * 백도인데 판 위에 말이 하나도 없으면 도로 친다.
- * 안 그러면 첫 판부터 아무것도 못 하고 넘어가는 턴이 생긴다.
+ * 판 위에 말이 하나도 없는데 백도가 나왔다 — **그 값으로는 아무것도 못 한다.**
+ * 9/23 까지는 도로 바꿔 쳤는데(`realThrow`), 진짜 윷놀이에는 없는 규칙이라 걷어냈다
+ * (사용자가 고른 것 — 대회규정대로 한 번 쉰다). 화면은 `건너뛰기` 만 내준다
  */
-export const realThrow = (horses: number[], t: Throw): Throw =>
-  t === -1 && onBoard(horses).length === 0 ? 1 : t;
+export const stuck = (horses: number[], t: Throw) =>
+  t === -1 && onBoard(horses).length === 0;
 
 export type MoveResult = {
   horses: Horses;

@@ -3,7 +3,7 @@
  * 화면 없이 길 · 잡기 · 업기 · 윷가락 판정만 확인한다.
  * 이벤트가 끝나면 이 파일도 같이 지운다.
  */
-import { advance, applyMove, field, isFork, judge, movesFor, pathOf, realThrow, CHAM, GOAL, WAIT } from "../src/lib/yut.ts";
+import { advance, applyMove, field, isFork, judge, movesFor, pathOf, stuck, CHAM, GOAL, WAIT } from "../src/lib/yut.ts";
 
 let bad = 0;
 const eq = (got: unknown, want: unknown, what: string) => {
@@ -59,8 +59,9 @@ eq(advance(35, -1), 25, "지름길로 온 찌모는 지름길로 물러난다");
 eq(advance(15, -1), 14, "바깥길로 온 찌모는 바깥길로");
 eq(advance(CHAM, -1), 19, "바깥길로 온 참먹이도 마찬가지");
 eq(advance(31, -1), 29, "지름길로 온 참먹이는 지름길로");
-eq(realThrow([WAIT, WAIT, WAIT], -1), 1, "판에 말이 없으면 백도는 도로 친다");
-eq(realThrow([3, WAIT, WAIT], -1), -1, "판에 말이 있으면 백도 그대로");
+eq(stuck([WAIT, WAIT, WAIT], -1), true, "판에 말이 없으면 백도로는 아무것도 못 한다");
+eq(stuck([3, WAIT, WAIT], -1), false, "판에 말이 있으면 백도를 쓴다");
+eq(movesFor([WAIT, WAIT, WAIT], -1).length, 0, "그때는 옮길 수가 하나도 없다");
 
 // 도만 던지면? 우상 모서리에 멈추므로 지름길을 탄다 — 열한 번에 난다
 let pos = WAIT, n = 0;

@@ -15,7 +15,7 @@ import {
   pathOf,
   PER_WIN,
   rank,
-  realThrow,
+  stuck,
   THROW_NAME,
   WAIT,
   type Horses,
@@ -239,12 +239,10 @@ export default function EventView({
 
   const finishThrow = (t: Throw) => {
     setThrowing(false);
-    // 판에 말이 하나도 없을 때의 백도는 도로 친다 — 안 그러면 아무것도 못 하고 넘어간다
-    const real = realThrow(mine, t);
     save({
       ...game,
-      rolls: [...game.rolls, real],
-      log: [...game.log, real],
+      rolls: [...game.rolls, t],
+      log: [...game.log, t],
       // 한 번 던져 빚을 갚고, 윷 · 모면 다시 진다
       owe: Math.max(0, owe - 1) + (isExtra(t) ? 1 : 0),
     });
@@ -427,7 +425,9 @@ export default function EventView({
                 </button>
               ) : moves.length === 0 ? (
                 <button className="btn ev-btn" onClick={skip} disabled={!!walk}>
-                  옮길 말이 없어요 · 건너뛰기
+                  {use !== null && stuck(mine, use)
+                    ? "백도는 못 써요 · 건너뛰기"
+                    : "옮길 말이 없어요 · 건너뛰기"}
                 </button>
               ) : owe > 0 ? null : (
                 <button className="btn ev-btn ev-btn-ghost" disabled>
@@ -452,6 +452,11 @@ export default function EventView({
                 ? "가는 중…"
                 : use === null
                 ? `${NAME[turn]}이 던질 차례예요 · 정연이 이기면 ${PER_WIN} 포인트`
+                : /* 판에 말이 없는데 백도면 쓸 데가 없다 — 왜 못 쓰는지 밝혀준다 */
+                  stuck(mine, use)
+                ? "백도 — 판에 나간 말이 없어서 쓸 수 없어요"
+                : moves.length === 0
+                ? `${THROW_NAME[use]} — 옮길 ${FRUIT[turn]}가 없어요`
                 : owe > 0
                 ? `${THROW_NAME[use]} — 지금 옮겨도 되고, 더 던지고 골라도 돼요`
                 : `${THROW_NAME[use]} — 판에서 점선이 그려진 ${FRUIT[turn]}를 눌러요`)}

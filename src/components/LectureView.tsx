@@ -9,6 +9,13 @@ import type { NewTask, Task, TaskKind } from "@/lib/types";
 /** 화면에 묶는 차례이자 팝업 버튼 차례. 종류를 늘리면 두 곳이 같이 는다 */
 const KINDS: TaskKind[] = ["강의", "과제", "할일"];
 
+/** 종류 뱃지 색. 한 종류는 한 색으로만 — 과목 색은 이름 앞 네모가 맡는다 */
+const KIND_COLOR: Record<TaskKind, string> = {
+  강의: "var(--band)",
+  과제: "#FFE9A0",
+  할일: "var(--mint)",
+};
+
 type EditState = {
   id: string | null;
   kind: TaskKind;
@@ -168,14 +175,14 @@ export default function LectureView({
                   {t.title}
                 </span>
                 <span className="block mt-1 text-[10px] text-ink-soft">
+                  {c && (
+                    <i className="course-dot" style={{ background: c.color }} />
+                  )}
                   {c ? `${c.name} · ` : ""}
                   {shortDate(t.date)}
                 </span>
               </button>
-              <span
-                className="kind"
-                style={{ background: c?.color ?? "var(--band)" }}
-              >
+              <span className="kind" style={{ background: KIND_COLOR[t.kind] }}>
                 {t.kind}
               </span>
             </div>

@@ -536,6 +536,14 @@
     border: 1px solid var(--ink);
     flex: none;
   }
+  /* 수업 이름 앞 과목 색 네모. 뱃지는 종류 색이라 여기서 어느 수업인지 본다 */
+  .course-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 4px;
+    border: 1px solid var(--ink);
+  }
 
   /* ── 시간표 ───────────────────────── */
   .tt-item {

@@ -20,6 +20,12 @@ export const UPDATE_LABEL: Record<UpdateKind, string> = {
 
 export const UPDATES: Update[] = [
   {
+    date: "2026-09-29",
+    items: [
+      { kind: "new", text: "할로윈 세트 신규 아이템 12종 추가" },
+    ],
+  },
+  {
     date: "2026-09-23",
     items: [
       { kind: "new", text: "윷놀이 — 말이 한 칸씩 걸어가요" },

@@ -270,6 +270,52 @@ function backdrop(wall: Surface, floor: Surface) {
     }
   }
 
+  /*
+   * 가랜드 줄무늬 벽지 (할로윈 세트 · 9/29 시안) — 넓은 세로줄을 한 톤만 어둡게 깔아 조용히 두고,
+   * 맨 위에 **파티 깃발 줄**이 열여섯 칸마다 처지며 걸린다. 깃발은 주황 · 검정 · 크림 순서로 돌아간다.
+   * 아래 12줄은 짙은 벽널 + 주황 몰딩, 벽널은 열 칸마다 세로 줄.
+   * 처음 낸 박쥐 벽지(어두운 박쥐를 흩뿌림) 는 개편 요청으로, 같이 낸 유령 호박 벽지는 사용자가 빼자고 해서 지웠다
+   */
+  if (wall.kind === "halloween") {
+    const trim = wall.accent2 ?? wall.base;
+    const lower = shade(wall.base, 0.62);
+    const lowerLine = shade(wall.base, 0.5);
+    const px = (key: string, x: number, y: number, fill: string) =>
+      out.push(<rect key={key} x={x} y={y} width={1} height={1} fill={fill} />);
+
+    const band = wall.accent ?? wall.base;
+    const FLAG = ["XXXXX", ".XXX.", "..X.."];
+    const colors = ["#F28C28", "#1E1428", "#F4EFE2"];
+    const SWAG = 16;
+    // 줄이 늘어진 높이 — 못 자리(0) 에서 3, 가운데에서 6
+    const stringY = (x: number) => 3 + Math.round(3 * Math.sin((Math.PI * (((x % SWAG) + SWAG) % SWAG)) / SWAG));
+    for (let x = 0; x < ROOM.w; x++) {
+      const h = floorTopAt(x) - 1;
+      if (h <= 0) continue;
+      const my = h - 12;
+      if (((x % 10) + 10) % 10 >= 5) out.push(<rect key={`hs${x}`} x={x} y={0} width={1} height={Math.max(0, my)} fill={band} />);
+      if (my > 8) px(`hg${x}`, x, stringY(x), "#B9A6CC");
+    }
+    // 깃발 — 줄 위 한 칸 아래로 매단다. 뒷벽에서 옆벽까지 이어져도 줄을 따라간다
+    for (let fx = 1, n = 0; fx + 5 <= ROOM.w; fx += 8, n++) {
+      const cx = fx + 2;
+      if (floorTopAt(cx) - 13 < 12) continue;
+      const top = stringY(cx) + 1;
+      FLAG.forEach((r, dy) =>
+        [...r].forEach((c, dx) => c === "X" && px(`hf${fx}-${dy}-${dx}`, fx + dx, top + dy, colors[n % 3]))
+      );
+    }
+
+    for (let x = 0; x < ROOM.w; x++) {
+      const h = floorTopAt(x) - 1;
+      const my = h - 12;
+      if (my <= 4) continue;
+      out.push(<rect key={`hl${x}`} x={x} y={my} width={1} height={h - my} fill={lower} />);
+      if (((x % 10) + 10) % 10 === 5) out.push(<rect key={`hv${x}`} x={x} y={my + 2} width={1} height={h - my - 2} fill={lowerLine} />);
+      px(`ht${x}`, x, my, trim);
+    }
+  }
+
   const seam = shade(wall.base, 0.9);
   [ROOM.side - 1, ROOM.w - ROOM.side].forEach((x) => {
     const h = floorTopAt(x) - 1;
@@ -783,7 +829,25 @@ export default function PetRoom({
   const byFeet = (slot: string) =>
     out.filter((o) => o.it.slot === slot).sort((a, b) => feetOf(a) - feetOf(b));
   const onFloor = byFeet("floor");
-  const onTop = byFeet("top");
+  /*
+   * 가구 위에 얹는 것은 **받치고 있는 가구의 발끝**으로 앞뒤를 정한다.
+   * 앞뒤로 긴 식탁(할로윈 만찬 · 9/29) 뒤쪽에 촛대를 얹었더니 촛대 발끝이 식탁 발끝보다 한참 뒤라,
+   * 판다가 그 사이에 서면 촛대가 판다 뒤 차례로 가서 **식탁에 가려 사라졌다.**
+   * (그 촛대는 나중에 식탁 그림에 붙였지만, 꽃병 · 화분을 식탁 뒤쪽에 얹어도 같은 일이 생긴다)
+   * 발끝이 걸린 바닥 가구 중 제일 앞의 것을 받침으로 친다. 받침이 없으면 제 발끝 그대로
+   */
+  const topFeet = (o: (typeof out)[number]) => {
+    const cx = o.x + o.sprite.rows[0].length / 2;
+    const feet = feetOf(o);
+    const under = onFloor.filter(
+      (b) => cx >= b.x && cx < b.x + b.sprite.rows[0].length && feet >= b.y && feet <= feetOf(b)
+    );
+    return under.length ? Math.max(feet, ...under.map(feetOf)) : feet;
+  };
+  const onTop = out
+    .filter((o) => o.it.slot === "top")
+    .map((o) => ({ ...o, feet: topFeet(o) }))
+    .sort((a, b) => a.feet - b.feet);
 
   const worn = [pet.worn.head, pet.worn.body]
     .map((id) => (id ? itemById(id) : undefined))
@@ -867,7 +931,7 @@ export default function PetRoom({
           그래야 책상 위 화분이 책상에 안 가리면서도, 앞을 지나가는 판다에는 가린다.
         */}
         {onTop
-          .filter((o) => feetOf(o) <= pandaFeet)
+          .filter((o) => o.feet <= pandaFeet)
           .map((o) => (
             <Piece key={o.it.id} sprite={o.sprite} x={o.x} y={o.y} />
           ))}
@@ -878,7 +942,7 @@ export default function PetRoom({
             <Piece key={o.it.id} sprite={o.sprite} x={o.x} y={o.y} />
           ))}
         {onTop
-          .filter((o) => feetOf(o) > pandaFeet)
+          .filter((o) => o.feet > pandaFeet)
           .map((o) => (
             <Piece key={o.it.id} sprite={o.sprite} x={o.x} y={o.y} />
           ))}

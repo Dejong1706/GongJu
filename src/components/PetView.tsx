@@ -80,6 +80,11 @@ export function swatch(s: Surface) {
     style.backgroundImage =
       `linear-gradient(180deg,#23262E 0 4%,${s.accent ?? "#343B46"} 4% 18%,#23262E 18% 21%,` +
       `${s.accent2 ?? "#C9A227"} 21% 24%,transparent 24% 70%,#C9B79C 70% 100%)`;
+  } else if (s.kind === "halloween") {
+    // 한 톤 어두운 넓은 세로줄 · 위 주황 깃발 줄 · 아래 짙은 벽널과 주황 몰딩
+    style.backgroundImage =
+      `linear-gradient(180deg,transparent 0 8%,#F28C28 8% 16%,transparent 16% 70%,${s.accent2} 70% 73%,rgba(0,0,0,.35) 73% 100%),` +
+      `repeating-linear-gradient(90deg,transparent 0 5px,${s.accent} 5px 10px)`;
   } else if (s.kind === "jeondol") {
     // 검은 전돌 — 어두운 줄눈 격자, 한 칸 건너 조금 밝게
     style.backgroundImage =

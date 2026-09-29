@@ -15,6 +15,7 @@ import banner from "./banner";
 import winMoon from "./win_moon";
 import cheongsa from "./cheongsa";
 import minhwa from "./minhwa";
+import hwWindow from "./hw_window";
 
 /* 창문은 전부 `only: "win"` — 창문 자리가 하나라 한 번에 하나만 걸린다 */
 export default inCat("벽 장식", [
@@ -23,4 +24,6 @@ export default inCat("벽 장식", [
   banner,
   // 조선 세트
   winMoon, cheongsa, minhwa,
+  // 할로윈 세트
+  hwWindow,
 ]);

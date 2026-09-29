@@ -55,4 +55,6 @@ export const FLOORS: Surface[] = [
     accent2: "#A67C52",
     kind: "maru",
   },
+  // 할로윈 세트 · 프리미엄(1,050) — 검정 · 보라 체크. 무늬는 기존 check 에 색만 바꿨다
+  { id: "f_halloween", name: "밤보라 체크", price: 1050, base: "#2E2438", accent: "#57407A", kind: "check" },
 ];

@@ -60,4 +60,17 @@ export const WALLS: Surface[] = [
     accent2: "#C9A227",
     kind: "meok",
   },
+  /*
+    할로윈 세트 · 프리미엄(1,100) — 보라 넓은 세로줄을 한 톤만 어둡게, 맨 위에 파티 깃발 줄, 아래 짙은 벽널에 주황 몰딩.
+    accent 가 어두운 세로줄, accent2 가 몰딩. 처음 낸 박쥐 벽지는 개편 요청으로, 같이 낸 유령 호박 벽지는 빠졌다 (9/29)
+  */
+  {
+    id: "w_halloween",
+    name: "가랜드 줄무늬 벽지",
+    price: 1100,
+    base: "#46305E",
+    accent: "#3C2852",
+    accent2: "#F28C28",
+    kind: "halloween",
+  },
 ];

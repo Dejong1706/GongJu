@@ -368,7 +368,7 @@ export const K = {
 };
 
 /** 이겼을 때 정연이 받는 포인트 */
-export const PER_WIN = 100;
+export const PER_WIN = 150;
 
 /**
  * 잡힌 말이 튕겨 날아가는 걸음 수 (9/23 사용자가 고른 연출).

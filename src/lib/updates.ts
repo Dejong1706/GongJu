@@ -23,6 +23,7 @@ export const UPDATES: Update[] = [
     date: "2026-09-29",
     items: [
       { kind: "new", text: "할로윈 세트 신규 아이템 12종 추가" },
+      { kind: "change", text: "윷놀이 — 이기면 150점을 받아요 (전에는 100점)" },
     ],
   },
   {

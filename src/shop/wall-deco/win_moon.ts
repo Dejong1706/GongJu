@@ -40,7 +40,7 @@ const winMoon: ItemDef = {
   name: "달밤 창호문",
   slot: "wall",
   price: 700,
-  at: [25, 6],
+  at: [33, 7],
   only: "win",
   sprite: {
     rows: FRAMES[0],

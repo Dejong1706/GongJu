@@ -73,6 +73,8 @@ export type Pet = {
    * 맵이 아니라 배열인 건 Firestore 때문이다 — merge 로 쓰면 맵은 키가 안 지워진다.
    */
   spots: Spot[];
+  /** spots 를 잰 방의 가로 칸 수 (`ROOM.w`). 없으면 80 x 92 시절 것 — 읽을 때 `fitGrid` 가 옮긴다 */
+  grid?: number;
   wall: string;
   floor: string;
   /*

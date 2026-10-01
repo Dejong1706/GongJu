@@ -50,7 +50,7 @@ const canopy: ItemDef = {
   name: "캐노피 침대",
   slot: "floor",
   price: 750,
-  at: [8, 46],
+  at: [13, 60],
   sprite: { rows: ROWS, palette: FURN },
   face: "right",
   views: {

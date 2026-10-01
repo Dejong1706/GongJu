@@ -23,7 +23,7 @@ const vase: ItemDef = {
   name: "장미 꽃병",
   slot: "top",
   price: 500,
-  at: [58, 51],
+  at: [71, 64],
   sprite: { rows: ROWS, palette: { ...GOLD, R: "#FF7BAC", r: "#E2648F", g: "#6FAE6A", G: "#5A9A6A", j: "#FF6FA8" } },
 };
 export default vase;

@@ -74,7 +74,7 @@ const vanity: ItemDef = {
   name: "공주 화장대",
   slot: "floor",
   price: 800,
-  at: [52, 50],
+  at: [64, 64],
   sprite: { rows: ROWS, palette: FURN },
   views: { right: { rows: SIDE, palette: FURN }, back: { rows: BACK, palette: FURN } },
 };

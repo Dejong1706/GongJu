@@ -6,7 +6,7 @@ const pot: ItemDef = {
   name: "작은 화분",
   slot: "top",
   price: 60,
-  at: [54, 51],
+  at: [65, 63],
   sprite: s(["..GG..", ".GGGG.", "GGgGGG", ".GGGG.", "..GG..", "TTTTTT", ".TTTT."], "GgT"),
 };
 export default pot;

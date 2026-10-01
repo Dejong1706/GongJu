@@ -39,7 +39,7 @@ const tank: ItemDef = {
   name: "어항",
   slot: "floor",
   price: 650,
-  at: [52, 56],
+  at: [64, 70],
   sprite: {
     rows: FRAMES[0],
     palette: {

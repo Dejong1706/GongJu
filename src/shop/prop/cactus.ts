@@ -6,7 +6,7 @@ const cactus: ItemDef = {
   name: "선인장",
   slot: "top",
   price: 60,
-  at: [36, 60],
+  at: [44, 74],
   sprite: s(
     ["..GG..", "G.GG..", "GGGG.G", ".GGGGG", "..gG..", "..GG..", "TTTTTT", ".TTTT."],
     "GgT"

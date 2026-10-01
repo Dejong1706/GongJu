@@ -67,7 +67,7 @@ const hwFeast: ItemDef = {
   name: "할로윈 만찬 식탁",
   slot: "floor",
   price: 1000,
-  at: [28, 42],
+  at: [36, 59],
   sprite: {
     rows: frame(0),
     palette: {

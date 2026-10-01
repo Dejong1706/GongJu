@@ -6,7 +6,7 @@ const books: ItemDef = {
   name: "책 더미",
   slot: "top",
   price: 50,
-  at: [47, 53],
+  at: [57, 65],
   sprite: s([".RRRRRR.", ".RRRRRR.", "UUUUUUUU", "UUUUUUUU", "GGGGGGGG"], "RUG"),
 };
 export default books;

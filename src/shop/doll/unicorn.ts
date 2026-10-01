@@ -54,7 +54,7 @@ const unicorn: ItemDef = {
   name: "유니콘 인형",
   slot: "floor",
   price: 600,
-  at: [14, 76],
+  at: [18, 94],
   sprite: { rows: ROWS, palette: PAL },
   face: "right",
   views: { front: { rows: FRONT, palette: PAL }, back: { rows: BACK, palette: PAL } },

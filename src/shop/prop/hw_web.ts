@@ -43,7 +43,7 @@ const hwWeb: ItemDef = {
   name: "거미줄",
   slot: "flat",
   price: 300,
-  at: [46, 76],
+  at: [57, 93],
   sprite: { rows: FRAMES[0], palette: { w: "#D8CBE8", S: "#241A2E", k: "#241A2E", R: "#E2483A" } },
   anim: FRAMES,
 };

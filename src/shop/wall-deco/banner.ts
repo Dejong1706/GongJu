@@ -27,7 +27,7 @@ const banner: ItemDef = {
   name: "왕실 깃발",
   slot: "wall",
   price: 550,
-  at: [56, 4],
+  at: [68, 5],
   sprite: { rows: ROWS, palette: { ...GOLD, R: "#C8384F", W: "#FFFFFF" } },
 };
 export default banner;

@@ -8,7 +8,7 @@ const bandaji: ItemDef = {
   name: "반닫이",
   slot: "floor",
   price: 650,
-  at: [8, 58],
+  at: [12, 72],
   sprite: {
     rows: [
       "bbbbbbbbbbbbbbbbbbbb",

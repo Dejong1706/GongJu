@@ -1,4 +1,5 @@
-import { ITEMS } from "@/shop";
+import { ITEMS, itemById, type Item } from "@/shop";
+import type { Spot } from "./types";
 
 /**
  * 판다 방 — 세 면으로 세운다.
@@ -9,9 +10,12 @@ import { ITEMS } from "@/shop";
  *
  * 아래 세 함수가 **벽·바닥·걸레받이·판다가 다닐 곳을 전부** 정한다.
  * 방 크기를 바꾸고 싶으면 이 숫자 넷만 만지면 나머지는 따라온다.
- * 폰(가로 393px)에서 한 칸이 4.0px, 방 높이가 366px — 스크롤 없이 한 화면에 들어간다.
+ * 폰(가로 393px)에서 한 칸이 3.3px, 방 높이가 366px — 스크롤 없이 한 화면에 들어간다.
+ *
+ * 10/1 에 80 x 92 → 96 x 110 (1.2배) 으로 칸을 촘촘하게 했다 ("방이 좁아 보인다").
+ * 화면 크기는 그대로라 그림이 저절로 작아지고 바닥이 넓어진다. **w 를 바꾸면 저장된 자리가 `fitGrid` 로 따라온다**
  */
-export const ROOM = { w: 80, h: 92, base: 54, floorTop: 55, side: 12 } as const;
+export const ROOM = { w: 96, h: 110, base: 65, floorTop: 66, side: 14 } as const;
 export const BASEBOARD = "#8A6B7C";
 
 /** 그 열에서 바닥이 시작하는 줄. 옆벽이면 앞으로 올수록 내려온다 */
@@ -32,7 +36,35 @@ export const floorRightAt = (y: number) =>
   );
 
 /** 판다 16 x 16. 처음 서 있는 자리 — 그다음부터는 스스로 돌아다닌다 */
-export const PANDA = { w: 16, h: 16, x: 30, y: 62 } as const;
+export const PANDA = { w: 16, h: 16, x: 36, y: 74 } as const;
+
+/**
+ * 방 칸 수가 바뀌었을 때 놓인 자리를 옮긴다 (k = 새 칸 수 / 옛 칸 수).
+ * 그림 크기는 그대로라 왼쪽 위를 비율대로 옮기면 오른쪽 · 아래로 쏠린다.
+ * 가로는 **가운데**, 세로는 바닥 것은 **발끝**, 벽 것은 **윗줄**을 비율대로 옮긴다
+ */
+export function rescaleAt(it: Item, x: number, y: number, k: number): [number, number] {
+  const w = it.sprite.rows[0].length;
+  const h = it.sprite.rows.length;
+  const nx = Math.round((x + w / 2) * k - w / 2);
+  const ny = it.slot === "wall" ? Math.round(y * k) : Math.round((y + h) * k - h);
+  return [nx, ny];
+}
+
+/**
+ * 저장된 자리를 지금 방 칸 수에 맞춘다. `grid` 는 그 자리를 잰 방의 가로 칸 수 —
+ * 이 값이 생기기 전(80 x 92 시절) 에 저장된 것에는 없어서 80 으로 본다
+ */
+export function fitGrid(spots: Spot[], grid = 80): Spot[] {
+  if (grid === ROOM.w) return spots;
+  const k = ROOM.w / grid;
+  return spots.map((sp) => {
+    const it = itemById(sp.id);
+    if (!it) return sp;
+    const [x, y] = rescaleAt(it, sp.x, sp.y, k);
+    return { ...sp, x, y };
+  });
+}
 
 /**
  * 자리를 저장하기 전에 쓰던 방식에서 옮겨오기.

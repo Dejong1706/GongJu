@@ -28,6 +28,7 @@ import {
   type Surface,
 } from "@/shop";
 import type { Pet } from "@/lib/types";
+import { ROOM, fitGrid } from "@/lib/pet";
 import { DRAFT_FLOORS, DRAFT_ITEMS, DRAFT_NOTES, DRAFT_WALLS } from "./drafts";
 
 ITEMS.push(...DRAFT_ITEMS);
@@ -43,7 +44,9 @@ const KEY = `pet-preview:8:${[...DRAFTS].join(",")}`;
 function load(): { pet: Pet; cat: Cat } {
   try {
     const raw = JSON.parse(localStorage.getItem(KEY) ?? "null");
-    if (raw?.pet?.spots) return { pet: { ...START, ...raw.pet }, cat: raw.cat ?? "벽지" };
+    // 방 칸 수가 바뀌기 전(80 x 92) 에 꾸며둔 방이면 자리를 새 방에 맞춰 옮긴다 — 앱과 같은 fitGrid
+    if (raw?.pet?.spots)
+      return { pet: { ...START, ...raw.pet, spots: fitGrid(raw.pet.spots, raw.pet.grid), grid: ROOM.w }, cat: raw.cat ?? "벽지" };
   } catch {}
   return { pet: START, cat: "벽지" };
 }

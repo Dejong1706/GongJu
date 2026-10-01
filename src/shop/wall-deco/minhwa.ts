@@ -7,7 +7,7 @@ const minhwa: ItemDef = {
   name: "까치호랑이 민화",
   slot: "wall",
   price: 620,
-  at: [52, 12],
+  at: [64, 14],
   sprite: {
     rows: [
       "TTTTTTTTTTTTTTTT",

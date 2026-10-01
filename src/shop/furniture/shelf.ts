@@ -6,7 +6,7 @@ const shelf: ItemDef = {
   name: "책장",
   slot: "floor",
   price: 300,
-  at: [60, 55],
+  at: [73, 69],
   // 흰 책장에 책만 색을 준다. 칸을 나누는 줄도 테두리색이라 책이 도드라진다
   sprite: s(
     [

@@ -8,7 +8,7 @@ const bed: ItemDef = {
   name: "침대",
   slot: "floor",
   price: 320,
-  at: [9, 56],
+  at: [14, 70],
   sprite: s(BED, "HhWQq"),
   face: "right",
   views: { front: s(BED_FRONT, "HhWQq"), back: s(BED_BACK, "HhWQq") },

@@ -69,7 +69,7 @@ const throne: ItemDef = {
   name: "왕좌",
   slot: "floor",
   price: 850,
-  at: [48, 52],
+  at: [60, 67],
   sprite: { rows: ROWS, palette: PAL },
   views: { right: { rows: SIDE, palette: PAL }, back: { rows: BACK, palette: PAL } },
 };

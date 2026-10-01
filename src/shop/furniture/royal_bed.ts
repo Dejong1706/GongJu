@@ -139,7 +139,7 @@ const royalBed: ItemDef = {
   name: "왕실 침대",
   slot: "floor",
   price: 1000,
-  at: [6, 38],
+  at: [11, 52],
   sprite: { rows: draw(), palette: PALETTE },
   face: "right",
   views: {

@@ -6,7 +6,7 @@ const clock: ItemDef = {
   name: "벽시계",
   slot: "wall",
   price: 100,
-  at: [56, 14],
+  at: [68, 17],
   sprite: s(
     [
       "..KKKK..",

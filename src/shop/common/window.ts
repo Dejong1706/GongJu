@@ -8,7 +8,7 @@ import { INK } from "./palette";
   (궁전 · 발코니 창문은 38 x 38 로 따로 그린다 — 이 틀을 안 쓴다)
 */
 const WIN = { w: 24, h: 22, ix: 2, iy: 2, iw: 20, ih: 18 };
-export const WIN_AT: readonly [number, number] = [28, 10];
+export const WIN_AT: readonly [number, number] = [36, 12];
 
 /** 창밖에 놓는 부품 — [그림, 안쪽에서 x, y] */
 export type Part = [string[], number, number];

@@ -109,7 +109,7 @@ const winPalace: ItemDef = {
   name: "궁전 창문",
   slot: "wall",
   price: 1000,
-  at: [23, 3],
+  at: [31, 4],
   only: "win",
   sprite: {
     rows: FRAMES[0],

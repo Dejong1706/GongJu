@@ -22,7 +22,7 @@ const hwJack: ItemDef = {
   name: "호박 등",
   slot: "floor",
   price: 400,
-  at: [18, 62],
+  at: [23, 76],
   sprite: {
     rows: jackRows(true),
     palette: { K: INK, O: HW.pump, o: HW.pumpSh, g: HW.stem, Y: HW.glow, y: HW.glow2 },

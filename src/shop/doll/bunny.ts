@@ -6,7 +6,7 @@ const bunny: ItemDef = {
   name: "토끼 인형",
   slot: "floor",
   price: 90,
-  at: [24, 76],
+  at: [30, 93],
   sprite: s(
     [
       ".WW..WW.",

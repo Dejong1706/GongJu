@@ -6,7 +6,7 @@ const desk: ItemDef = {
   name: "책상",
   slot: "floor",
   price: 300,
-  at: [52, 60],
+  at: [64, 74],
   sprite: s(
     [
       "hhhhhhhhhhhhhhhhhhhh",

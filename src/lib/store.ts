@@ -21,6 +21,8 @@ import {
   PER_FOCUS,
   PER_QUIZ,
   PER_TASK,
+  fitGrid,
+  ROOM,
   spotsFromPlaced,
   stickerPoints,
   TASK_CAP,
@@ -296,6 +298,7 @@ export const EMPTY_PET: Pet = {
   owned: [],
   worn: {},
   spots: [],
+  grid: ROOM.w,
   wall: "w0",
   floor: "f0",
 };
@@ -359,6 +362,15 @@ export function usePet(uid: string) {
         const next = { ...EMPTY_PET, ...raw };
         // 자리를 저장하기 전에 놓아둔 것들은 소품마다 정해둔 처음 자리로 옮겨준다
         if (!raw?.spots && raw?.placed) next.spots = spotsFromPlaced(raw.placed);
+        /*
+         * 방 칸 수가 바뀌었으면(10/1 80 → 96) 저장된 자리를 새 방에 맞춰 옮기고 한 번 써 둔다.
+         * 안 옮기면 칸이 촘촘해진 만큼 전부 왼쪽 위로 몰린다. 쓰고 나면 grid 가 맞아서 다시 안 탄다
+         */
+        else if (raw?.spots && raw.grid !== ROOM.w) {
+          next.spots = fitGrid(raw.spots, raw.grid);
+          void setDoc(ref, { spots: next.spots, grid: ROOM.w }, { merge: true });
+        }
+        next.grid = ROOM.w;
         latest.current = next;
         setError(false);
         setPet(next);

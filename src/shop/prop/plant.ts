@@ -6,7 +6,7 @@ const plant: ItemDef = {
   name: "화분",
   slot: "floor",
   price: 140,
-  at: [10, 62],
+  at: [13, 76],
   sprite: s(
     [
       "..GG.GG.",

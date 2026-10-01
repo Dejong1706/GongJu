@@ -6,7 +6,7 @@ const lamp: ItemDef = {
   name: "스탠드",
   slot: "floor",
   price: 120,
-  at: [33, 57],
+  at: [40, 71],
   sprite: s(
     [
       ".NNNN.",

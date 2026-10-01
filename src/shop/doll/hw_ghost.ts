@@ -62,7 +62,7 @@ const hwGhost: ItemDef = {
   name: "유령 인형",
   slot: "floor",
   price: 1000,
-  at: [14, 70],
+  at: [19, 87],
   sprite: {
     rows: FRAMES[0],
     palette: {

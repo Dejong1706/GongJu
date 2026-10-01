@@ -56,7 +56,7 @@ const irworobongdo: ItemDef = {
   name: "일월오봉도 병풍",
   slot: "floor",
   price: 700,
-  at: [23, 44],
+  at: [31, 57],
   sprite: { rows: ROWS, palette: PALETTE },
   views: { right: { rows: SIDE, palette: PALETTE }, back: { rows: BACK, palette: PALETTE } },
 };

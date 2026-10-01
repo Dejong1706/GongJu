@@ -157,7 +157,7 @@ const hwWindow: ItemDef = {
   name: "할로윈 창문",
   slot: "wall",
   price: 1250,
-  at: [23, 3],
+  at: [31, 4],
   only: "win",
   sprite: {
     rows: FRAMES[0],

@@ -63,7 +63,7 @@ const jagae: ItemDef = {
   name: "자개장",
   slot: "floor",
   price: 690,
-  at: [58, 42],
+  at: [72, 56],
   sprite: { rows: FRAMES[0], palette: PALETTE },
   anim: FRAMES,
   views: { right: { rows: SIDE, palette: PALETTE }, back: { rows: BACK, palette: PALETTE } },

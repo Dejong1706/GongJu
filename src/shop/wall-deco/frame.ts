@@ -6,7 +6,7 @@ const frame: ItemDef = {
   name: "액자",
   slot: "wall",
   price: 120,
-  at: [16, 16],
+  at: [20, 19],
   // 창문과 같은 하늘·풀색을 써서 창밖 풍경을 담아놓은 것처럼 보이게 했다
   sprite: {
     rows: [

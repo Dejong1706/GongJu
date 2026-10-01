@@ -6,7 +6,7 @@ const rug: ItemDef = {
   name: "분홍 러그",
   slot: "flat",
   price: 100,
-  at: [26, 74],
+  at: [34, 90],
   // 28 x 8. 판다(16폭) 가 올라서도 자리가 남아야 깔개로 보인다
   sprite: s(
     [

@@ -6,7 +6,7 @@ const bangseok: ItemDef = {
   name: "비단 방석",
   slot: "flat",
   price: 380,
-  at: [28, 76],
+  at: [36, 93],
   sprite: {
     rows: [
       "...YYYYYYYYYYYYYYYY...",

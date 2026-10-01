@@ -23,6 +23,7 @@ export const UPDATES: Update[] = [
     date: "2026-10-01",
     items: [
       { kind: "change", text: "궁전 · 발코니 · 할로윈 창문이 한 치수 작아졌어요" },
+      { kind: "change", text: "판다 방이 더 넓어졌어요 (판다와 가구가 조금 작아 보여요)" },
     ],
   },
   {

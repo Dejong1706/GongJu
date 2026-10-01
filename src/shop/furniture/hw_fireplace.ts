@@ -59,7 +59,7 @@ const hwFireplace: ItemDef = {
   name: "할로윈 벽난로",
   slot: "floor",
   price: 800,
-  at: [44, 34],
+  at: [56, 46],
   sprite: {
     rows: FRAMES[0],
     palette: {

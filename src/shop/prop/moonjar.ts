@@ -6,7 +6,7 @@ const moonjar: ItemDef = {
   name: "달항아리",
   slot: "floor",
   price: 420,
-  at: [62, 66],
+  at: [75, 81],
   sprite: {
     rows: [
       "...wwww...",

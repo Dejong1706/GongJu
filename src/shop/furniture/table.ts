@@ -6,7 +6,7 @@ const table: ItemDef = {
   name: "둥근 탁자",
   slot: "floor",
   price: 180,
-  at: [34, 66],
+  at: [42, 81],
   sprite: s(
     [
       "..hhhhhhhh..",

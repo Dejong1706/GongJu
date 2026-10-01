@@ -25,7 +25,7 @@ const cheongsa: ItemDef = {
   name: "청사초롱",
   slot: "wall",
   price: 600,
-  at: [16, 8],
+  at: [20, 10],
   sprite: { rows: lantern(false), palette: { Y: "#E3B85C", R: "#D8423A", r: "#B5302A", L: "#FF9A7A", B: "#3E6DB5", b: "#2E4F8A" } },
   anim: [lantern(false), lantern(true)],
 };

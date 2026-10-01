@@ -6,7 +6,7 @@ const bear: ItemDef = {
   name: "곰 인형",
   slot: "floor",
   price: 90,
-  at: [36, 78],
+  at: [44, 95],
   sprite: s(
     [
       "ZZ....ZZ",

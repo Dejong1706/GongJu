@@ -20,7 +20,7 @@ const soban: ItemDef = {
   name: "소반 다과상",
   slot: "floor",
   price: 450,
-  at: [40, 70],
+  at: [50, 86],
   sprite: { rows: ROWS, palette: PALETTE },
   views: {
     // 옆 10 폭 — 상이 좁아지고 주전자 뒤로 약과 · 찻잔이 겹친다

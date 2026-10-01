@@ -77,7 +77,7 @@ const winBalcony: ItemDef = {
   name: "발코니 창문",
   slot: "wall",
   price: 1000,
-  at: [23, 3],
+  at: [31, 4],
   only: "win",
   sprite: {
     rows: FRAMES[0],
